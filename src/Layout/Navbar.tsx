@@ -10,6 +10,7 @@ import { logout, selectUser } from "@/store/features/auth/auth.slice";
 import { useAppDispatch, useAppSelector } from "@/store/hook";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import logo from "@/assets/nav/logo.png"
+import CommonWrapper from "@/common/CommonWrapper";
 
 // const navLinks = [
 //   { to: "/", label: "Home", end: true },
@@ -36,8 +37,8 @@ const Navbar: React.FC = () => {
 
   return (
     <nav className="sticky top-0 z-50 bg-white border-b border-[#C4CDD5] backdrop-blur-md shadow-lg">
-      <div className="max-w-350 mx-auto px-4 sm:px-6">
-        <div className="flex items-center justify-between h-20">
+      <CommonWrapper>
+        <div className="flex items-center justify-between h-16">
           {/* Logo */}
           <Link to="/" className="flex items-center gap-2 group">
             <img src={logo} alt="logo" />
@@ -142,7 +143,7 @@ const Navbar: React.FC = () => {
             {isOpen ? <X size={20} /> : <Menu size={20} />}
           </button>
         </div>
-      </div>
+      </CommonWrapper>
 
       {/* Mobile Menu */}
       {isOpen && (
