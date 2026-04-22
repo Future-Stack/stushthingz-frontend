@@ -4,6 +4,7 @@ import HowItWorks from "@/components/homePageComponent/HowItWorks";
 import InvestorsSection from "@/components/homePageComponent/InvestorsSection";
 import TestimonialsSection from "@/components/homePageComponent/TestimonialsSection";
 import FAQSection from "@/components/homePageComponent/FAQSection";
+import StartJourney from "@/components/homePageComponent/StartJourney";
 
 const Home: React.FC = () => {
   return (
@@ -12,6 +13,7 @@ const Home: React.FC = () => {
       <HowItWorks />
       <InvestorsSection />
       <TestimonialsSection />
+      <StartJourney />
       <FAQSection />
     </div>
   );

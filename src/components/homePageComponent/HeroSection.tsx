@@ -15,38 +15,68 @@ export default function HeroSection() {
                     alt="Jamaica"
                     className="w-full h-full object-cover"
                 />
-                <div className="absolute inset-0 bg-black/40" />
+                <div className="absolute inset-0 bg-black/10" />
             </div>
 
             {/* Content */}
             <CommonWrapper className="relative z-10 w-full px-6 py-16 grid md:grid-cols-2 gap-10 items-center">
 
                 {/* LEFT */}
-                <div className="text-white space-y-6">
-                    <h1 className="text-4xl md:text-5xl font-bold leading-tight">
+                <div className="text-white space-y-4">
+                    <h1 className="text-2xl md:text-[32px] lg:text-[40px] xl:text-[54px] font-bold text-white font-poppins md:leading-10 lg:leading-14 xl:leading-16">
                         Invest in Jamaica Real Estate with Confidence
                     </h1>
-                    <p className="text-lg text-gray-200 max-w-md">
+                    <p className="text-xl font-normal text-[#F4F6F8] mb-10">
                         AI-guided investment journey designed for foreign buyers
                     </p>
-                    <button className="bg-pink-500 hover:bg-pink-600 transition px-6 py-3 rounded-full font-semibold shadow-lg">
+                    <button className="bg-color-main transition px-4 py-2.5 rounded-lg font-semibold shadow-lg">
                         Get Started →
                     </button>
                 </div>
 
                 {/* RIGHT — Overlapping collage */}
-                <div className="hidden md:flex items-center justify-center">
-                    {/*
-                        Wrapper: fixed intrinsic size so absolute children
-                        have a reliable coordinate system, then scaled down
-                        on smaller viewports with clamp / responsive classes.
-                    */}
+                <div className="hidden md:flex items-center justify-center mr-3">
                     <div className="relative w-105 h-75 lg:w-125 lg:h-90 xl:w-140 xl:h-100">
+                        {/* <div className="relative w-[120%] max-w-[520px] lg:max-w-[620px] xl:max-w-[720px] aspect-[4/3]"> */}
 
-                        {/*
-                            IMAGE 1 — top-right, smallest, sits on top (z-30)
-                            In the screenshot: ~38% wide, anchored top-right
-                        */}
+
+
+                        {/* IMAGE 1 */}
+                        {/* <img
+                            src={heroImg1}
+                            className="
+    absolute z-30
+    top-0 right-[3%]
+    w-[65%]
+    aspect-[6/4] object-cover
+    rounded-2xl shadow-2xl
+  "
+                        /> */}
+
+                        {/* IMAGE 2 */}
+                        {/* <img
+                            src={heroImg2}
+                            className="
+    absolute z-20
+    top-[40%] left-0
+    w-[62%]
+    aspect-[9/5] object-cover
+    rounded-2xl shadow-2xl
+  "
+                        /> */}
+
+                        {/* IMAGE 3 */}
+                        {/* <img
+                            src={heroImg3}
+                            className="
+    absolute z-40
+    bottom-0 -right-[20%]
+    w-[55%]
+    aspect- object-cover
+    rounded-2xl shadow-2xl
+  "
+                        /> */}
+
                         <img
                             src={heroImg1}
                             alt="Property 1"
@@ -60,11 +90,6 @@ export default function HeroSection() {
                             "
                         />
 
-                        {/*
-                            IMAGE 2 — center, largest, sits in the middle (z-20)
-                            In the screenshot: ~54% wide, vertically centred,
-                            shifted left so it overlaps behind img3
-                        */}
                         <img
                             src={heroImg2}
                             alt="Property 2"
@@ -78,11 +103,7 @@ export default function HeroSection() {
                             "
                         />
 
-                        {/*
-                            IMAGE 3 — bottom-right, medium, sits at the back (z-10)
-                            In the screenshot: ~46% wide, bottom-right corner,
-                            slightly behind image 2
-                        */}
+
                         <img
                             src={heroImg3}
                             alt="Property 3"

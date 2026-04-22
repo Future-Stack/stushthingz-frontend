@@ -30,11 +30,11 @@ const steps = [
 
 const HowItWorks = () => {
     return (
-        <section className="w-full py-20 bg-white">
+        <section className="w-full py-25 bg-white">
             <CommonWrapper>
 
                 {/* Title */}
-                <h2 className="text-3xl md:text-4xl font-bold text-center mb-14 text-color-jet-black">
+                <h2 className="text-3xl md:text-4xl lg:text-5xl font-bold text-center mb-14 text-color-jet-black">
                     How It Works
                 </h2>
 
@@ -46,7 +46,7 @@ const HowItWorks = () => {
                             className="group p-6 rounded-xl hover:shadow-lg transition duration-300"
                         >
                             {/* Number */}
-                            <h3 className="text-pink-600 text-4xl font-bold mb-4 group-hover:scale-110 transition">
+                            <h3 className="text-pink-600 text-5xl font-bold mb-4 group-hover:scale-110 transition">
                                 {step.number}
                             </h3>
 
@@ -56,12 +56,12 @@ const HowItWorks = () => {
                             </div>
 
                             {/* Title */}
-                            <h4 className="text-lg font-semibold mb-2 text-[#212B36]">
+                            <h4 className="text-xl font-bold mb-3 text-[#212B36]">
                                 {step.title}
                             </h4>
 
                             {/* Description */}
-                            <p className="text-gray-500 text-sm leading-relaxed">
+                            <p className="text-[#454F5B] text-base leading-relaxed">
                                 {step.desc}
                             </p>
                         </div>
