@@ -30,7 +30,7 @@ const steps = [
 
 const HowItWorks = () => {
     return (
-        <section className="w-full py-25 bg-white">
+        <section className="w-full py-10 md:py-15 lg:py-20 xl:py-25 bg-white">
             <CommonWrapper>
 
                 {/* Title */}
@@ -43,7 +43,7 @@ const HowItWorks = () => {
                     {steps.map((step, index) => (
                         <div
                             key={index}
-                            className="group p-6 rounded-xl hover:shadow-lg transition duration-300"
+                            className="group p-4 rounded-xl hover:shadow-lg transition duration-300"
                         >
                             {/* Number */}
                             <h3 className="text-pink-600 text-5xl font-bold mb-4 group-hover:scale-110 transition">

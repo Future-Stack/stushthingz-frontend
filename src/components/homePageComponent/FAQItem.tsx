@@ -41,12 +41,12 @@ const FAQItem = ({ question, answer }: FAQItemProps) => {
     const contentRef = useRef<HTMLDivElement>(null);
 
     return (
-        <div className="border-b">
+        <div className="border-b-2 border-b-[#DFE3E8] last:border-none">
             <button
                 onClick={() => setOpen(!open)}
-                className="w-full text-left py-4 flex justify-between items-center"
+                className="w-full text-left py-4 flex justify-between items-center cursor-pointer"
             >
-                <span className="font-medium text-color-jet-black">
+                <span className="font-semibold text-color-jet-black text-lg">
                     {question}
                 </span>
 
@@ -66,7 +66,7 @@ const FAQItem = ({ question, answer }: FAQItemProps) => {
                     opacity: open ? 1 : 0,
                 }}
             >
-                <p className="text-[#364153] pb-4 text-sm">
+                <p className="text-[#364153] text-base font-normal pb-4">
                     {answer}
                 </p>
             </div>

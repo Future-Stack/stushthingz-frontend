@@ -13,8 +13,8 @@ const Home: React.FC = () => {
       <HowItWorks />
       <InvestorsSection />
       <TestimonialsSection />
-      <StartJourney />
       <FAQSection />
+      <StartJourney />
     </div>
   );
 };
