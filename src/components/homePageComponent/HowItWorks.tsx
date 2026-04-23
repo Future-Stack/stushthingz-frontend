@@ -1,5 +1,6 @@
 import CommonWrapper from "@/common/CommonWrapper";
 import { FileCheck, MessageSquare, Shield, TrendingUp } from "lucide-react";
+import { motion, Variants } from "framer-motion";
 
 const steps = [
     {
@@ -28,21 +29,53 @@ const steps = [
     },
 ];
 
+const containerVariants: Variants = {
+    hidden: { opacity: 0 },
+    visible: {
+        opacity: 1,
+        transition: {
+            staggerChildren: 0.2
+        }
+    }
+};
+
+const itemVariants: Variants = {
+    hidden: { opacity: 0, y: 30 },
+    visible: {
+        opacity: 1,
+        y: 0,
+        transition: { duration: 0.6, ease: "easeOut" }
+    }
+};
+
 const HowItWorks = () => {
     return (
         <section className="w-full py-10 md:py-15 lg:py-20 xl:py-25 bg-white">
             <CommonWrapper>
 
                 {/* Title */}
-                <h2 className="text-3xl md:text-4xl lg:text-5xl font-bold text-center mb-14 text-color-jet-black">
+                <motion.h2 
+                    initial={{ opacity: 0, y: 20 }}
+                    whileInView={{ opacity: 1, y: 0 }}
+                    viewport={{ once: true, margin: "-100px" }}
+                    transition={{ duration: 0.6, ease: "easeOut" }}
+                    className="text-3xl md:text-4xl lg:text-5xl font-bold text-center mb-14 text-color-jet-black"
+                >
                     How It Works
-                </h2>
+                </motion.h2>
 
                 {/* Grid */}
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-10">
+                <motion.div 
+                    variants={containerVariants}
+                    initial="hidden"
+                    whileInView="visible"
+                    viewport={{ once: true, margin: "-50px" }}
+                    className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-10"
+                >
                     {steps.map((step, index) => (
-                        <div
+                        <motion.div
                             key={index}
+                            variants={itemVariants}
                             className="group p-4 rounded-xl hover:shadow-lg transition duration-300"
                         >
                             {/* Number */}
@@ -64,9 +97,9 @@ const HowItWorks = () => {
                             <p className="text-[#454F5B] text-base leading-relaxed">
                                 {step.desc}
                             </p>
-                        </div>
+                        </motion.div>
                     ))}
-                </div>
+                </motion.div>
             </CommonWrapper>
         </section>
     );

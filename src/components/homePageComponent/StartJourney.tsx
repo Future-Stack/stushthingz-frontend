@@ -1,6 +1,6 @@
-
 import watermark from "@/assets/home/watermark.png"
 import CommonWrapper from "@/common/CommonWrapper"
+import { motion } from "framer-motion"
 
 export default function StartJourney() {
     return (
@@ -8,33 +8,63 @@ export default function StartJourney() {
             <CommonWrapper className="py-8">
 
                 {/* Left Watermark */}
-                <img
+                <motion.img
+                    animate={{ y: [-10, 10, -10] }}
+                    transition={{ duration: 6, repeat: Infinity, ease: "easeInOut" }}
                     src={watermark}
                     alt="left shape"
                     className="hidden lg:block absolute md:left-40 top-1/2 -translate-y-1/2 opacity-10 w-32 md:w-40 pointer-events-none"
                 />
 
                 {/* Right Watermark */}
-                <img
+                <motion.img
+                    animate={{ y: [10, -10, 10] }}
+                    transition={{ duration: 7, repeat: Infinity, ease: "easeInOut" }}
                     src={watermark}
                     alt="right shape"
                     className="hidden lg:block absolute lg:right-40 top-1/3 -translate-y-1/2 opacity-10 w-32 md:w-20 pointer-events-none -rotate-180"
                 />
 
-                <div className="px-6 py-16 text-center">
+                <motion.div 
+                    initial={{ opacity: 0, y: 30 }}
+                    whileInView={{ opacity: 1, y: 0 }}
+                    viewport={{ once: true, margin: "-50px" }}
+                    transition={{ duration: 0.6, ease: "easeOut" }}
+                    className="px-6 py-16 text-center"
+                >
 
-                    <h1 className="text-3xl md:text-5xl font-bold mb-7">
+                    <motion.h1 
+                        initial={{ opacity: 0, y: 20 }}
+                        whileInView={{ opacity: 1, y: 0 }}
+                        viewport={{ once: true }}
+                        transition={{ duration: 0.6, delay: 0.2, ease: "easeOut" }}
+                        className="text-3xl md:text-5xl font-bold mb-7"
+                    >
                         Start Your Investment Journey
-                    </h1>
+                    </motion.h1>
 
-                    <p className="text-sm md:text-xl font-normal text-[#FFFFFFE5] mb-6">
+                    <motion.p 
+                        initial={{ opacity: 0, y: 20 }}
+                        whileInView={{ opacity: 1, y: 0 }}
+                        viewport={{ once: true }}
+                        transition={{ duration: 0.6, delay: 0.3, ease: "easeOut" }}
+                        className="text-sm md:text-xl font-normal text-[#FFFFFFE5] mb-6"
+                    >
                         Join foreign investors who trust Vanessa to navigate Jamaica&apos;s real estate market
-                    </p>
+                    </motion.p>
 
-                    <button className="bg-white text-lg text-pink-700 font-medium px-6 py-3 rounded-lg shadow hover:bg-pink-100 transition">
+                    <motion.button 
+                        whileHover={{ scale: 1.05 }}
+                        whileTap={{ scale: 0.95 }}
+                        initial={{ opacity: 0, y: 20 }}
+                        whileInView={{ opacity: 1, y: 0 }}
+                        viewport={{ once: true }}
+                        transition={{ duration: 0.6, delay: 0.4, ease: "easeOut" }}
+                        className="bg-white text-lg text-pink-700 font-medium px-6 py-3 rounded-lg shadow hover:bg-pink-100 transition"
+                    >
                         Get Started Now →
-                    </button>
-                </div>
+                    </motion.button>
+                </motion.div>
             </CommonWrapper>
         </section>
     )
