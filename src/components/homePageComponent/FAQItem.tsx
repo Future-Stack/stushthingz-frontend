@@ -1,33 +1,3 @@
-// import { ChevronDown, ChevronUp } from "lucide-react";
-// import { useState } from "react";
-
-// interface FAQItemProps {
-//     question: string;
-//     answer: string;
-// }
-
-// const FAQItem = ({ question, answer }: FAQItemProps) => {
-//     const [open, setOpen] = useState(false);
-
-//     return (
-//         <div className="border-b">
-//             <button
-//                 onClick={() => setOpen(!open)}
-//                 className="w-full text-left py-4 flex justify-between items-center"
-//             >
-//                 <span className="font-medium text-color-jet-black">{question}</span>
-//                 <span className="text-[#212B36]">{open ? <ChevronUp /> : <ChevronDown />}</span>
-//             </button>
-
-//             {open && (
-//                 <p className="text-[#364153] pb-4 text-sm">{answer}</p>
-//             )}
-//         </div>
-//     );
-// };
-
-// export default FAQItem;
-
 import { ChevronDown } from "lucide-react";
 import { useState, useRef } from "react";
 
