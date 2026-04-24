@@ -40,7 +40,7 @@ const Signup = () => {
     if (selectedFile) formData.append("image", selectedFile);
 
     console.log("Signup Data:", Object.fromEntries(formData));
-    navigate("/login");
+    navigate("/onboarding");
   };
 
   const handleImageChange = (event: React.ChangeEvent<HTMLInputElement>) => {

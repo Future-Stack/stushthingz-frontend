@@ -16,6 +16,10 @@ import Signup from "@/pages/Signup";
 import Services from "@/pages/Services";
 import AdminLayout from "@/Layout/AdminLayout";
 import UserLayout from "@/Layout/UserLayout";
+import Onboarding from "@/pages/Onboarding";
+import FinancialAssessment from "@/pages/FinancialAssessment";
+import InvestmentGuide from "@/pages/InvestmentGuide";
+import DocumentChecklist from "@/pages/DocumentChecklist";
 
 const routes = createBrowserRouter([
   {
@@ -30,6 +34,24 @@ const routes = createBrowserRouter([
       { path: "/login", element: <Login /> },
       { path: "/signup", element: <Signup /> },
     ],
+  },
+
+  {
+    // ─── Standalone Onboarding (No Navbar/Footer) ──────────────────────────────
+    path: "/onboarding",
+    element: <Onboarding />,
+  },
+  {
+    path: "/onboarding/assessment",
+    element: <FinancialAssessment />,
+  },
+  {
+    path: "/onboarding/guide",
+    element: <InvestmentGuide />,
+  },
+  {
+    path: "/onboarding/documents",
+    element: <DocumentChecklist />,
   },
 
   {
