@@ -1,14 +1,15 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
-import { FaCheck, FaChevronDown, FaChevronUp, FaBook, FaDollarSign, FaFileInvoiceDollar, FaExclamationTriangle } from "react-icons/fa";
+import { FaCheck, FaChevronDown, FaChevronUp } from "react-icons/fa";
+import { DollarSign, FileText, House, TriangleAlert } from "lucide-react";
 
 const SECTIONS = [
   {
     id: "buying-process",
     title: "Buying Process",
     subtitle: "Step-by-step guide to purchasing property in Jamaica",
-    icon: <FaBook className="text-[#e81c62]" />,
+    icon: <House className="w-6 h-6 text-color-main" />,
     content: (
       <div className="space-y-6 mt-4 text-sm text-gray-700">
         <div>
@@ -40,27 +41,27 @@ const SECTIONS = [
     id: "cost-overview",
     title: "Cost Overview",
     subtitle: "Understanding the full financial picture",
-    icon: <FaDollarSign className="text-[#e81c62]" />,
+    icon: <DollarSign className="w-6 h-6 text-color-main" />,
     content: (
       <div className="space-y-4 mt-4 text-sm text-gray-700">
-        <div>
-          <h4 className="font-semibold text-gray-900">Stamp Duty</h4>
+        <div className="border-l-4 pl-5 border-color-main">
+          <h4 className="text-lg text-color-jet-black mb-1.5 font-semibold">Stamp Duty</h4>
           <p className="text-gray-600">5-7.5% of property value depending on price tier</p>
         </div>
-        <div>
-          <h4 className="font-semibold text-gray-900">Transfer Tax</h4>
+        <div className="border-l-4 pl-5 border-color-main">
+          <h4 className="text-lg text-color-jet-black mb-1.5 font-semibold">Transfer Tax</h4>
           <p className="text-gray-600">4-5% of property value</p>
         </div>
-        <div>
-          <h4 className="font-semibold text-gray-900">Legal Fees</h4>
+        <div className="border-l-4 pl-5 border-color-main">
+          <h4 className="text-lg text-color-jet-black mb-1.5 font-semibold">Legal Fees</h4>
           <p className="text-gray-600">Typically 2-3% of purchase price plus disbursements</p>
         </div>
-        <div>
-          <h4 className="font-semibold text-gray-900">Agent Commission</h4>
+        <div className="border-l-4 pl-5 border-color-main">
+          <h4 className="text-lg text-color-jet-black mb-1.5 font-semibold">Agent Commission</h4>
           <p className="text-gray-600">Usually 5% paid by seller, but verify in agreement</p>
         </div>
-        <div>
-          <h4 className="font-semibold text-gray-900 mb-2">Hidden Costs to Consider</h4>
+        <div className="border-l-4 pl-5 border-[#FE9A00]">
+          <h4 className="text-lg text-color-jet-black mb-1.5 font-semibold">Hidden Costs to Consider</h4>
           <ul className="list-disc pl-5 space-y-1 text-gray-600">
             <li>Property insurance</li>
             <li>Ongoing maintenance and property management</li>
@@ -76,12 +77,12 @@ const SECTIONS = [
     id: "financing-guide",
     title: "Financing Guide",
     subtitle: "Mortgage options for foreign buyers",
-    icon: <FaFileInvoiceDollar className="text-[#e81c62]" />,
+    icon: <FileText className="w-6 h-6 text-color-main" />,
     content: (
       <div className="space-y-4 mt-4 text-sm text-gray-700">
         <div>
-          <h4 className="font-semibold text-gray-900 mb-2">Eligibility Basics</h4>
-          <ul className="list-disc pl-5 space-y-1 text-gray-600">
+          <h4 className="text-lg font-semibold text-[#364153] mb-2">Eligibility Basics</h4>
+          <ul className="text-[#364153] text-base font-normal pl-5 space-y-1">
             <li>Most Jamaican banks offer mortgages to foreign nationals</li>
             <li>Typical down payment: 15-25% for non-residents</li>
             <li>Interest rates: 7-11% depending on bank and profile</li>
@@ -89,8 +90,8 @@ const SECTIONS = [
           </ul>
         </div>
         <div>
-          <h4 className="font-semibold text-gray-900 mb-2">Required Documents</h4>
-          <ul className="list-disc pl-5 space-y-1 text-gray-600">
+          <h4 className="text-lg font-semibold text-[#364153] mb-2">Required Documents</h4>
+          <ul className="text-[#364153] text-base font-normal pl-5 space-y-1">
             <li>Proof of income (pay stubs, tax returns, employment letter)</li>
             <li>Bank statements (last 6 months)</li>
             <li>Credit report from home country</li>
@@ -99,8 +100,8 @@ const SECTIONS = [
           </ul>
         </div>
         <div>
-          <h4 className="font-semibold text-gray-900 mb-2">Bank Expectations</h4>
-          <ul className="list-disc pl-5 space-y-1 text-gray-600">
+          <h4 className="text-lg font-semibold text-[#364153] mb-2">Bank Expectations</h4>
+          <ul className="text-[#364153] text-base font-normal pl-5 space-y-1">
             <li>Debt-to-income ratio below 40%</li>
             <li>Strong credit history in home country</li>
             <li>Stable employment (2+ years)</li>
@@ -114,12 +115,13 @@ const SECTIONS = [
     id: "risks-considerations",
     title: "Risks & Considerations",
     subtitle: "Important factors to understand",
-    icon: <FaExclamationTriangle className="text-orange-500" />,
+    icon: <TriangleAlert className="w-6 h-6 text-[#E17100]" />,
+    iconBg: "bg-[#FEF3C6]",
     content: (
       <div className="space-y-4 mt-4 text-sm text-gray-700">
         <div>
-          <h4 className="font-semibold text-orange-600 mb-2">Legal Risks</h4>
-          <ul className="list-disc pl-5 space-y-1 text-gray-600">
+          <h4 className="text-lg text-[#BB4D00] font-semibold mb-2">Legal Risks</h4>
+          <ul className="text-base font-normal text-[#364153] list-disc pl-5 space-y-1">
             <li>Always use a qualified local attorney</li>
             <li>Verify clear title before committing</li>
             <li>Understand zoning and building restrictions</li>
@@ -127,8 +129,8 @@ const SECTIONS = [
           </ul>
         </div>
         <div>
-          <h4 className="font-semibold text-orange-600 mb-2">Market Risks</h4>
-          <ul className="list-disc pl-5 space-y-1 text-gray-600">
+          <h4 className="text-lg text-[#BB4D00] font-semibold mb-2">Market Risks</h4>
+          <ul className="text-base font-normal text-[#364153] list-disc pl-5 space-y-1">
             <li>Property values can fluctuate with tourism trends</li>
             <li>Currency exchange rate volatility (JMD/USD)</li>
             <li>Limited liquidity in some market segments</li>
@@ -136,8 +138,8 @@ const SECTIONS = [
           </ul>
         </div>
         <div>
-          <h4 className="font-semibold text-orange-600 mb-2">Foreign Ownership Considerations</h4>
-          <ul className="list-disc pl-5 space-y-1 text-gray-600">
+          <h4 className="text-lg text-[#BB4D00] font-semibold mb-2">Foreign Ownership Considerations</h4>
+          <ul className="text-base font-normal text-[#364153] list-disc pl-5 space-y-1">
             <li>Non-residents can own property but some restrictions apply</li>
             <li>Properties over 0.5 acres may require government approval</li>
             <li>Estate planning: understand inheritance laws</li>
@@ -175,10 +177,10 @@ const InvestmentGuide = () => {
   const completedCount = Object.values(completedSections).filter(Boolean).length;
 
   return (
-    <div className="min-h-screen bg-[#f8f9fa] font-sans pb-12">
+    <div className="min-h-screen bg-white font-sans pb-12">
       {/* Header Area */}
       <div className="bg-white border-b border-gray-200 sticky top-0 z-10">
-        <div className="max-w-5xl mx-auto mt-4">
+        <div className="max-w-6xl mx-auto mt-4">
           <div className="px-4 sm:px-8 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
             <div>
               <h1 className="text-3xl font-bold text-color-jet-black">Jamaica Investment Guide</h1>
@@ -201,7 +203,7 @@ const InvestmentGuide = () => {
           <div className="flex space-x-1 mx-8 mt-2 mb-4.5">
             {SECTIONS.map((s, idx) => (
               <div
-                key={s.id}
+                key={idx}
                 className={`h-2 w-full rounded-full ${completedSections[s.id] ? "bg-color-main" : "bg-gray-200"
                   }`}
               />
@@ -211,7 +213,7 @@ const InvestmentGuide = () => {
       </div>
 
       {/* Accordion List */}
-      <main className="max-w-5xl mx-auto px-4 sm:px-8 mt-8 space-y-4">
+      <main className="max-w-6xl mx-auto px-4 sm:px-8 mt-8 space-y-4">
         {SECTIONS.map((section) => {
           const isExpanded = expandedSection === section.id;
           const isCompleted = completedSections[section.id];
@@ -219,15 +221,15 @@ const InvestmentGuide = () => {
           return (
             <div
               key={section.id}
-              className={`rounded-xl border overflow-hidden transition-colors py-4 px-6 ${isCompleted ? "border-green-200" : "border-[#919EAB]"
+              className={`rounded-2xl border overflow-hidden transition-colors py-4 px-6 ${isCompleted ? "border-green-200" : "border-[#919EAB]"
                 }`}
             >
               <div
                 onClick={() => toggleSection(section.id)}
-                className="flex items-start justify-between cursor-pointer hover:bg-gray-50 transition-colors"
+                className="flex items-start justify-between cursor-pointer  transition-colors"
               >
                 <div className="flex items-center space-x-4">
-                  <div className={`p-3 rounded-xl ${isCompleted ? 'bg-green-50' : 'bg-pink-50'}`}>
+                  <div className={`p-3 rounded-xl ${section.iconBg || "bg-[#FFF0F7]"}`}>
                     {section.icon}
                   </div>
                   <div>

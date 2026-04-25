@@ -16,6 +16,9 @@ import Signup from "@/pages/Signup";
 import Services from "@/pages/Services";
 import AdminLayout from "@/Layout/AdminLayout";
 import UserLayout from "@/Layout/UserLayout";
+import InvestorLayout from "@/Layout/InvestorLayout";
+import InvestorDashboard from "@/pages/Investor/InvestorDashboard";
+import PropertyListing from "@/pages/Investor/PropertyListing";
 import Onboarding from "@/pages/Onboarding";
 import FinancialAssessment from "@/pages/FinancialAssessment";
 import InvestmentGuide from "@/pages/InvestmentGuide";
@@ -65,6 +68,22 @@ const routes = createBrowserRouter([
           { path: "", element: <UserDashboard /> },
           { path: "profile", element: <UserProfile /> },
           // 🛠️ Add more user pages here
+        ],
+      },
+    ],
+  },
+
+  {
+    // ─── Investor Dashboard (requires login — see PrivateRoute for BYPASS_AUTH) ───
+    path: "/investor",
+    element: <PrivateRoute />,
+    children: [
+      {
+        element: <InvestorLayout />,
+        children: [
+          { path: "dashboard", element: <InvestorDashboard /> },
+          { path: "opportunities", element: <PropertyListing /> },
+          // 🛠️ Add more investor pages here
         ],
       },
     ],

@@ -2,6 +2,7 @@ import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { FaCheckCircle, FaRegCircle, FaEye, FaTimes, FaCloudUploadAlt } from "react-icons/fa";
 import Modal from "@/components/ui/Modal";
+import { motion } from "framer-motion";
 
 interface DocItem {
   id: string;
@@ -83,12 +84,12 @@ const DocumentChecklist = () => {
       items: cat.items.map((item) =>
         item.id === selectedDoc.id
           ? {
-              ...item,
-              file: {
-                name: uploadFile.name,
-                url: URL.createObjectURL(uploadFile), // mock url for preview
-              },
-            }
+            ...item,
+            file: {
+              name: uploadFile.name,
+              url: URL.createObjectURL(uploadFile), // mock url for preview
+            },
+          }
           : item
       ),
     }));
@@ -111,57 +112,60 @@ const DocumentChecklist = () => {
     <div className="min-h-screen bg-[#f8f9fa] font-sans pb-12">
       {/* Header */}
       <div className="bg-white border-b border-gray-200 sticky top-0 z-10">
-        <div className="max-w-4xl mx-auto px-4 sm:px-8 py-4 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-          <div>
-            <h1 className="text-xl font-bold text-gray-900">Document Checklist</h1>
-            <p className="text-sm text-gray-500 mt-1">
-              {uploadedDocs} of {totalDocs} documents uploaded
-            </p>
-            {/* Progress Bar */}
-            <div className="h-1.5 w-48 bg-gray-200 rounded-full mt-2 overflow-hidden">
-              <div
-                className="h-full bg-[#e81c62] transition-all duration-500"
-                style={{ width: `${(uploadedDocs / totalDocs) * 100}%` }}
-              />
+        <div className="max-w-6xl mx-auto mb- px-4 sm:px-8 py-4">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+            <div>
+              <h1 className="text-3xl text-color-jet-black font-bold mb-1">Document Checklist</h1>
+              <p className="text-base font-normal text-[#4A5565] mt-1">
+                {uploadedDocs} of {totalDocs} documents uploaded
+              </p>
             </div>
+            <motion.button
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.95 }}
+              onClick={() => navigate("/dashboard")}
+              className="bg-color-main hover:bg-color-main/90 text-white px-6 py-3 rounded-lg font-medium transition-colors cursor-pointer shadow-md"
+            >
+              Complete Setup
+            </motion.button>
           </div>
-          <button
-            onClick={() => navigate("/dashboard")}
-            className="bg-[#f48fb1] hover:bg-[#f06292] text-white px-6 py-2.5 rounded-lg font-medium transition-colors cursor-pointer"
-          >
-            Complete Setup
-          </button>
+          {/* Progress Bar */}
+          <div className="h-2 w-full bg-gray-200 rounded-full overflow-hidden mt-4">
+            <div
+              className="h-full bg-color-main transition-all duration-500"
+              style={{ width: `${(uploadedDocs / totalDocs) * 100}%` }}
+            />
+          </div>
         </div>
       </div>
 
       {/* Main Content */}
-      <main className="max-w-4xl mx-auto px-4 sm:px-8 mt-8 space-y-8">
+      <main className="max-w-6xl mx-auto px-4 sm:px-8 mt-8 space-y-8">
         {categories.map((category) => (
           <div key={category.id}>
-            <h2 className="text-lg font-semibold text-gray-900 mb-4">{category.title}</h2>
-            <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
+            <h2 className="text-2xl text-color-jet-black font-bold mb-4">{category.title}</h2>
+            <div className="bg-white rounded-2xl border border-[#C4CDD5] overflow-hidden">
               {category.items.map((item, idx) => (
                 <div
                   key={item.id}
-                  className={`p-4 sm:p-6 flex flex-col sm:flex-row sm:items-center justify-between gap-4 ${
-                    idx !== category.items.length - 1 ? "border-b border-gray-100" : ""
-                  }`}
+                  className={`p-4 sm:p-6 flex flex-col sm:flex-row sm:items-center justify-between gap-4 ${idx !== category.items.length - 1 ? "border-b border-gray-100" : ""
+                    }`}
                 >
                   <div className="flex items-start space-x-4">
                     <div className="mt-1">
                       {item.file ? (
-                        <FaCheckCircle className="text-[#e81c62] text-xl" />
+                        <FaCheckCircle className="text-color-main text-xl" />
                       ) : (
                         <FaRegCircle className="text-gray-300 text-xl" />
                       )}
                     </div>
                     <div>
-                      <h3 className="font-medium text-gray-900">{item.title}</h3>
-                      <p className="text-sm text-gray-500 mt-1">{item.desc}</p>
-                      
+                      <h3 className="text-lg text-color-jet-black font-semibold mb-0.5">{item.title}</h3>
+                      <p className="text-sm text-[#4A5565] font-normal">{item.desc}</p>
+
                       {/* Uploaded File Info */}
                       {item.file && (
-                        <div className="flex items-center space-x-2 mt-2 text-sm text-[#e81c62]">
+                        <div className="flex items-center space-x-2 mt-2 text-sm text-color-main">
                           <FaCloudUploadAlt />
                           <span>{item.file.name}</span>
                         </div>
@@ -190,7 +194,7 @@ const DocumentChecklist = () => {
                     ) : (
                       <button
                         onClick={() => openModal(item)}
-                        className="bg-[#e81c62] text-white px-4 py-2 rounded-md text-sm font-medium hover:bg-[#d01958] transition-colors cursor-pointer flex items-center space-x-2"
+                        className="bg-color-main text-white px-4 py-2 rounded-md text-sm font-medium hover:bg-[#d01958] transition-colors cursor-pointer flex items-center space-x-2"
                       >
                         <FaCloudUploadAlt />
                         <span>Upload</span>
@@ -204,9 +208,9 @@ const DocumentChecklist = () => {
         ))}
 
         {/* Requirements Banner */}
-        <div className="bg-blue-50 border border-blue-100 rounded-xl p-6">
-          <h3 className="text-sm font-semibold text-blue-900 mb-2">Document Requirements</h3>
-          <ul className="list-disc pl-5 space-y-1 text-xs text-blue-800">
+        <div className="bg-[#EFF6FF] border border-[#BEDBFF] rounded-2xl p-6">
+          <h3 className="text-lg font-semibold text-[#1C398E] mb-2">Document Requirements</h3>
+          <ul className="list-disc pl-5 space-y-1 text-sm font-normal text-[#193CB8]">
             <li>All documents must be clear and legible</li>
             <li>Accepted formats: PDF, JPG, PNG</li>
             <li>Maximum file size: 10MB per document</li>

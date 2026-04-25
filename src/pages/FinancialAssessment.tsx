@@ -1,7 +1,6 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
-import { FaCheckCircle } from "react-icons/fa";
 import logo from "@/assets/nav/logo.png";
 import { CircleCheck } from "lucide-react";
 
