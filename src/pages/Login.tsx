@@ -1,9 +1,12 @@
+import React from "react";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Link, useNavigate } from "react-router-dom";
 import { useAppDispatch } from "@/store/hook";
 import { setUser } from "@/store/features/auth/auth.slice";
+import logo from "@/assets/nav/logo.png";
+import { Search } from "lucide-react";
 
 const loginSchema = z.object({
   email: z.string().email("Invalid email format"),
@@ -12,7 +15,7 @@ const loginSchema = z.object({
 
 type LoginFormInputs = z.infer<typeof loginSchema>;
 
-const Login = () => {
+const Login: React.FC = () => {
   const {
     register,
     handleSubmit,
@@ -27,62 +30,85 @@ const Login = () => {
   const onSubmit = (data: LoginFormInputs) => {
     console.log("Login Data:", data);
     dispatch(setUser(data));
-    navigate("/");
+    navigate("/investor/opportunities");
   };
 
   return (
-    <div className="flex items-center justify-center min-h-screen bg-gray-100">
-      <div className="w-full max-w-md bg-white p-6 rounded-lg shadow-md">
-        <h2 className="text-2xl font-semibold text-center">Login</h2>
-        <form onSubmit={handleSubmit(onSubmit)} className="mt-4">
-          {/* Email Field */}
-          <div className="mb-4">
-            <label className="block text-sm font-medium text-gray-700">
-              Email
-            </label>
-            <input
-              type="email"
-              {...register("email")}
-              className="w-full p-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-            />
-            {errors.email && (
-              <p className="text-red-500 text-sm">{errors.email.message}</p>
-            )}
-          </div>
-
-          {/* Password Field */}
-          <div className="mb-4">
-            <label className="block text-sm font-medium text-gray-700">
-              Password
-            </label>
-            <input
-              type="password"
-              {...register("password")}
-              className="w-full p-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-            />
-            {errors.password && (
-              <p className="text-red-500 text-sm">{errors.password.message}</p>
-            )}
-          </div>
-
-          <div className="mb-3">
-            <p className="text-sm">
-              Already have an account?{" "}
-              <Link to="/signup" className="text-blue-400 ">
-                Sign up here
-              </Link>
-            </p>
-          </div>
-
-          {/* Submit Button */}
-          <button
-            type="submit"
-            className="w-full bg-blue-500 text-white p-2 rounded-md hover:bg-blue-600"
-          >
-            Login
-          </button>
-        </form>
+    <div className="w-full mx-auto">
+      <div className="mb-6">
+        <img src={logo} alt="Vanessa" className="w-40 mb-6" />
+        <h2 className="text-4xl font-bold text-black mb-1 font-inter">Welcome Back</h2>
+        <p className="text-base text-[#454F5B] font-normal">Continue your investment journey</p>
       </div>
+
+      <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
+        <div>
+          <label className="block text-base font-normal text-color-jet-black mb-1">
+            Email
+          </label>
+          <input
+            type="email"
+            placeholder="you@example.com"
+            {...register("email")}
+            className="w-full p-3 bg-[#F3F3F5] border border-[#00000000] rounded-lg focus:outline-none focus:ring-2 focus:ring-color-main text-sm placeholder:text-[#454F5B]"
+          />
+          {errors.email && (
+            <p className="text-red-500 text-xs mt-1">{errors.email.message}</p>
+          )}
+        </div>
+
+        <div>
+          <label className="block text-base font-normal text-color-jet-black mb-1">
+            Password
+          </label>
+          <input
+            type="password"
+            placeholder="••••••••"
+            {...register("password")}
+            className="w-full p-3 bg-[#F3F3F5] border border-[#00000000] rounded-lg focus:outline-none focus:ring-2 focus:ring-color-main text-sm placeholder:text-[#454F5B]"
+          />
+          {errors.password && (
+            <p className="text-red-500 text-xs mt-1">{errors.password.message}</p>
+          )}
+        </div>
+
+        <button
+          type="submit"
+          className="w-full bg-color-main text-white py-3 rounded-lg font-semibold hover:bg-color-main/90 transition-colors shadow-sm cursor-pointer"
+        >
+          Sign In
+        </button>
+      </form>
+
+      <div className="text-right mt-3">
+        <Link to="/forgot-password" title="Forgot Password" className="text-sm font-medium text-black hover:underline">
+          Forgot Password?
+        </Link>
+      </div>
+
+      <div className="relative my-4">
+        <div className="absolute inset-0 flex items-center">
+          <div className="w-full border-t border-[#EAECF0]"></div>
+        </div>
+        <div className="relative flex justify-center text-xs uppercase">
+          <span className="bg-white px-2 text-[#667085]">or</span>
+        </div>
+      </div>
+
+      {/* <button
+        type="button"
+        className="w-full flex items-center justify-center gap-3 px-4 py-3 border border-[#D0D5DD] rounded-lg bg-white text-[#344054] font-semibold text-sm hover:bg-gray-50 transition-colors cursor-pointer"
+      >
+        <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/smartlock/google.svg" alt="Google" className="w-5 h-5" />
+        Continue with Google
+      </button> */}
+
+      <p className="text-center text-sm text-[#4A5565]">
+        Don't have an account?{" "}
+        <Link to="/signup" className="text-base font-medium text-color-main hover:underline">
+          Sign up
+        </Link>
+      </p>
     </div>
   );
 };

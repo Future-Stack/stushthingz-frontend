@@ -13,10 +13,14 @@ import UserDashboard from "@/pages/User/UserDashboard";
 import UserProfile from "@/pages/User/UserProfile";
 import Login from "@/pages/Login";
 import Signup from "@/pages/Signup";
+import ForgotPassword from "@/pages/ForgotPassword";
+import VerifyOTP from "@/pages/VerifyOTP";
+import ResetPassword from "@/pages/ResetPassword";
 import Services from "@/pages/Services";
 import AdminLayout from "@/Layout/AdminLayout";
 import UserLayout from "@/Layout/UserLayout";
 import InvestorLayout from "@/Layout/InvestorLayout";
+import AuthLayout from "@/Layout/AuthLayout";
 import InvestorDashboard from "@/pages/Investor/InvestorDashboard";
 import PropertyListing from "@/pages/Investor/PropertyListing";
 import Onboarding from "@/pages/Onboarding";
@@ -34,8 +38,19 @@ const routes = createBrowserRouter([
       { path: "/about", element: <About /> },
       { path: "/contact", element: <Contact /> },
       { path: "/services", element: <Services /> },
+    ],
+  },
+
+  {
+    // ─── Auth Layout (Split Screen) ──────────────────────────────────────────
+    path: "/",
+    element: <AuthLayout />,
+    children: [
       { path: "/login", element: <Login /> },
       { path: "/signup", element: <Signup /> },
+      { path: "/forgot-password", element: <ForgotPassword /> },
+      { path: "/verify-otp", element: <VerifyOTP /> },
+      { path: "/reset-password", element: <ResetPassword /> },
     ],
   },
 
