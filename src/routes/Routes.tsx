@@ -23,6 +23,7 @@ import InvestorLayout from "@/Layout/InvestorLayout";
 import AuthLayout from "@/Layout/AuthLayout";
 import InvestorDashboard from "@/pages/Investor/InvestorDashboard";
 import PropertyListing from "@/pages/Investor/PropertyListing";
+import PropertyDetails from "@/pages/Investor/PropertyDetails";
 import Onboarding from "@/pages/Onboarding";
 import FinancialAssessment from "@/pages/FinancialAssessment";
 import InvestmentGuide from "@/pages/InvestmentGuide";
@@ -98,6 +99,7 @@ const routes = createBrowserRouter([
         children: [
           { path: "dashboard", element: <InvestorDashboard /> },
           { path: "opportunities", element: <PropertyListing /> },
+          { path: "opportunities/:id", element: <PropertyDetails /> },
           // 🛠️ Add more investor pages here
         ],
       },

@@ -1,12 +1,14 @@
 import React from "react";
 import { MapPin, FileText, Users, AlertCircle, Shield } from "lucide-react";
-import { Property } from "../PropertyListing";
+import { useNavigate } from "react-router-dom";
+import { Property } from "../../../types/property";
 
 interface PropertyCardProps {
   property: Property;
 }
 
 const PropertyCard: React.FC<PropertyCardProps> = ({ property }) => {
+  const navigate = useNavigate();
   return (
     <div className="bg-white border border-[#919EAB] rounded-2xl overflow-hidden flex flex-col lg:flex-row shadow-sm">
       {/* Image Section */}
@@ -105,7 +107,10 @@ const PropertyCard: React.FC<PropertyCardProps> = ({ property }) => {
 
         {/* Action Buttons */}
         <div className="flex flex-col sm:flex-row gap-4 mt-auto">
-          <button className="flex-1 bg-color-main hover:bg-color-main/80 text-white py-2.5 px-4 rounded-lg text-sm font-medium transition-colors flex justify-center items-center gap-2 shadow-sm cursor-pointer">
+          <button 
+            onClick={() => navigate(`/investor/opportunities/${property.id}`)}
+            className="flex-1 bg-color-main hover:bg-color-main/80 text-white py-2.5 px-4 rounded-lg text-sm font-medium transition-colors flex justify-center items-center gap-2 shadow-sm cursor-pointer"
+          >
             <FileText size={16} /> View Full Opportunity Brief
           </button>
           <button className="px-6 border border-color-main text-color-main hover:bg-pink-50 py-2.5 rounded-lg text-sm font-medium transition-colors flex justify-center items-center gap-2 cursor-pointer">
