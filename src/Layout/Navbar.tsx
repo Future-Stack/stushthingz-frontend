@@ -41,7 +41,7 @@ const Navbar: React.FC = () => {
         <div className="flex items-center justify-between h-16">
           {/* Logo */}
           <Link to="/" className="flex items-center gap-2 group">
-            <img src={logo} alt="logo" />
+            <img src={logo} alt="logo" className="w-50" />
             {/* <div className="w-8 h-8 rounded-lg bg-linear-to-br from-[#124e66] to-[#748d92] flex items-center justify-center font-bold text-white text-sm shadow-lg group-hover:scale-105 transition-transform">
               M
             </div>
@@ -120,16 +120,16 @@ const Navbar: React.FC = () => {
               <div className="flex items-center gap-2">
                 <Link
                   to="/login"
-                  className="px-4 py-2 text-sm font-medium text-gray-300 hover:text-white transition-colors"
+                  className="bg-color-main rounded-full px-6 py-2 text-base font-medium text-white hover:text-white transition-all cursor-pointer shadow-sm active:scale-95"
                 >
                   Log In
                 </Link>
-                <Link
+                {/* <Link
                   to="/signup"
                   className="px-4 py-2 text-sm font-medium bg-linear-to-r from-[#124e66] to-[#2e3944] text-white rounded-lg hover:opacity-90 transition-opacity shadow-lg border border-white/10"
                 >
                   Sign Up
-                </Link>
+                </Link> */}
               </div>
             )}
           </div>
