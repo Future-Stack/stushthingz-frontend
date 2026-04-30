@@ -6,7 +6,6 @@ import { Link, useNavigate } from "react-router-dom";
 import { useAppDispatch } from "@/store/hook";
 import { setUser } from "@/store/features/auth/auth.slice";
 import logo from "@/assets/nav/logo.png";
-import { Search } from "lucide-react";
 
 const loginSchema = z.object({
   email: z.string().email("Invalid email format"),
@@ -36,7 +35,7 @@ const Login: React.FC = () => {
   return (
     <div className="w-full mx-auto">
       <div className="mb-6">
-        <img src={logo} alt="Vanessa" className="w-40 mb-6" />
+        <img src={logo} alt="Vanessa" className="mb-6" />
         <h2 className="text-4xl font-bold text-black mb-1 font-inter">Welcome Back</h2>
         <p className="text-base text-[#454F5B] font-normal">Continue your investment journey</p>
       </div>

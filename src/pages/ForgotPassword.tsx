@@ -2,7 +2,7 @@ import React from "react";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { Link, useNavigate } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 import { Mail } from "lucide-react";
 import logo from "@/assets/nav/logo.png";
 
@@ -31,7 +31,7 @@ const ForgotPassword: React.FC = () => {
   return (
     <div className="w-full mx-auto">
       <div className="mb-6">
-        <img src={logo} alt="Vanessa" className="w-40 mb-6" />
+        <img src={logo} alt="Vanessa" className="mb-6" />
         <h2 className="text-4xl font-bold text-black mb-1 font-inter">Forgot Password!</h2>
         <p className="text-base text-[#454F5B] font-normal leading-relaxed">
           Do you forgot your password? It's ease to reset, just provide your email address. We'll send you a OTP code.

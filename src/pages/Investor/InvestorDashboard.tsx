@@ -1,8 +1,10 @@
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { ShieldCheck, FileText, ArrowRight, Home, Upload, House, TrendingUp } from "lucide-react";
+import { ShieldCheck, ArrowRight, Home, Upload, House, TrendingUp } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import watermark from "@/assets/home/watermark.png";
+import GuideContent from "@/components/onboarding/GuideContent";
+import DocumentChecklistContent from "@/components/onboarding/DocumentChecklistContent";
 
 type TabType = "Dashboard" | "Documents" | "Guide" | "Profile";
 
@@ -183,7 +185,7 @@ const InvestorDashboard: React.FC = () => {
                 <h3 className="text-xl font-bold text-color-jet-black mb-4">Recommended Next Steps</h3>
                 <div className="space-y-3">
                   <div className="bg-white border border-gray-100 rounded-xl p-5 shadow-sm flex flex-col sm:flex-row items-start sm:items-center gap-4">
-                    <div className="w-10 h-10 rounded-full bg-pink-50 flex items-center justify-center text-[#d81b60] flex-shrink-0">
+                    <div className="w-10 h-10 rounded-full bg-pink-50 flex items-center justify-center text-[#d81b60] shrink-0">
                       <Upload size={18} />
                     </div>
                     <div className="flex-1">
@@ -199,7 +201,7 @@ const InvestorDashboard: React.FC = () => {
                   </div>
 
                   <div className="bg-white border border-gray-100 rounded-xl p-5 shadow-sm flex flex-col sm:flex-row items-start sm:items-center gap-4">
-                    <div className="w-10 h-10 rounded-full bg-pink-50 flex items-center justify-center text-[#d81b60] flex-shrink-0">
+                    <div className="w-10 h-10 rounded-full bg-pink-50 flex items-center justify-center text-[#d81b60] shrink-0">
                       <TrendingUp size={18} />
                     </div>
                     <div className="flex-1">
@@ -212,7 +214,7 @@ const InvestorDashboard: React.FC = () => {
                   </div>
 
                   <div className="bg-white border border-gray-100 rounded-xl p-5 shadow-sm flex flex-col sm:flex-row items-start sm:items-center gap-4">
-                    <div className="w-10 h-10 rounded-full bg-pink-50 flex items-center justify-center text-[#d81b60] flex-shrink-0">
+                    <div className="w-10 h-10 rounded-full bg-pink-50 flex items-center justify-center text-[#d81b60] shrink-0">
                       <House size={18} />
                     </div>
                     <div className="flex-1">
@@ -232,32 +234,32 @@ const InvestorDashboard: React.FC = () => {
           )}
 
           {activeTab === "Documents" && (
-            <div className="bg-white border border-[#919EAB] rounded-[14px] p-8">
-              <h2 className="text-xl font-bold text-color-jet-black mb-4">Document Management</h2>
-              <p className="text-base font-normal text-[#4A5565] mb-8">
-                View and manage all your uploaded documents. Navigate to the full document checklist for detailed management.
-              </p>
-              <button
-                onClick={() => navigate("/onboarding/documents")}
-                className="w-full bg-color-main hover:bg-[#c2185b] text-white py-3 rounded-lg font-medium transition-colors inline-flex justify-center items-center gap-2 cursor-pointer"
-              >
-                <FileText size={18} /> Go to Document Checklist
-              </button>
+            <div>
+              {/* <div className="flex justify-between items-center mb-6">
+                <h2 className="text-2xl font-bold text-color-jet-black">Document Management</h2>
+                <button
+                  onClick={() => navigate("/onboarding/documents")}
+                  className="text-sm font-medium text-color-main hover:underline flex items-center gap-1"
+                >
+                  Full Checklist <ArrowRight size={16} />
+                </button>
+              </div> */}
+              <DocumentChecklistContent />
             </div>
           )}
 
           {activeTab === "Guide" && (
-            <div className="bg-white border border-[#919EAB] rounded-[14px] p-8">
-              <h2 className="text-xl font-bold text-color-jet-black mb-4">Investment Guide</h2>
-              <p className="text-base font-normal text-[#4A5565] mb-8">
-                View and learn from our comprehensive investment guide tailored for your journey.
-              </p>
-              <button
-                onClick={() => navigate("/onboarding/guide")}
-                className="w-full bg-color-main hover:bg-[#c2185b] text-white py-3 rounded-lg font-medium transition-colors inline-flex justify-center items-center gap-2 cursor-pointer"
-              >
-                <FileText size={18} /> Go to Investment Guide
-              </button>
+            <div>
+              {/* <div className="flex justify-between items-center mb-6">
+                <h2 className="text-2xl font-bold text-color-jet-black">Investment Guide</h2>
+                <button
+                  onClick={() => navigate("/onboarding/guide")}
+                  className="text-sm font-medium text-color-main hover:underline flex items-center gap-1"
+                >
+                  View Full Guide <ArrowRight size={16} />
+                </button>
+              </div> */}
+              <GuideContent />
             </div>
           )}
 

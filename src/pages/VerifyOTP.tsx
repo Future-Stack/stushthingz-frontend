@@ -38,7 +38,7 @@ const VerifyOTP: React.FC = () => {
   return (
     <div className="w-full mx-auto">
       <div className="mb-6">
-        <img src={logo} alt="Vanessa" className="w-40 mb-6" />
+        <img src={logo} alt="Vanessa" className="mb-6" />
         <h2 className="text-4xl font-bold text-black mb-1 font-inter">Verify OTP</h2>
         <p className="text-base text-[#454F5B] font-normal leading-relaxed">
           We have sent you a 6 digit OTP code to your provided email{" "}
@@ -50,7 +50,7 @@ const VerifyOTP: React.FC = () => {
         <span className="text-color-main text-lg font-bold">{formatTime(timer)}</span>
       </div>
 
-      <div className="flex justify-between gap-2 mb-8">
+      <div className="grid grid-cols-3 md:grid-cols-6 justify-items-center gap-4 mb-8">
         {otp.map((data, index) => (
           <input
             key={index}

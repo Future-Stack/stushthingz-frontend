@@ -34,11 +34,10 @@ const FinancialAssessment = () => {
   return (
     <div className="min-h-screen bg-[#f8f9fa] font-sans">
       {/* Header */}
-      <header className="w-full px-8 bg-white border-b border-[#919EAB] sticky top-0 z-10 pt-4 pb-5">
+      <header className="w-full px-8 bg-white border-b border-[#919EAB] sticky top-0 z-10 py-2">
         <div className="max-w-6xl mx-auto flex items-center space-x-2">
           <div>
-            <img src={logo} alt="logo" className="w-36" />
-            <p className="text-xs font-poppins font-normal text-[#4A5565] ml-12 -mt-2">Your Investment Guide</p>
+            <img src={logo} alt="logo" className="w-50" />
           </div>
         </div>
       </header>

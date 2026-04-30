@@ -40,7 +40,7 @@ const Signup: React.FC = () => {
   return (
     <div className="w-full mx-auto">
       <div className="mb-6">
-        <img src={logo} alt="Vanessa" className="w-40 mb-6" />
+        <img src={logo} alt="Vanessa" className="mb-6" />
         <h2 className="text-3xl font-bold text-black mb-2 leading-tight font-inter">
           Start investing in Jamaica's growing property market today.
         </h2>

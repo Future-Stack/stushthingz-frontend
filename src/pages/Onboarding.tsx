@@ -122,11 +122,10 @@ const Onboarding = () => {
   return (
     <div className="flex flex-col h-screen bg-[#f8f9fa] font-sans">
       {/* Header */}
-      <header className="flex items-center justify-between px-8 py-4 bg-white border-b border-gray-200 shrink-0">
+      <header className="flex items-center justify-between px-8 py-2 bg-white border-b border-gray-200 shrink-0">
         <div className="flex items-center space-x-2">
           <div>
-            <img src={logo} alt="logo" className="w-36" />
-            <p className="text-xs font-poppins font-normal text-[#4A5565] ml-12 -mt-2">Your Investment Guide</p>
+            <img src={logo} alt="logo" className="w-50" />
           </div>
         </div>
         <div className="flex items-center space-x-1.5">

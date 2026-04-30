@@ -9,7 +9,6 @@ import {
   Info,
   TrendingUp,
   Clock,
-  Gavel,
   ChevronRight,
   CircleAlert,
   Scale
