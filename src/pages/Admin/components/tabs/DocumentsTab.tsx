@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { Pencil, Plus, SquarePen, Trash2, X } from "lucide-react";
+import { Plus, SquarePen, Trash2, X } from "lucide-react";
 import AddDocumentModal, { AddDocumentFormData } from "../modals/AddDocumentModal";
 import WarningModal from "../modals/WarningModal";
 
@@ -191,21 +191,21 @@ const DocumentsTab: React.FC = () => {
         </div>
 
         {/* Document List */}
-        <div className="space-y-4">
+        <div className="space-y-4 overflow-x-auto scrollbar-thin pb-2">
           {documents.map((doc) => (
-            <div key={doc.id} className="flex items-center justify-between py-4 border border-[#0000001A] rounded-[14px] p-4">
+            <div key={doc.id} className="flex items-center justify-between py-4 border border-[#0000001A] rounded-[14px] p-4 min-w-125">
               {/* Info */}
               <div className="flex-1 min-w-0 pr-4">
                 <div className="flex flex-wrap items-center gap-2 mb-2">
-                  <span className="text-base font-semibold text-color-jet-black">{doc.name}</span>
-                  <span className="text-xs text-color-jet-black font-medium border border-[#0000001A] rounded-lg px-2 py-0.5">{doc.category}</span>
+                  <span className="text-base font-semibold text-color-jet-black whitespace-nowrap">{doc.name}</span>
+                  <span className="text-xs text-color-jet-black font-medium border border-[#0000001A] rounded-lg px-2 py-0.5 whitespace-nowrap">{doc.category}</span>
                   {doc.required && (
-                    <span className="px-2 py-0.5 rounded-lg text-xs font-semibold bg-[#FB2C36] text-white">
+                    <span className="px-2 py-0.5 rounded-lg text-xs font-semibold bg-[#FB2C36] text-white whitespace-nowrap">
                       Required
                     </span>
                   )}
                 </div>
-                <p className="text-sm text-[#4A5565] font-normal">{doc.description}</p>
+                <p className="text-sm text-[#4A5565] font-normal line-clamp-2 md:line-clamp-none">{doc.description}</p>
               </div>
 
               {/* Actions */}

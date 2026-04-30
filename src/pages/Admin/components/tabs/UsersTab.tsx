@@ -120,12 +120,12 @@ const UsersTab: React.FC = () => {
         </div>
 
         {/* Table */}
-        <div className="overflow-x-auto">
+        <div className="overflow-x-auto scrollbar-thin pb-4">
           <table className="w-full">
             <thead>
               <tr className="border-b border-gray-100">
                 {["Name", "Email", "Role", "Status", "Joined", "Last Active", "Actions"].map((h) => (
-                  <th key={h} className="text-left text-sm font-medium text-color-jet-black pb-3 pr-4 last:pr-0">
+                  <th key={h} className="text-left text-sm font-medium text-color-jet-black pb-3 pr-4 last:pr-0 whitespace-nowrap">
                     {h}
                   </th>
                 ))}
@@ -134,21 +134,21 @@ const UsersTab: React.FC = () => {
             <tbody>
               {pagedUsers.map((user) => (
                 <tr key={user.id} className="border-b border-gray-200 hover:bg-gray-50/60 transition-colors">
-                  <td className="py-3.5 pr-4 text-sm font-semibold text-color-jet-black">{user.name}</td>
-                  <td className="py-3.5 pr-4 text-sm font-normal text-color-jet-black">{user.email}</td>
-                  <td className="py-3.5 pr-4">
+                  <td className="py-3.5 pr-4 text-sm font-semibold text-color-jet-black whitespace-nowrap">{user.name}</td>
+                  <td className="py-3.5 pr-4 text-sm font-normal text-color-jet-black whitespace-nowrap">{user.email}</td>
+                  <td className="py-3.5 pr-4 whitespace-nowrap">
                     <span className={`inline-block px-3 py-1 rounded-full text-xs font-semibold ${getRoleBadge(user.role)}`}>
                       {user.role}
                     </span>
                   </td>
-                  <td className="py-3.5 pr-4">
+                  <td className="py-3.5 pr-4 whitespace-nowrap">
                     <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-[#4CAF50] text-white">
                       {user.status}
                     </span>
                   </td>
-                  <td className="py-3.5 pr-4 text-sm font-normal text-color-jet-black">{user.joined}</td>
-                  <td className="py-3.5 pr-4 text-sm font-normal text-color-jet-black">{user.lastActive}</td>
-                  <td className="py-3.5">
+                  <td className="py-3.5 pr-4 text-sm font-normal text-color-jet-black whitespace-nowrap">{user.joined}</td>
+                  <td className="py-3.5 pr-4 text-sm font-normal text-color-jet-black whitespace-nowrap">{user.lastActive}</td>
+                  <td className="py-3.5 whitespace-nowrap">
                     <div className="flex items-center gap-2">
                       <button
                         onClick={() => handleViewUser(user)}

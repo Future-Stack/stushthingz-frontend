@@ -99,7 +99,7 @@ const AdminDashboard: React.FC = () => {
       {/* ── Tabs — pill style matching PropertyTabs ───────────────────────── */}
       <div>
         {/* Tab Bar */}
-        <div className="bg-[#ECECF0] p-1 rounded-full flex w-fit overflow-x-auto scroll-smooth overflow-hidden">
+        <div className="bg-[#ECECF0] p-1 rounded-full flex max-w-full overflow-x-auto scrollbar-thin scroll-smooth">
           {TABS.map((tab) => (
             <button
               key={tab.id}
