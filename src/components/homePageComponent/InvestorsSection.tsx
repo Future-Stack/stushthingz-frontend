@@ -1,5 +1,6 @@
 import CommonWrapper from "@/common/CommonWrapper";
-import investorImage from "@/assets/home/investorSection.png"
+// import investorImage from "@/assets/home/investorSection.png"
+import investorImage from "@/assets/home/village-landscape.png"
 import { motion, Variants } from "framer-motion";
 
 const features = [

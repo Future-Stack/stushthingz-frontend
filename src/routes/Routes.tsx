@@ -1,7 +1,5 @@
 import { createBrowserRouter } from "react-router-dom";
 import App from "../App";
-import About from "../pages/About";
-import Contact from "../pages/Contact";
 import NotFound from "../pages/NotFound";
 import Home from "../pages/Home";
 import AdminRoute from "./AdminRoutes";
@@ -11,12 +9,11 @@ import AdminUsers from "@/pages/Admin/AdminUsers";
 import AdminSettings from "@/pages/Admin/AdminSettings";
 import UserDashboard from "@/pages/User/UserDashboard";
 import UserProfile from "@/pages/User/UserProfile";
-import Login from "@/pages/Login";
-import Signup from "@/pages/Signup";
-import ForgotPassword from "@/pages/ForgotPassword";
-import VerifyOTP from "@/pages/VerifyOTP";
-import ResetPassword from "@/pages/ResetPassword";
-import Services from "@/pages/Services";
+// import Login from "@/pages/Login";
+// import Signup from "@/pages/Signup";
+// import ForgotPassword from "@/pages/ForgotPassword";
+// import VerifyOTP from "@/pages/VerifyOTP";
+// import ResetPassword from "@/pages/ResetPassword";
 import AdminLayout from "@/Layout/AdminLayout";
 import UserLayout from "@/Layout/UserLayout";
 import InvestorLayout from "@/Layout/InvestorLayout";
@@ -35,10 +32,7 @@ const routes = createBrowserRouter([
     path: "/",
     element: <App />,
     children: [
-      { path: "/", element: <Home /> },
-      { path: "/about", element: <About /> },
-      { path: "/contact", element: <Contact /> },
-      { path: "/services", element: <Services /> },
+      { path: "/", element: <Home /> }
     ],
   },
 
@@ -47,11 +41,11 @@ const routes = createBrowserRouter([
     path: "/",
     element: <AuthLayout />,
     children: [
-      { path: "/login", element: <Login /> },
-      { path: "/signup", element: <Signup /> },
-      { path: "/forgot-password", element: <ForgotPassword /> },
-      { path: "/verify-otp", element: <VerifyOTP /> },
-      { path: "/reset-password", element: <ResetPassword /> },
+      // { path: "/login", element: <Login /> },
+      // { path: "/signup", element: <Signup /> },
+      // { path: "/forgot-password", element: <ForgotPassword /> },
+      // { path: "/verify-otp", element: <VerifyOTP /> },
+      // { path: "/reset-password", element: <ResetPassword /> },
     ],
   },
 

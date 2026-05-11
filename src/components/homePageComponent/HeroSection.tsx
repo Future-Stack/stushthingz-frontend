@@ -24,7 +24,7 @@ export default function HeroSection() {
 
                 {/* LEFT */}
                 <div className="text-white space-y-4">
-                    <motion.h1 
+                    <motion.h1
                         initial={{ opacity: 0, y: 30 }}
                         animate={{ opacity: 1, y: 0 }}
                         transition={{ duration: 0.8, ease: "easeOut" }}
@@ -32,7 +32,7 @@ export default function HeroSection() {
                     >
                         Invest in Jamaica Real Estate with Confidence
                     </motion.h1>
-                    <motion.p 
+                    <motion.p
                         initial={{ opacity: 0, y: 20 }}
                         animate={{ opacity: 1, y: 0 }}
                         transition={{ duration: 0.8, delay: 0.2, ease: "easeOut" }}
@@ -40,7 +40,7 @@ export default function HeroSection() {
                     >
                         AI-guided investment journey designed for foreign buyers
                     </motion.p>
-                    <motion.button 
+                    <motion.button
                         initial={{ opacity: 0, y: 20 }}
                         animate={{ opacity: 1, y: 0 }}
                         whileHover={{ scale: 1.05 }}

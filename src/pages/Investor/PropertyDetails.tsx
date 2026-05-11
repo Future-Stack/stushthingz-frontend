@@ -136,7 +136,7 @@ const PropertyDetails: React.FC = () => {
                   <span className="text-[#016630] text-base font-normal">{property.mutualSource.description}</span>
                 </div>
                 <p className="text-[#0D542B] text-base font-normal leading-relaxed max-w-3xl">
-                  {property.fullDescription.split('.')[0]}. This partnership ensures full regulatory compliance, expedited permitting, and access to municipal infrastructure planning. The Council has committed to maintaining road access and supporting community development initiatives within the project.
+                  {property.fullDescription?.split('.')[0] ?? ""}. This partnership ensures full regulatory compliance, expedited permitting, and access to municipal infrastructure planning. The Council has committed to maintaining road access and supporting community development initiatives within the project.
                 </p>
               </div>
             </div>
