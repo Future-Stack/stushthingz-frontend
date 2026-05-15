@@ -14,6 +14,7 @@ import {
   Scale
 } from "lucide-react";
 import { Link, useParams } from "react-router-dom";
+import { motion, AnimatePresence } from "framer-motion";
 import PropertyTabs from "./components/PropertyTabs";
 import { MOCK_PROPERTIES } from "../../data/mockProperties";
 
@@ -43,15 +44,39 @@ const PropertyDetails: React.FC = () => {
     { id: "legal", label: "Legal & Context" }
   ];
 
+  const containerVariants = {
+    hidden: { opacity: 0 },
+    visible: {
+      opacity: 1,
+      transition: {
+        staggerChildren: 0.1
+      }
+    }
+  };
+
+  const itemVariants = {
+    hidden: { opacity: 0, y: 20 },
+    visible: {
+      opacity: 1,
+      y: 0,
+      transition: { duration: 0.5, ease: "easeOut" }
+    }
+  } as const;
+
   return (
-    <div className="w-full max-w-7xl mx-auto py-6 px-4 md:px-0">
+    <motion.div
+      initial="hidden"
+      animate="visible"
+      variants={containerVariants}
+      className="w-full max-w-7xl mx-auto md:py-6 md:px-0"
+    >
       {/* Back Button */}
       <Link to="/investor/opportunities" className="inline-flex items-center gap-2 text-sm font-medium text-gray-600 hover:text-color-jet-black mb-6 transition-colors">
         <ChevronLeft size={16} /> Back to Properties
       </Link>
 
       {/* Hero Section - Image Gallery */}
-      <div className="relative rounded-2xl overflow-hidden aspect-21/9 mb-8 group">
+      <motion.div variants={itemVariants} className="relative rounded-2xl overflow-hidden aspect-21/9 mb-8 group">
         <img
           src={property.gallery?.[currentImageIndex] || property.image}
           alt={property.title}
@@ -100,18 +125,18 @@ const PropertyDetails: React.FC = () => {
             )}
           </div>
         </div>
-      </div>
+      </motion.div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
         {/* Left Column - Details */}
         <div className="lg:col-span-2 space-y-8">
           {/* Header Info */}
-          <div className="space-y-4">
+          <motion.div variants={itemVariants} className="space-y-4">
             <div className="flex items-center gap-3">
-              <div className="w-10 h-10 bg-pink-100 rounded-lg flex items-center justify-center text-color-main">
+              <div className="w-8 h-8 md:w-10 md:h-10 bg-pink-100 rounded-lg flex items-center justify-center text-color-main">
                 <FileText size={20} />
               </div>
-              <h1 className="text-4xl md:text-4xl font-bold text-color-jet-black">{property.title}</h1>
+              <h1 className="text-2xl md:text-4xl font-bold text-color-jet-black">{property.title}</h1>
             </div>
             <div className="flex flex-wrap items-center gap-4 text-[#4A5565] text-lg">
               <p className="flex items-center gap-1.5 font-medium">
@@ -128,7 +153,7 @@ const PropertyDetails: React.FC = () => {
             <div className="bg-[#F0FDF4] border-2 border-[#B9F8CF] rounded-2xl p-6 relative overflow-hidden">
               <div className="relative z-10 space-y-2">
                 <div className="flex items-center gap-2 text-[#0D542B] font-bold text-lg">
-                  <ShieldCheck size={24} className="text-[#008236]" />
+                  <ShieldCheck size={24} className="text-[#008236] hidden md:block" />
                   <span>Vetted Source: {property.mutualSource.name}</span>
                 </div>
                 <div className="flex items-center gap-2">
@@ -140,224 +165,233 @@ const PropertyDetails: React.FC = () => {
                 </p>
               </div>
             </div>
-          </div>
+          </motion.div>
 
           {/* Tabs Navigation */}
-          <div className="sticky top-22 z-30 py-4 -mx-4 px-4">
+          <motion.div variants={itemVariants} className="sticky top-18 z-30 py-4 -mx-4 px-4">
             <PropertyTabs tabs={tabs} activeTab={activeTab} onChange={setActiveTab} />
-          </div>
+          </motion.div>
 
           {/* Tab Content */}
-          <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
-            {activeTab === "overview" && (
-              <>
-                {/* Opportunity Description */}
-                <section className="bg-white border border-[#919EAB] rounded-[14px] p-3 md:p-6 space-y-4">
-                  <h3 className="text-xl font-bold text-color-jet-black flex items-center gap-2">
-                    <FileText size={20} className="text-color-main" /> Opportunity Description
-                  </h3>
-                  <p className="text-[#364153] leading-relaxed text-base font-normal">
-                    {property.fullDescription}
-                  </p>
-                </section>
+          <AnimatePresence mode="wait">
+            <motion.div
+              key={activeTab}
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -10 }}
+              transition={{ duration: 0.3 }}
+              className="space-y-8"
+            >
+              {activeTab === "overview" && (
+                <>
+                  {/* Opportunity Description */}
+                  <section className="bg-white border border-[#919EAB] rounded-[14px] p-3 md:p-6 space-y-4">
+                    <h3 className="text-xl font-bold text-color-jet-black flex items-center gap-2">
+                      <FileText size={20} className="text-color-main" /> Opportunity Description
+                    </h3>
+                    <p className="text-[#364153] leading-relaxed text-base font-normal">
+                      {property.fullDescription}
+                    </p>
+                  </section>
 
-                {/* Key Details Grid */}
-                <section className="bg-white border border-[#919EAB] rounded-[14px] p-3 md:p-6 space-y-6">
-                  <h3 className="text-xl font-bold text-color-jet-black flex items-center gap-2">
-                    <Info size={20} className="text-color-main" /> Key Details
-                  </h3>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-y-6 gap-x-12">
-                    {property.keyDetails?.map((detail, idx) => (
-                      <div key={idx} className="flex justify-between items-center py-2 border-b border-gray-50 last:border-0">
-                        <span className="text-base font-medium text-[#4A5565]">{detail.label}</span>
-                        <span className={`text-base font-semibold ${detail.label === 'Price Range' ? 'text-color-main' : 'text-color-jet-black'}`}>
-                          {detail.value}
-                        </span>
-                      </div>
-                    ))}
-                  </div>
-                </section>
-
-                {/* Key Highlights */}
-                <section className="bg-white border border-[#919EAB] rounded-[14px] p-3 md:p-6 space-y-6">
-                  <h3 className="text-xl font-bold text-color-jet-black flex items-center gap-2">
-                    <TrendingUp size={20} className="text-color-main" /> Key Highlights
-                  </h3>
-                  <ul className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    {property.highlights.map((highlight, idx) => (
-                      <li key={idx} className="flex items-start gap-3">
-                        <CheckCircle2 size={18} className="text-color-main shrink-0 mt-0.5" />
-                        <span className="text-base text-[#364153] font-normal">{highlight}</span>
-                      </li>
-                    ))}
-                  </ul>
-                </section>
-
-                {/* Diaspora Considerations */}
-                <section className="bg-[#FDF2F8] border border-[#FCCEE8] rounded-2xl p-3 md:p-6 space-y-6">
-                  <h3 className="text-xl font-bold text-[#101828] flex items-center gap-2">
-                    <Users size={24} className="text-color-main" /> Diaspora Investor Considerations
-                  </h3>
-                  <p className="text-sm text-[#4A5565] font-normal mb-4">
-                    Practical guidance for international investors based on common questions and concerns:
-                  </p>
-                  <ul className="space-y-4">
-                    {property.considerations.map((item, idx) => (
-                      <li key={idx} className="flex items-start gap-3">
-                        <CircleAlert size={18} className="text-color-main shrink-0 mt-0.5" />
-                        <span className="text-sm text-[#4A5565] font-normal">{item}</span>
-                      </li>
-                    ))}
-                  </ul>
-                </section>
-              </>
-            )}
-
-            {activeTab === "features" && (
-              <section className="bg-white border border-[#919EAB] rounded-[14px] p-3 md:p-6 space-y-8">
-                <h3 className="text-xl font-bold text-color-jet-black flex items-center gap-2">
-                  <CheckCircle2 size={20} className="text-color-main" /> Included Features & Amenities
-                </h3>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  {property.features?.map((feature, idx) => (
-                    <div key={idx} className="flex items-center gap-3">
-                      <CheckCircle2 size={20} className="text-color-main shrink-0" />
-                      <span className="text-base text-[#364153] font-normal">{feature}</span>
+                  {/* Key Details Grid */}
+                  <section className="bg-white border border-[#919EAB] rounded-[14px] p-3 md:p-6 space-y-6">
+                    <h3 className="text-xl font-bold text-color-jet-black flex items-center gap-2">
+                      <Info size={20} className="text-color-main" /> Key Details
+                    </h3>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-y-6 gap-x-12">
+                      {property.keyDetails?.map((detail, idx) => (
+                        <div key={idx} className="flex justify-between items-center py-2 border-b border-gray-50 last:border-0">
+                          <span className="text-base font-medium text-[#4A5565]">{detail.label}</span>
+                          <span className={`text-base font-semibold ${detail.label === 'Price Range' ? 'text-color-main' : 'text-color-jet-black'}`}>
+                            {detail.value}
+                          </span>
+                        </div>
+                      ))}
                     </div>
-                  ))}
-                </div>
-              </section>
-            )}
+                  </section>
 
-            {activeTab === "financials" && property.financials && (
-              <div className="space-y-8">
-                <section className="bg-white border border-[#919EAB] rounded-[14px] p-3 md:p-6 space-y-3">
-                  <h3 className="text-xl font-bold text-color-jet-black flex items-center gap-2">
-                    <TrendingUp size={24} className="text-color-main" /> Investment Breakdown
-                  </h3>
-
-                  <div className="space-y-3">
-                    {property.financials.investmentBreakdown.map((item, idx) => (
-                      <div key={idx} className="space-y-2">
-                        <p className="text-base font-semibold text-[#101828]">{item.label}</p>
-                        <p className="text-sm text-gray-600 font-normal leading-relaxed">{item.details}</p>
-                        <div className="h-px bg-gray-100 w-full mt-4"></div>
-                      </div>
-                    ))}
-                  </div>
-
-                  <div className="space-y-4">
-                    <p className="text-base font-semibold text-color-jet-black">Ongoing Costs</p>
-                    <ul className="space-y-3">
-                      {property.financials.ongoingCosts.map((cost, idx) => (
-                        <li key={idx} className="flex items-center gap-2">
-                          <span className="text-color-main font-bold w-2 h-2 bg-color-main rounded-full"></span>
-                          <p className="text-base text-gray-600 font-normal">
-                            <span className="font-semibold text-gray-700">{cost.label}:</span> {cost.value}
-                          </p>
+                  {/* Key Highlights */}
+                  <section className="bg-white border border-[#919EAB] rounded-[14px] p-3 md:p-6 space-y-6">
+                    <h3 className="text-xl font-bold text-color-jet-black flex items-center gap-2">
+                      <TrendingUp size={20} className="text-color-main" /> Key Highlights
+                    </h3>
+                    <ul className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      {property.highlights.map((highlight, idx) => (
+                        <li key={idx} className="flex items-start gap-3">
+                          <CheckCircle2 size={18} className="text-color-main shrink-0 mt-0.5" />
+                          <span className="text-base text-[#364153] font-normal">{highlight}</span>
                         </li>
                       ))}
                     </ul>
-                    <div className="h-px bg-gray-100 w-full mt-4"></div>
-                  </div>
+                  </section>
 
-                  <div className="space-y-4">
-                    <p className="text-base font-semibold text-color-jet-black">Investment Structure</p>
-                    <p className="text-sm text-gray-600 font-normal leading-relaxed">{property.financials.investmentStructure}</p>
-                  </div>
+                  {/* Diaspora Considerations */}
+                  <section className="bg-[#FDF2F8] border border-[#FCCEE8] rounded-2xl p-3 md:p-6 space-y-6">
+                    <h3 className="text-xl font-bold text-[#101828] flex items-center gap-2">
+                      <Users size={24} className="text-color-main" /> Diaspora Investor Considerations
+                    </h3>
+                    <p className="text-sm text-[#4A5565] font-normal mb-4">
+                      Practical guidance for international investors based on common questions and concerns:
+                    </p>
+                    <ul className="space-y-4">
+                      {property.considerations.map((item, idx) => (
+                        <li key={idx} className="flex items-start gap-3">
+                          <CircleAlert size={18} className="text-color-main shrink-0 mt-0.5" />
+                          <span className="text-sm text-[#4A5565] font-normal">{item}</span>
+                        </li>
+                      ))}
+                    </ul>
+                  </section>
+                </>
+              )}
 
-                  <div className="grid grid-cols-1 gap-4 pt-4">
-                    <div className="bg-[#F0FDF4] border border-[#B9F8CF] rounded-xl p-4 flex gap-3 items-start">
-                      <TrendingUp size={20} className="text-[#008236] shrink-0" />
-                      <div>
-                        <p className="text-base font-semibold text-[#0D542B] mb-1">Projected Returns</p>
-                        <p className="text-base text-[#016630] font-normal leading-relaxed">{property.financials.projectedReturns}</p>
-                      </div>
-                    </div>
-                    <div className="bg-[#EFF6FF] border border-[#BFDBFE] rounded-xl p-4 flex gap-3 items-start">
-                      <FileText size={20} className="text-[#155DFC] shrink-0 mt-1" />
-                      <div>
-                        <p className="text-lg font-semibold text-[#1E40AF] mb-1">Tax Incentives</p>
-                        <p className="text-base text-[#1E40AF] font-normal leading-relaxed">{property.financials.taxIncentives}</p>
-                      </div>
-                    </div>
-                  </div>
-                </section>
-
-                <section className="bg-white border border-[#919EAB] rounded-[14px] p-3 md:p-6 space-y-6">
+              {activeTab === "features" && (
+                <section className="bg-white border border-[#919EAB] rounded-[14px] p-3 md:p-6 space-y-8">
                   <h3 className="text-xl font-bold text-color-jet-black flex items-center gap-2">
-                    <Clock size={24} className="text-color-main" /> Timeline
+                    <CheckCircle2 size={20} className="text-color-main" /> Included Features & Amenities
                   </h3>
-                  <div className="space-y-6">
-                    {property.timeline?.map((item, idx) => (
-                      <div key={idx} className="space-y-0.5">
-                        <p className="text-sm font-semibold text-[#4A5565] uppercase tracking-wider">{item.label}</p>
-                        <p className="text-base font-normal text-[#101828]">{item.value}</p>
-                        {item.details && <p className="text-sm text-gray-600 font-normal">{item.details}</p>}
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    {property.features?.map((feature, idx) => (
+                      <div key={idx} className="flex items-center gap-3">
+                        <CheckCircle2 size={20} className="text-color-main shrink-0" />
+                        <span className="text-base text-[#364153] font-normal">{feature}</span>
                       </div>
                     ))}
                   </div>
                 </section>
-              </div>
-            )}
+              )}
 
-            {activeTab === "legal" && (
-              <div className="space-y-8">
-                <section className="bg-white border border-[#919EAB] rounded-[14px] p-3 md:p-6 space-y-6">
-                  <h3 className="text-xl font-bold text-color-jet-black flex items-center gap-2">
-                    <Scale size={24} className="text-color-main" /> Legal Considerations
-                  </h3>
-                  <p className="text-sm text-[#4A5565] font-normal italic">
-                    Important legal and regulatory information for this investment:
-                  </p>
-                  <ul className="space-y-3">
-                    {property.legalConsiderations?.map((item, idx) => (
-                      <li key={idx} className="flex items-start gap-3 bg-[#F9FAFB] px-3 py-3.5 rounded-[10px]">
-                        <Scale size={18} className="text-gray-400 shrink-0 mt-0.5" />
-                        <span className="text-sm text-[#364153]font-medium">{item}</span>
-                      </li>
-                    ))}
-                  </ul>
-                  <p className="text-xs text-[#6A7282] font-normal">
-                    Note: Always consult with a licensed Jamaica attorney before finalizing any property transaction.
-                  </p>
-                </section>
-
-                {property.localContext && (
-                  <section className="bg-white border border-[#919EAB] rounded-[14px] p-3 md:p-6 space-y-8">
+              {activeTab === "financials" && property.financials && (
+                <div className="space-y-8">
+                  <section className="bg-white border border-[#919EAB] rounded-[14px] p-3 md:p-6 space-y-3">
                     <h3 className="text-xl font-bold text-color-jet-black flex items-center gap-2">
-                      <MapPin size={24} className="text-color-main" /> Local Context
+                      <TrendingUp size={24} className="text-color-main" /> Investment Breakdown
                     </h3>
 
-                    <div className="space-y-6">
-                      <div className="space-y-2">
-                        <p className="text-sm font-bold text-color-jet-black">Market Trends</p>
-                        <p className="text-sm text-gray-600 font-normal leading-relaxed">{property.localContext.marketTrends}</p>
-                        <div className="h-px bg-gray-100 w-full mt-4"></div>
-                      </div>
+                    <div className="space-y-3">
+                      {property.financials.investmentBreakdown.map((item, idx) => (
+                        <div key={idx} className="space-y-2">
+                          <p className="text-base font-semibold text-[#101828]">{item.label}</p>
+                          <p className="text-sm text-gray-600 font-normal leading-relaxed">{item.details}</p>
+                          <div className="h-px bg-gray-100 w-full mt-4"></div>
+                        </div>
+                      ))}
+                    </div>
 
-                      <div className="space-y-2">
-                        <p className="text-sm font-bold text-color-jet-black">Community Information</p>
-                        <p className="text-sm text-gray-600 font-normal leading-relaxed">{property.localContext.communityInfo}</p>
-                        <div className="h-px bg-gray-100 w-full mt-4"></div>
-                      </div>
+                    <div className="space-y-4">
+                      <p className="text-base font-semibold text-color-jet-black">Ongoing Costs</p>
+                      <ul className="space-y-3">
+                        {property.financials.ongoingCosts.map((cost, idx) => (
+                          <li key={idx} className="flex items-center gap-2">
+                            <span className="text-color-main font-bold w-2 h-2 bg-color-main rounded-full"></span>
+                            <p className="text-base text-gray-600 font-normal">
+                              <span className="font-semibold text-gray-700">{cost.label}:</span> {cost.value}
+                            </p>
+                          </li>
+                        ))}
+                      </ul>
+                      <div className="h-px bg-gray-100 w-full mt-4"></div>
+                    </div>
 
-                      <div className="space-y-2">
-                        <p className="text-sm font-bold text-color-jet-black">Infrastructure & Amenities</p>
-                        <p className="text-sm text-gray-600 font-normal leading-relaxed">{property.localContext.infrastructure}</p>
+                    <div className="space-y-4">
+                      <p className="text-base font-semibold text-color-jet-black">Investment Structure</p>
+                      <p className="text-sm text-gray-600 font-normal leading-relaxed">{property.financials.investmentStructure}</p>
+                    </div>
+
+                    <div className="grid grid-cols-1 gap-4 pt-4">
+                      <div className="bg-[#F0FDF4] border border-[#B9F8CF] rounded-xl p-4 flex gap-3 items-start">
+                        <TrendingUp size={20} className="text-[#008236] shrink-0" />
+                        <div>
+                          <p className="text-base font-semibold text-[#0D542B] mb-1">Projected Returns</p>
+                          <p className="text-base text-[#016630] font-normal leading-relaxed">{property.financials.projectedReturns}</p>
+                        </div>
+                      </div>
+                      <div className="bg-[#EFF6FF] border border-[#BFDBFE] rounded-xl p-4 flex gap-3 items-start">
+                        <FileText size={20} className="text-[#155DFC] shrink-0 mt-1" />
+                        <div>
+                          <p className="text-lg font-semibold text-[#1E40AF] mb-1">Tax Incentives</p>
+                          <p className="text-base text-[#1E40AF] font-normal leading-relaxed">{property.financials.taxIncentives}</p>
+                        </div>
                       </div>
                     </div>
                   </section>
-                )}
-              </div>
-            )}
-          </div>
+
+                  <section className="bg-white border border-[#919EAB] rounded-[14px] p-3 md:p-6 space-y-6">
+                    <h3 className="text-xl font-bold text-color-jet-black flex items-center gap-2">
+                      <Clock size={24} className="text-color-main" /> Timeline
+                    </h3>
+                    <div className="space-y-6">
+                      {property.timeline?.map((item, idx) => (
+                        <div key={idx} className="space-y-0.5">
+                          <p className="text-sm font-semibold text-[#4A5565] uppercase tracking-wider">{item.label}</p>
+                          <p className="text-base font-normal text-[#101828]">{item.value}</p>
+                          {item.details && <p className="text-sm text-gray-600 font-normal">{item.details}</p>}
+                        </div>
+                      ))}
+                    </div>
+                  </section>
+                </div>
+              )}
+
+              {activeTab === "legal" && (
+                <div className="space-y-8">
+                  <section className="bg-white border border-[#919EAB] rounded-[14px] p-3 md:p-6 space-y-6">
+                    <h3 className="text-xl font-bold text-color-jet-black flex items-center gap-2">
+                      <Scale size={24} className="text-color-main" /> Legal Considerations
+                    </h3>
+                    <p className="text-sm text-[#4A5565] font-normal italic">
+                      Important legal and regulatory information for this investment:
+                    </p>
+                    <ul className="space-y-3">
+                      {property.legalConsiderations?.map((item, idx) => (
+                        <li key={idx} className="flex items-start gap-3 bg-[#F9FAFB] px-3 py-3.5 rounded-[10px]">
+                          <Scale size={18} className="text-gray-400 shrink-0 mt-0.5" />
+                          <span className="text-sm text-[#364153]font-medium">{item}</span>
+                        </li>
+                      ))}
+                    </ul>
+                    <p className="text-xs text-[#6A7282] font-normal">
+                      Note: Always consult with a licensed Jamaica attorney before finalizing any property transaction.
+                    </p>
+                  </section>
+
+                  {property.localContext && (
+                    <section className="bg-white border border-[#919EAB] rounded-[14px] p-3 md:p-6 space-y-8">
+                      <h3 className="text-xl font-bold text-color-jet-black flex items-center gap-2">
+                        <MapPin size={24} className="text-color-main" /> Local Context
+                      </h3>
+
+                      <div className="space-y-6">
+                        <div className="space-y-2">
+                          <p className="text-sm font-bold text-color-jet-black">Market Trends</p>
+                          <p className="text-sm text-gray-600 font-normal leading-relaxed">{property.localContext.marketTrends}</p>
+                          <div className="h-px bg-gray-100 w-full mt-4"></div>
+                        </div>
+
+                        <div className="space-y-2">
+                          <p className="text-sm font-bold text-color-jet-black">Community Information</p>
+                          <p className="text-sm text-gray-600 font-normal leading-relaxed">{property.localContext.communityInfo}</p>
+                          <div className="h-px bg-gray-100 w-full mt-4"></div>
+                        </div>
+
+                        <div className="space-y-2">
+                          <p className="text-sm font-bold text-color-jet-black">Infrastructure & Amenities</p>
+                          <p className="text-sm text-gray-600 font-normal leading-relaxed">{property.localContext.infrastructure}</p>
+                        </div>
+                      </div>
+                    </section>
+                  )}
+                </div>
+              )}
+            </motion.div>
+          </AnimatePresence>
         </div>
 
         {/* Right Column - Sidebar */}
-        <div className="space-y-6">
+        <motion.div variants={itemVariants} className="space-y-6">
           {/* Pricing Card */}
-          <div className="bg-white border-2 border-[#919EAB] rounded-[14px] p-3 md:p-6 shadow-sm sticky top-24">
+          <div className="bg-white border-2 border-[#919EAB] rounded-[14px] p-3 md:p-6 shadow-sm md:sticky top-24">
             <div className="space-y-1 mb-6">
               <p className="text-sm font-semibold text-[#4A5565] mb-1.5">Investment Range</p>
               <p className="text-3xl font-bold text-color-main">
@@ -417,9 +451,9 @@ const PropertyDetails: React.FC = () => {
               Contact details shared after expressing interest.
             </p>
           </div>
-        </div>
+        </motion.div>
       </div>
-    </div>
+    </motion.div>
   );
 };
 

@@ -39,10 +39,33 @@ const InvestorDashboard: React.FC = () => {
 
   const tabs: TabType[] = ["Dashboard", "Documents", "Guide", "Profile"];
 
+  const containerVariants = {
+    hidden: { opacity: 0 },
+    visible: {
+      opacity: 1,
+      transition: {
+        staggerChildren: 0.1
+      }
+    }
+  };
+
+  const itemVariants = {
+    hidden: { opacity: 0, y: 20 },
+    visible: {
+      opacity: 1,
+      y: 0,
+      transition: { duration: 0.5, ease: "easeOut" }
+    }
+  } as const;
+
   return (
-    <div className="w-full max-w-7xl mx-auto space-y-6">
-      {/* Header Section */}
-      <div className="mb-8">
+    <motion.div
+      initial="hidden"
+      animate="visible"
+      variants={containerVariants}
+      className="w-full max-w-7xl mx-auto space-y-6"
+    >
+      <motion.div variants={itemVariants} className="mb-8">
         <h1 className="text-4xl font-bold text-color-jet-black mb-3">Investment Dashboard</h1>
         <p className="text-xl font-normal text-[#4A5565]">Track your Jamaica real estate investment journey</p>
 
@@ -61,7 +84,7 @@ const InvestorDashboard: React.FC = () => {
             </button>
           ))}
         </div>
-      </div>
+      </motion.div>
 
       {/* Tab Content */}
       <AnimatePresence mode="wait">
@@ -73,19 +96,19 @@ const InvestorDashboard: React.FC = () => {
           transition={{ duration: 0.2 }}
         >
           {activeTab === "Dashboard" && (
-            <div className="space-y-6">
+            <motion.div variants={containerVariants} initial="hidden" animate="visible" className="space-y-6">
               {/* Pink Banner */}
-              <div className="bg-color-main rounded-2xl p-12 text-white relative overflow-hidden shadow-md">
+              <motion.div variants={itemVariants} className="bg-color-main rounded-2xl md:p-12 p-6 text-white relative overflow-hidden shadow-md">
                 <div className="relative z-10">
-                  <h2 className="text-4xl text-white font-bold mb-4">You're 73% Ready !</h2>
-                  <p className="max-w-3xl text-xl font-normal text-[#FFFFFFE5] mb-8">
+                  <h2 className="md:text-4xl text-2xl text-white font-bold mb-4">You're 73% Ready !</h2>
+                  <p className="md:text-xl text-lg font-normal text-[#FFFFFFE5] mb-8">
                     You've completed all preparation steps. Browse Investment Opportunities to start viewing properties.
                   </p>
                   <button
                     onClick={() => navigate("/investor/opportunities")}
-                    className="bg-white text-color-main text-sm font-medium cursor-pointer hover:bg-gray-100 px-5 py-2.5 rounded-lg transition-colors inline-flex items-center gap-2"
+                    className="bg-white text-color-main md:text-sm text-xs font-medium cursor-pointer hover:bg-gray-100 px-5 py-2.5 rounded-lg transition-colors inline-flex items-center gap-2"
                   >
-                    <Home size={16} /> Browse Investment Opportunities
+                    <Home size={16} className="shrink-0 " /> Browse Investment Opportunities
                   </button>
                 </div>
                 {/* Abstract Shape/Icon */}
@@ -98,14 +121,14 @@ const InvestorDashboard: React.FC = () => {
                     className="pointer-events-none"
                   />
                 </div>
-              </div>
+              </motion.div>
 
               {/* Progress Tracker */}
-              <div>
+              <motion.div variants={itemVariants}>
                 <h3 className="text-xl font-bold text-color-jet-black mb-4">Progress Tracker</h3>
                 <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4">
                   {/* Onboarding */}
-                  <div className="bg-white border border-gray-200 rounded-xl p-5 shadow-sm">
+                  <motion.div whileHover={{ y: -5 }} transition={{ type: "spring", stiffness: 300 }} className="bg-white border border-gray-200 rounded-xl p-5 shadow-sm">
                     <div className="flex justify-between items-start mb-4">
                       <span className="font-semibold text-base  text-color-jet-black">Onboarding</span>
                       <ShieldCheck size={18} className="text-green-500" />
@@ -114,10 +137,10 @@ const InvestorDashboard: React.FC = () => {
                       <div className="h-full bg-[#d81b60] rounded-full w-full"></div>
                     </div>
                     <span className="text-sm font-normal text-[#4A5565]">Complete</span>
-                  </div>
+                  </motion.div>
 
                   {/* Financial Readiness */}
-                  <div className="bg-white border border-gray-200 rounded-xl p-5 shadow-sm">
+                  <motion.div whileHover={{ y: -5 }} transition={{ type: "spring", stiffness: 300 }} className="bg-white border border-gray-200 rounded-xl p-5 shadow-sm">
                     <div className="flex justify-between items-start mb-4">
                       <span className="font-semibold text-base  text-color-jet-black">Financial Readiness</span>
                       <ShieldCheck size={18} className="text-green-500" />
@@ -126,10 +149,10 @@ const InvestorDashboard: React.FC = () => {
                       <div className="h-full bg-[#d81b60] rounded-full w-[80%]"></div>
                     </div>
                     <span className="text-sm font-normal text-[#4A5565]">80%</span>
-                  </div>
+                  </motion.div>
 
                   {/* Investment Guide */}
-                  <div className="bg-white border border-gray-200 rounded-xl p-5 shadow-sm">
+                  <motion.div whileHover={{ y: -5 }} transition={{ type: "spring", stiffness: 300 }} className="bg-white border border-gray-200 rounded-xl p-5 shadow-sm">
                     <div className="flex justify-between items-start mb-4">
                       <span className="font-semibold text-base  text-color-jet-black">Investment Guide</span>
                       <ShieldCheck size={18} className="text-green-500" />
@@ -138,10 +161,10 @@ const InvestorDashboard: React.FC = () => {
                       <div className="h-full bg-[#d81b60] rounded-full w-full"></div>
                     </div>
                     <span className="text-sm font-normal text-[#4A5565]">Complete</span>
-                  </div>
+                  </motion.div>
 
                   {/* Documents */}
-                  <div className="bg-white border border-gray-200 rounded-xl p-5 shadow-sm">
+                  <motion.div whileHover={{ y: -5 }} transition={{ type: "spring", stiffness: 300 }} className="bg-white border border-gray-200 rounded-xl p-5 shadow-sm">
                     <div className="flex justify-between items-start mb-4">
                       <span className="font-semibold text-base  text-color-jet-black">Documents</span>
                     </div>
@@ -149,12 +172,12 @@ const InvestorDashboard: React.FC = () => {
                       <div className="h-full bg-[#d81b60] rounded-full w-[85%]"></div>
                     </div>
                     <span className="text-sm font-normal text-[#4A5565]">In Progress</span>
-                  </div>
+                  </motion.div>
                 </div>
-              </div>
+              </motion.div>
 
               {/* Document Status */}
-              <div className="bg-white border border-gray-100 rounded-xl p-6">
+              <motion.div variants={itemVariants} className="bg-white border border-gray-100 rounded-xl p-6">
                 <div className="flex justify-between items-center mb-6">
                   <h3 className="font-bold text-xl text-color-jet-black">Document Status</h3>
                   <button
@@ -178,13 +201,13 @@ const InvestorDashboard: React.FC = () => {
                     <span className="text-sm font-normal text-[#4A5565]">Total Required</span>
                   </div>
                 </div>
-              </div>
+              </motion.div>
 
               {/* Recommended Next Steps */}
-              <div>
+              <motion.div variants={itemVariants}>
                 <h3 className="text-xl font-bold text-color-jet-black mb-4">Recommended Next Steps</h3>
                 <div className="space-y-3">
-                  <div className="bg-white border border-gray-100 rounded-xl p-5 shadow-sm flex flex-col sm:flex-row items-start sm:items-center gap-4">
+                  <motion.div whileHover={{ scale: 1.01 }} className="bg-white border border-gray-100 rounded-xl p-5 shadow-sm flex flex-col sm:flex-row items-start sm:items-center gap-4">
                     <div className="w-10 h-10 rounded-full bg-pink-50 flex items-center justify-center text-[#d81b60] shrink-0">
                       <Upload size={18} />
                     </div>
@@ -198,9 +221,9 @@ const InvestorDashboard: React.FC = () => {
                     >
                       Upload Now <ArrowRight size={14} />
                     </button>
-                  </div>
+                  </motion.div>
 
-                  <div className="bg-white border border-gray-100 rounded-xl p-5 shadow-sm flex flex-col sm:flex-row items-start sm:items-center gap-4">
+                  <motion.div whileHover={{ scale: 1.01 }} className="bg-white border border-gray-100 rounded-xl p-5 shadow-sm flex flex-col sm:flex-row items-start sm:items-center gap-4">
                     <div className="w-10 h-10 rounded-full bg-pink-50 flex items-center justify-center text-[#d81b60] shrink-0">
                       <TrendingUp size={18} />
                     </div>
@@ -211,9 +234,9 @@ const InvestorDashboard: React.FC = () => {
                     <button className="mt-3 sm:mt-0 bg-color-main hover:bg-[#c2185b] text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors inline-flex items-center gap-1.5">
                       Learn More <ArrowRight size={14} />
                     </button>
-                  </div>
+                  </motion.div>
 
-                  <div className="bg-white border border-gray-100 rounded-xl p-5 shadow-sm flex flex-col sm:flex-row items-start sm:items-center gap-4">
+                  <motion.div whileHover={{ scale: 1.01 }} className="bg-white border border-gray-100 rounded-xl p-5 shadow-sm flex flex-col sm:flex-row items-start sm:items-center gap-4">
                     <div className="w-10 h-10 rounded-full bg-pink-50 flex items-center justify-center text-[#d81b60] shrink-0">
                       <House size={18} />
                     </div>
@@ -227,10 +250,10 @@ const InvestorDashboard: React.FC = () => {
                     >
                       View Properties <ArrowRight size={14} />
                     </button>
-                  </div>
+                  </motion.div>
                 </div>
-              </div>
-            </div>
+              </motion.div>
+            </motion.div>
           )}
 
           {activeTab === "Documents" && (
@@ -264,8 +287,8 @@ const InvestorDashboard: React.FC = () => {
           )}
 
           {activeTab === "Profile" && (
-            <div className="bg-white border border-[#919EAB] rounded-[14px] p-8">
-              <h2 className="text-xl font-bold text-color-jet-black mb-8">Investor Profile</h2>
+            <div className="bg-white border border-[#919EAB] rounded-[14px] p-4 md:p-8">
+              <h2 className="text-xl font-bold text-color-jet-black mb-6 md:mb-8">Investor Profile</h2>
 
               <div className="space-y-6 max-w-2xl">
                 <div>
@@ -379,7 +402,7 @@ const InvestorDashboard: React.FC = () => {
           </div>
         )}
       </AnimatePresence>
-    </div>
+    </motion.div>
   );
 };
 

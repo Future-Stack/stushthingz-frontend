@@ -14,7 +14,7 @@ interface PropertyTabsProps {
 
 const PropertyTabs: React.FC<PropertyTabsProps> = ({ tabs, activeTab, onChange }) => {
   return (
-    <div className="w-full bg-[#ECECF0] p-1 rounded-full flex overflow-x-auto no-scrollbar">
+    <div className="w-full bg-[#ECECF0] p-1 rounded-full flex overflow-x-auto scrollbar-none md:overflow-y-hidden">
       {tabs.map((tab) => (
         <button
           key={tab.id}

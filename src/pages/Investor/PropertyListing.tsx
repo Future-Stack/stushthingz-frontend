@@ -1,8 +1,9 @@
 import React, { useState } from "react";
 import { ChevronLeft, ChevronRight, Search } from "lucide-react";
+import { motion, AnimatePresence } from "framer-motion";
 
 import PropertyCard from "./components/PropertyCard";
-
+import icon from "@/assets/home/watermark.png"
 import { MOCK_PROPERTIES } from "../../data/mockProperties";
 
 const PropertyListing: React.FC = () => {
@@ -28,29 +29,49 @@ const PropertyListing: React.FC = () => {
   const startIndex = (currentPage - 1) * ITEMS_PER_PAGE;
   const paginatedProperties = filteredProperties.slice(startIndex, startIndex + ITEMS_PER_PAGE);
 
+  const containerVariants = {
+    hidden: { opacity: 0 },
+    visible: {
+      opacity: 1,
+      transition: {
+        staggerChildren: 0.1
+      }
+    }
+  };
+
+  const itemVariants = {
+    hidden: { opacity: 0, y: 20 },
+    visible: {
+      opacity: 1,
+      y: 0,
+      transition: { duration: 0.5, ease: "easeOut" }
+    }
+  } as const;
+
   return (
-    <div className="w-full max-w-7xl mx-auto space-y-6">
+    <motion.div
+      initial="hidden"
+      animate="visible"
+      variants={containerVariants}
+      className="w-full max-w-7xl mx-auto md:py-6 md:px-0 space-y-6"
+    >
 
       {/* Header Banner */}
-      <div className="bg-color-main rounded-2xl p-6 md:p-8 text-white relative overflow-hidden shadow-md">
+      <motion.div variants={itemVariants} className="bg-color-main rounded-2xl p-6 md:p-8 text-white relative overflow-hidden shadow-md">
         <div className="relative z-10">
           <div className="flex items-center gap-2 mb-4 mt-5">
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-              <path d="M12 2L2 22H22L12 2Z" fill="currentColor" />
-            </svg>
+            <img src={icon} className="w-8 h-8 hidden md:block" alt="watermark" />
             <h1 className="text-3xl font-bold">Curated Investment Opportunities</h1>
           </div>
           <p className="text-[#FFFFFFE5] max-w-3xl text-sm md:text-lg">
             Exclusive access to vetted opportunities secured through our developers, bank partners, and curated local properties. Includes off-market and pre-listing assets through Vanessa's network.
           </p>
         </div>
-      </div>
+      </motion.div>
 
       {/* Search & Filters */}
-      <div className="flex flex-col space-y-4">
-        {/* Filters & Count */}
+      <motion.div variants={itemVariants} className="flex flex-col space-y-4">
         <div className="flex flex-col md:flex-row justify-between items-center gap-4">
-          {/* Search Bar */}
           <div className="relative flex-1 w-full">
             <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
               <Search className="h-5 w-5 text-gray-400" />
@@ -62,7 +83,7 @@ const PropertyListing: React.FC = () => {
               value={searchTerm}
               onChange={(e) => {
                 setSearchTerm(e.target.value);
-                setCurrentPage(1); // Reset to first page on search
+                setCurrentPage(1);
               }}
             />
           </div>
@@ -90,24 +111,25 @@ const PropertyListing: React.FC = () => {
             </select>
           </div>
         </div>
-        <div className="text-base font-normal text-[#4A5565] mt-3">
-          Showing <span className="text-[#212a31] font-semibold">{filteredProperties.length}</span> curated opportunities
-        </div>
-      </div>
+      </motion.div>
 
       {/* Properties List */}
-      <div className="space-y-8">
-        {paginatedProperties.length > 0 ? (
-          paginatedProperties.map((prop) => (
-            <PropertyCard key={prop.id} property={prop} />
-          ))
-        ) : (
-          <div className="text-center py-12 bg-white border border-gray-200 rounded-2xl">
-            <h3 className="text-lg font-medium text-gray-900">No properties found</h3>
-            <p className="mt-1 text-gray-500">Try adjusting your search or filters to find what you're looking for.</p>
-          </div>
-        )}
-      </div>
+      <motion.div variants={itemVariants} className="space-y-8">
+        <AnimatePresence mode="wait">
+          {paginatedProperties.length > 0 ? (
+            paginatedProperties.map((prop) => (
+              <motion.div key={prop.id} layout initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
+                <PropertyCard property={prop} />
+              </motion.div>
+            ))
+          ) : (
+            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="text-center py-12 bg-white border border-gray-200 rounded-2xl">
+              <h3 className="text-lg font-medium text-gray-900">No properties found</h3>
+              <p className="mt-1 text-gray-500">Try adjusting your search or filters to find what you're looking for.</p>
+            </motion.div>
+          )}
+        </AnimatePresence>
+      </motion.div>
 
       {/* Pagination */}
       {totalPages > 1 && (
@@ -154,7 +176,7 @@ const PropertyListing: React.FC = () => {
         </p>
       </div>
 
-    </div>
+    </motion.div>
   );
 };
 

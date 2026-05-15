@@ -95,16 +95,16 @@ const DocumentChecklistContent: React.FC<DocumentChecklistContentProps> = ({ onP
     }));
 
     setCategories(newCategories);
-    
+
     const newUploadedCount = newCategories.reduce(
       (acc, cat) => acc + cat.items.filter((item) => item.file).length,
       0
     );
-    
+
     if (onProgressUpdate) {
       onProgressUpdate(newUploadedCount, totalDocs);
     }
-    
+
     closeModal();
   };
 
@@ -116,12 +116,12 @@ const DocumentChecklistContent: React.FC<DocumentChecklistContentProps> = ({ onP
       ),
     }));
     setCategories(newCategories);
-    
+
     const newUploadedCount = newCategories.reduce(
       (acc, cat) => acc + cat.items.filter((item) => item.file).length,
       0
     );
-    
+
     if (onProgressUpdate) {
       onProgressUpdate(newUploadedCount, totalDocs);
     }
@@ -130,15 +130,14 @@ const DocumentChecklistContent: React.FC<DocumentChecklistContentProps> = ({ onP
   return (
     <div className="space-y-8">
       {categories.map((category) => (
-        <div key={category.id} className="bg-white border border-[#C4CDD5] rounded-[14px] p-6">
+        <div key={category.id} className="bg-white border border-[#C4CDD5] rounded-[14px] p-4 md:p-6">
           <h2 className="text-2xl text-color-jet-black font-bold mb-4">{category.title}</h2>
           <div className="bg-white rounded-xl border border-[#C4CDD5] overflow-hidden">
             {category.items.map((item, idx) => (
               <div
                 key={item.id}
-                className={`p-4 sm:p-6 flex flex-col sm:flex-row sm:items-center justify-between gap-4 ${
-                  idx !== category.items.length - 1 ? "border-b border-gray-100" : ""
-                }`}
+                className={`p-4 sm:p-6 flex flex-col sm:flex-row sm:items-center justify-between gap-4 ${idx !== category.items.length - 1 ? "border-b border-gray-100" : ""
+                  }`}
               >
                 <div className="flex items-start space-x-4">
                   <div className="mt-1">

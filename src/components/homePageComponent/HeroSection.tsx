@@ -16,7 +16,7 @@ export default function HeroSection() {
                     alt="Jamaica"
                     className="w-full h-full object-cover"
                 />
-                <div className="absolute inset-0 bg-black/10" />
+                <div className="absolute inset-0 bg-black/50 z-10" />
             </div>
 
             {/* Content */}

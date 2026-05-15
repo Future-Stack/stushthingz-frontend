@@ -192,19 +192,19 @@ const GuideContent: React.FC<GuideContentProps> = ({ onProgressUpdate }) => {
         return (
           <div
             key={section.id}
-            className={`rounded-2xl border overflow-hidden transition-colors py-4 px-6 ${isCompleted ? "border-green-200" : "border-[#919EAB]"
+            className={`rounded-2xl border overflow-hidden transition-colors py-4 px-4 md:px-6 ${isCompleted ? "border-green-200" : "border-[#919EAB]"
               }`}
           >
             <div
               onClick={() => toggleSection(section.id)}
               className="flex items-start justify-between cursor-pointer transition-colors"
             >
-              <div className="flex items-center space-x-4">
-                <div className={`p-3 rounded-xl ${section.iconBg || "bg-[#FFF0F7]"}`}>
+              <div className="flex items-center space-x-3 md:space-x-4">
+                <div className={`p-2 md:p-3 rounded-xl ${section.iconBg || "bg-[#FFF0F7]"}`}>
                   {section.icon}
                 </div>
                 <div>
-                  <h3 className="text-2xl font-bold text-black">{section.title}</h3>
+                  <h3 className="md:text-2xl text-lg font-bold text-black">{section.title}</h3>
                   <p className="text-base font-normal text-[#454F5B] mb-2">{section.subtitle}</p>
                 </div>
               </div>
