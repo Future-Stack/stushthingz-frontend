@@ -110,7 +110,7 @@ const AddUserModal: React.FC<AddUserModalProps> = ({ isOpen, onClose, onSubmit }
               name="password"
               value={form.password}
               onChange={handleChange}
-              placeholder="Enter email address"
+              placeholder="Enter password"
               required
               className="w-full px-3.5 py-2.5 rounded-xl border border-gray-200 text-sm text-gray-800 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-color-main/30 focus:border-color-main transition-all"
             />

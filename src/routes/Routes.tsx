@@ -27,6 +27,11 @@ import InvestmentGuide from "@/pages/InvestmentGuide";
 import DocumentChecklist from "@/pages/DocumentChecklist";
 import BankLayout from "@/Layout/BankLayout";
 import BankDashboard from "@/pages/Bank/BankDashboard";
+import Login from "@/pages/Login";
+import Signup from "@/pages/Signup";
+import ForgotPassword from "@/pages/ForgotPassword";
+import VerifyOTP from "@/pages/VerifyOTP";
+import ResetPassword from "@/pages/ResetPassword";
 
 const routes = createBrowserRouter([
   {
@@ -43,11 +48,11 @@ const routes = createBrowserRouter([
     path: "/",
     element: <AuthLayout />,
     children: [
-      // { path: "/login", element: <Login /> },
-      // { path: "/signup", element: <Signup /> },
-      // { path: "/forgot-password", element: <ForgotPassword /> },
-      // { path: "/verify-otp", element: <VerifyOTP /> },
-      // { path: "/reset-password", element: <ResetPassword /> },
+      { path: "/login", element: <Login /> },
+      { path: "/signup", element: <Signup /> },
+      { path: "/forgot-password", element: <ForgotPassword /> },
+      { path: "/verify-otp", element: <VerifyOTP /> },
+      { path: "/reset-password", element: <ResetPassword /> },
     ],
   },
 
