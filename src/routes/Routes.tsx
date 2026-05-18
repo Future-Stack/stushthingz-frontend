@@ -25,6 +25,8 @@ import Onboarding from "@/pages/Onboarding";
 import FinancialAssessment from "@/pages/FinancialAssessment";
 import InvestmentGuide from "@/pages/InvestmentGuide";
 import DocumentChecklist from "@/pages/DocumentChecklist";
+import BankLayout from "@/Layout/BankLayout";
+import BankDashboard from "@/pages/Bank/BankDashboard";
 
 const routes = createBrowserRouter([
   {
@@ -114,6 +116,14 @@ const routes = createBrowserRouter([
           // 🛠️ Add more admin pages here
         ],
       },
+    ],
+  },
+  {
+    // ─── Bank Portal Dashboard
+    path: "/bank",
+    element: <BankLayout />,
+    children: [
+      { path: "", element: <BankDashboard /> },
     ],
   },
 
