@@ -7,6 +7,7 @@ import { useAppDispatch } from "@/store/hook";
 import { setUser } from "@/store/features/auth/auth.slice";
 import logo from "@/assets/nav/logo.png";
 import { Eye, EyeOff } from "lucide-react";
+import googleIcon from "@/assets/home/googleIcon.png";
 
 const loginSchema = z.object({
   email: z.string().email("Invalid email format"),
@@ -105,13 +106,13 @@ const Login: React.FC = () => {
         </div>
       </div>
 
-      {/* <button
+      <button
         type="button"
-        className="w-full flex items-center justify-center gap-3 px-4 py-3 border border-[#D0D5DD] rounded-lg bg-white text-[#344054] font-semibold text-sm hover:bg-gray-50 transition-colors cursor-pointer"
+        className="w-full flex items-center justify-center gap-3 px-4 py-3 border border-[#D0D5DD] rounded-lg bg-white text-[#344054] font-semibold text-sm hover:bg-gray-50 transition-colors cursor-pointer mb-3"
       >
-        <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/smartlock/google.svg" alt="Google" className="w-5 h-5" />
+        <img src={googleIcon} alt="Google" className="w-5 h-5" />
         Continue with Google
-      </button> */}
+      </button>
 
       <p className="text-center text-sm text-[#4A5565]">
         Don't have an account?{" "}

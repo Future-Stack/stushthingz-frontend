@@ -5,6 +5,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { Link, useNavigate } from "react-router-dom";
 import { Eye, EyeOff } from "lucide-react";
 import logo from "@/assets/nav/logo.png";
+import googleIcon from "@/assets/home/googleIcon.png";
 
 const signupSchema = z.object({
   fullName: z.string().min(2, "Full name is required"),
@@ -34,7 +35,7 @@ const Signup: React.FC = () => {
 
   const onSubmit = (data: SignupFormInputs) => {
     console.log("Signup Data:", data);
-    navigate("/login");
+    navigate("/onboarding");
   };
 
   return (
@@ -147,6 +148,22 @@ const Signup: React.FC = () => {
           Sign Up
         </button>
       </form>
+      <div className="relative my-4">
+        <div className="absolute inset-0 flex items-center">
+          <div className="w-full border-t border-[#EAECF0]"></div>
+        </div>
+        <div className="relative flex justify-center text-xs uppercase">
+          <span className="bg-white px-2 text-[#667085]">or</span>
+        </div>
+      </div>
+
+      <button
+        type="button"
+        className="w-full flex items-center justify-center gap-3 px-4 py-3 border border-[#D0D5DD] rounded-lg bg-white text-[#344054] font-semibold text-sm hover:bg-gray-50 transition-colors cursor-pointer mb-3"
+      >
+        <img src={googleIcon} alt="Google" className="w-5 h-5" />
+        Continue with Google
+      </button>
 
       <p className="text-center text-sm text-[#4A5565] mt-4">
         Already have an account?{" "}
