@@ -1,13 +1,7 @@
 import React, { useState } from "react";
 import { Edit3, Check, X, Sparkles, Sliders, Settings2 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
-
-interface GuideItem {
-  id: number;
-  title: string;
-  sections: number;
-  lastUpdated: string;
-}
+import EditInvestmentGuideModal, { GuideItem } from "../modals/EditInvestmentGuideModal";
 
 const ContentTab: React.FC = () => {
   // ─── State Management ───────────────────────────────────────────────────────
@@ -46,22 +40,14 @@ const ContentTab: React.FC = () => {
     setEditingGuide({ ...guide });
   };
 
-  const handleSaveGuide = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!editingGuide) return;
-
-    // Get today's date formatted as YYYY-MM-DD
-    const today = new Date().toISOString().split("T")[0];
-
+  const handleSaveGuide = (updatedGuide: GuideItem) => {
     setGuides((prev) =>
       prev.map((g) =>
-        g.id === editingGuide.id
-          ? { ...editingGuide, lastUpdated: today }
-          : g
+        g.id === updatedGuide.id ? updatedGuide : g
       )
     );
     setEditingGuide(null);
-    showToast(`Successfully updated "${editingGuide.title}" Guide!`);
+    showToast(`Successfully updated "${updatedGuide.title}" Guide!`);
   };
 
   const handleSavePrompts = (e: React.FormEvent) => {
@@ -102,7 +88,7 @@ const ContentTab: React.FC = () => {
       {/* ── Investment Guide Content Card ────────────────────────────────── */}
       <div className="bg-white border border-gray-200 rounded-[18px] p-6 shadow-sm">
         <div className="flex items-center gap-2 mb-6">
-          <Settings2 size={18} className="text-[#64748B]" />
+          {/* <Settings2 size={18} className="text-[#64748B]" /> */}
           <h2 className="text-lg font-bold text-gray-900">Investment Guide Content</h2>
         </div>
 
@@ -135,7 +121,7 @@ const ContentTab: React.FC = () => {
       {/* ── AI Prompt Configuration Card ─────────────────────────────────── */}
       <div className="bg-white border border-gray-200 rounded-[18px] p-6 shadow-sm">
         <div className="flex items-center gap-2 mb-6">
-          <Sparkles size={18} className="text-[#64748B]" />
+          {/* <Sparkles size={18} className="text-[#64748B]" /> */}
           <h2 className="text-lg font-bold text-gray-900">AI Prompt Configuration</h2>
         </div>
 
@@ -178,7 +164,7 @@ const ContentTab: React.FC = () => {
       {/* ── Financial Rules Configuration Card ────────────────────────────── */}
       <div className="bg-white border border-gray-200 rounded-[18px] p-6 shadow-sm">
         <div className="flex items-center gap-2 mb-6">
-          <Sliders size={18} className="text-[#64748B]" />
+          {/* <Sliders size={18} className="text-[#64748B]" /> */}
           <h2 className="text-lg font-bold text-gray-900">Financial Rules Configuration</h2>
         </div>
 
@@ -229,95 +215,12 @@ const ContentTab: React.FC = () => {
       </div>
 
       {/* ── Interactive Modal for Editing Guides ─────────────────────────── */}
-      <AnimatePresence>
-        {editingGuide && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center">
-            {/* Backdrop */}
-            <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              className="absolute inset-0 bg-black/40 backdrop-blur-sm"
-              onClick={() => setEditingGuide(null)}
-            />
-            {/* Modal */}
-            <motion.div
-              initial={{ opacity: 0, scale: 0.95, y: 20 }}
-              animate={{ opacity: 1, scale: 1, y: 0 }}
-              exit={{ opacity: 0, scale: 0.95, y: 20 }}
-              transition={{ duration: 0.2 }}
-              className="relative bg-white rounded-2xl shadow-2xl w-full max-w-md mx-4 p-6"
-            >
-              {/* Header */}
-              <div className="flex items-start justify-between mb-4">
-                <div>
-                  <h2 className="text-lg font-bold text-gray-900">Edit Investment Guide</h2>
-                  <p className="text-xs text-gray-500 mt-0.5">
-                    Modify the title and section configurations of the investment guide card.
-                  </p>
-                </div>
-                <button
-                  onClick={() => setEditingGuide(null)}
-                  className="p-1.5 rounded-lg text-gray-400 hover:text-gray-600 hover:bg-gray-100 transition-colors cursor-pointer"
-                >
-                  <X size={18} />
-                </button>
-              </div>
-
-              {/* Form */}
-              <form onSubmit={handleSaveGuide} className="space-y-4">
-                <div>
-                  <label className="block text-sm font-semibold text-gray-700 mb-1.5">
-                    Guide Title
-                  </label>
-                  <input
-                    type="text"
-                    required
-                    value={editingGuide.title}
-                    onChange={(e) =>
-                      setEditingGuide({ ...editingGuide, title: e.target.value })
-                    }
-                    className="w-full px-3.5 py-2.5 rounded-xl border border-gray-200 text-sm text-gray-800 focus:outline-none focus:ring-2 focus:ring-color-main/20 focus:border-color-main transition-all"
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-sm font-semibold text-gray-700 mb-1.5">
-                    Number of Sections
-                  </label>
-                  <input
-                    type="number"
-                    required
-                    min={1}
-                    value={editingGuide.sections}
-                    onChange={(e) =>
-                      setEditingGuide({ ...editingGuide, sections: parseInt(e.target.value) || 0 })
-                    }
-                    className="w-full px-3.5 py-2.5 rounded-xl border border-gray-200 text-sm text-gray-800 focus:outline-none focus:ring-2 focus:ring-color-main/20 focus:border-color-main transition-all"
-                  />
-                </div>
-
-                {/* Actions */}
-                <div className="flex gap-3 pt-2">
-                  <button
-                    type="submit"
-                    className="flex-1 bg-color-main hover:bg-[#b5156a] text-white py-2.5 rounded-xl text-sm font-semibold transition-all cursor-pointer shadow-sm active:scale-95"
-                  >
-                    Save Changes
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setEditingGuide(null)}
-                    className="flex-1 border border-gray-200 text-gray-600 hover:bg-gray-50 py-2.5 rounded-xl text-sm font-semibold transition-all cursor-pointer"
-                  >
-                    Cancel
-                  </button>
-                </div>
-              </form>
-            </motion.div>
-          </div>
-        )}
-      </AnimatePresence>
+      <EditInvestmentGuideModal
+        isOpen={!!editingGuide}
+        guide={editingGuide}
+        onClose={() => setEditingGuide(null)}
+        onSave={handleSaveGuide}
+      />
     </div>
   );
 };
