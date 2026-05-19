@@ -80,7 +80,7 @@ const BankDashboard: React.FC = () => {
   }, [debouncedSearchTerm, activeFilter, statusFilter]);
 
   const cardStyle = (filterName: string) =>
-    `bg-white rounded-xl border border-[#919EAB] p-6 flex items-start justify-between shadow-sm cursor-pointer transition-all border-[#919EAB] hover:border-gray-300 ${activeFilter === filterName ? 'ring-[#D91A7C]' : ''}`;
+    `bg-white rounded-xl p-6 flex items-start justify-between shadow-sm cursor-pointer transition-all border-[#919EAB] hover:border-gray-300 ${activeFilter === filterName ? 'ring-[#D91A7C]' : ''}`;
 
   return (
     <div className="space-y-6">
@@ -131,7 +131,7 @@ const BankDashboard: React.FC = () => {
       </div>
 
       {/* Search and Filter */}
-      <div className="flex flex-col sm:flex-row gap-4 border border-[#919EAB] p-4 rounded-xl bg-white">
+      <div className="flex flex-col sm:flex-row gap-4 p-4 rounded-xl bg-white">
         <div className="flex-1">
           <SearchInput
             placeholder="Search by name or country..."
@@ -182,7 +182,7 @@ const BankDashboard: React.FC = () => {
       </div>
 
       {/* Table */}
-      <div className="bg-white border border-[#919EAB] rounded-xl overflow-hidden shadow-sm">
+      <div className="bg-white rounded-xl overflow-hidden shadow-sm">
         <div className="overflow-x-auto">
           <table className="w-full text-left border-collapse">
             <thead>

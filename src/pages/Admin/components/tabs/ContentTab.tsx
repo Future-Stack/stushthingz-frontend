@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { Edit3, Check, X, Sparkles, Sliders, Settings2 } from "lucide-react";
+import { Edit3, Check, X } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import EditInvestmentGuideModal, { GuideItem } from "../modals/EditInvestmentGuideModal";
 
@@ -108,7 +108,7 @@ const ContentTab: React.FC = () => {
               </div>
               <button
                 onClick={() => handleEditClick(guide)}
-                className="border border-gray-200 hover:bg-gray-50 text-gray-700 px-3.5 py-1.5 rounded-lg text-xs font-semibold flex items-center gap-1.5 cursor-pointer transition-colors shadow-sm"
+                className="border border-gray-200 hover:bg-gray-50 text-gray-700 px-3.5 py-1.5 rounded-lg text-xs font-semibold flex items-center gap-1.5 cursor-pointer transition-colors"
               >
                 <Edit3 size={13} className="text-gray-500" />
                 Edit

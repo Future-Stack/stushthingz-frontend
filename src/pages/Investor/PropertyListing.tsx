@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { ChevronLeft, ChevronRight, Search } from "lucide-react";
+import { ChevronLeft, ChevronRight, Search, Sparkles } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 
 import PropertyCard from "./components/PropertyCard";
@@ -129,6 +129,11 @@ const PropertyListing: React.FC = () => {
           </div>
         </div>
       </motion.div>
+
+      <div className="flex items-center gap-2">
+        <Sparkles className="text-color-main mt-0.5" size={18} />
+        <span className="text-[#4A5565]">6 curated opportunities available</span>
+      </div>
 
       {/* Properties List */}
       <motion.div variants={itemVariants} className="space-y-8">

@@ -69,7 +69,7 @@ const AdminDashboard: React.FC = () => {
         </div>
         <button
           onClick={() => setAddUserOpen(true)}
-          className="flex items-center gap-2 bg-color-main hover:bg-[#b5156a] text-white px-5 py-2.5 rounded-xl text-sm font-semibold transition-all cursor-pointer shadow-sm active:scale-95"
+          className="flex items-center gap-2 bg-color-main hover:bg-[#b5156a] text-white px-5 py-2.5 rounded-lg text-sm font-semibold transition-all cursor-pointer shadow-sm active:scale-95"
         >
           <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
             <path d="M7 1V13M1 7H13" stroke="white" strokeWidth="2" strokeLinecap="round" />

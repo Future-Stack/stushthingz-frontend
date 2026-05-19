@@ -39,7 +39,7 @@ const AdminUsers: React.FC = () => {
               <Filter size={14} />
               Filter
             </button>
-            <button className="px-4 py-2 rounded-xl bg-gradient-to-r from-[#124e66] to-[#2e3944] text-white text-sm font-medium hover:opacity-90 transition-opacity">
+            <button className="px-4 py-2 rounded-lg bg-gradient-to-r from-[#124e66] to-[#2e3944] text-white text-sm font-medium hover:opacity-90 transition-opacity">
               + Add User
             </button>
           </div>

@@ -18,6 +18,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import PropertyTabs from "./components/PropertyTabs";
 import { MOCK_PROPERTIES } from "../../data/mockProperties";
 import { useInterest } from "../../hooks/useInterest";
+import iconImg from "@/assets/home/icon.png"
 
 const PropertyDetails: React.FC = () => {
   const { id } = useParams<{ id: string }>();
@@ -204,7 +205,7 @@ const PropertyDetails: React.FC = () => {
                     </h3>
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-y-6 gap-x-12">
                       {property.keyDetails?.map((detail, idx) => (
-                        <div key={idx} className="flex justify-between items-center py-2 border-b border-gray-50 last:border-0">
+                        <div key={idx} className="flex justify-between gap-6 items-center py-2 border-b border-gray-50 last:border-0">
                           <span className="text-base font-medium text-[#4A5565]">{detail.label}</span>
                           <span className={`text-base font-semibold ${detail.label === 'Price Range' ? 'text-color-main' : 'text-color-jet-black'}`}>
                             {detail.value}
@@ -432,7 +433,7 @@ const PropertyDetails: React.FC = () => {
           {/* What Happens Next Card */}
           <div className="bg-[#FDF2F8] border border-color-main rounded-[14px] p-3 md:p-6 space-y-6">
             <h4 className="text-lg font-bold text-color-jet-black flex items-center gap-2">
-              <Clock size={20} className="text-color-main" /> What Happens Next
+              <img src={iconImg} alt="icon" className="w-5 h-5"/> What Happens Next
             </h4>
             <div className="space-y-4">
               {[
