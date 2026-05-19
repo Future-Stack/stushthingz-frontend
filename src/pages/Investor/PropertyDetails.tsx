@@ -17,6 +17,7 @@ import { Link, useParams } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import PropertyTabs from "./components/PropertyTabs";
 import { MOCK_PROPERTIES } from "../../data/mockProperties";
+import { useInterest } from "../../hooks/useInterest";
 
 const PropertyDetails: React.FC = () => {
   const { id } = useParams<{ id: string }>();
@@ -24,6 +25,8 @@ const PropertyDetails: React.FC = () => {
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
 
   const property = MOCK_PROPERTIES.find((p) => p.id === id);
+  const { isInterested, toggleInterest } = useInterest();
+  const interested = property ? isInterested(property.id) : false;
 
   if (!property) {
     return (
@@ -400,12 +403,19 @@ const PropertyDetails: React.FC = () => {
             </div>
 
             <div className="space-y-3">
-              <button className="w-full bg-color-main hover:bg-[#c2185b] text-white py-3.5 rounded-xl font-semibold text-base transition-all flex items-center justify-center gap-2 shadow-pink-100 cursor-pointer">
-                <FileText size={18} /> Express Interest
+              <button 
+                onClick={() => toggleInterest(property.id)}
+                className={`w-full py-3.5 rounded-xl font-semibold text-base transition-all flex items-center justify-center gap-2 cursor-pointer ${
+                  interested 
+                  ? "bg-white border-2 border-color-main text-color-main hover:bg-pink-50"
+                  : "bg-color-main hover:bg-white hover:text-color-main hover:border-2 border-2 hover:border-color-main text-white shadow-pink-100" 
+                }`}
+              >
+                <FileText size={18} /> {interested ? "Remove Interest" : "Express Interest"}
               </button>
-              <button className="w-full bg-white border-2 border-color-main text-color-main hover:bg-pink-50 py-3.5 rounded-xl font-semibold text-base transition-all flex items-center justify-center gap-2 cursor-pointer">
+              {/* <button className="w-full bg-white border-2 border-color-main text-color-main hover:bg-pink-50 py-3.5 rounded-xl font-semibold text-base transition-all flex items-center justify-center gap-2 cursor-pointer">
                 Request More Information
-              </button>
+              </button> */}
             </div>
 
             <div className="mt-6 pt-6 border-t border-gray-100">

@@ -4,6 +4,7 @@ import heroImg1 from "@/assets/home/heroImg1.png"
 import heroImg2 from "@/assets/home/heroImg2.png"
 import heroImg3 from "@/assets/home/heroImg3.png"
 import CommonWrapper from "@/common/CommonWrapper"
+import { Link } from "react-router-dom"
 
 export default function HeroSection() {
     return (
@@ -40,16 +41,18 @@ export default function HeroSection() {
                     >
                         AI-guided investment journey designed for foreign buyers
                     </motion.p>
-                    <motion.button
-                        initial={{ opacity: 0, y: 20 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        whileHover={{ scale: 1.05 }}
-                        whileTap={{ scale: 0.95 }}
-                        transition={{ duration: 0.5, delay: 0.4, ease: "easeOut" }}
-                        className="bg-color-main transition px-4 py-2.5 rounded-lg font-semibold shadow-lg"
-                    >
-                        Get Started →
-                    </motion.button>
+                    <Link to={"/signup"}>
+                        <motion.button
+                            initial={{ opacity: 0, y: 20 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            whileHover={{ scale: 1.05 }}
+                            whileTap={{ scale: 0.95 }}
+                            transition={{ duration: 0.5, delay: 0.4, ease: "easeOut" }}
+                            className="bg-color-main transition px-4 py-2.5 rounded-lg font-semibold shadow-lg cursor-pointer"
+                        >
+                            Get Started →
+                        </motion.button>
+                    </Link>
                 </div>
 
                 {/* RIGHT — Overlapping collage */}

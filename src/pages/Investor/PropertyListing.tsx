@@ -5,6 +5,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import PropertyCard from "./components/PropertyCard";
 import icon from "@/assets/home/watermark.png"
 import { MOCK_PROPERTIES } from "../../data/mockProperties";
+import { FaAngleDown } from "react-icons/fa";
 
 const PropertyListing: React.FC = () => {
   const [currentPage, setCurrentPage] = useState(1);
@@ -89,26 +90,42 @@ const PropertyListing: React.FC = () => {
           </div>
 
           <div className="flex flex-wrap items-center gap-3 w-full md:w-auto">
-            <select
-              className="flex-1 md:w-auto bg-white border border-gray-200 text-sm rounded-lg px-3 py-2.5 text-gray-700 outline-none focus:border-[#d81b60] shadow-sm cursor-pointer"
-              value={selectedType}
-              onChange={(e) => {
-                setSelectedType(e.target.value);
-                setCurrentPage(1);
-              }}
-            >
-              {typeOptions.map(opt => <option key={opt}>{opt}</option>)}
-            </select>
-            <select
-              className="flex-1 md:w-auto bg-white border border-gray-200 text-sm rounded-lg px-3 py-2.5 text-gray-700 outline-none focus:border-[#d81b60] shadow-sm cursor-pointer"
-              value={selectedCategory}
-              onChange={(e) => {
-                setSelectedCategory(e.target.value);
-                setCurrentPage(1);
-              }}
-            >
-              {categoryOptions.map(opt => <option key={opt}>{opt}</option>)}
-            </select>
+            <div className="relative flex-1 md:w-auto">
+              <select
+                className="w-full appearance-none bg-white border border-gray-200 text-sm rounded-lg px-3 py-2.5 pr-12 text-gray-700 outline-none focus:border-[#d81b60] shadow-sm cursor-pointer"
+                value={selectedType}
+                onChange={(e) => {
+                  setSelectedType(e.target.value);
+                  setCurrentPage(1);
+                }}
+              >
+                {typeOptions.map(opt => (
+                  <option key={opt}>{opt}</option>
+                ))}
+              </select>
+
+              <div className="pointer-events-none absolute inset-y-0 right-3 flex items-center">
+                <FaAngleDown className="text-gray-400" />
+              </div>
+            </div>
+            <div className="relative flex-1 md:w-auto">
+              <select
+                className="w-full appearance-none bg-white border border-gray-200 text-sm rounded-lg px-3 py-2.5 pr-12 text-gray-700 outline-none focus:border-[#d81b60] shadow-sm cursor-pointer"
+                value={selectedCategory}
+                onChange={(e) => {
+                  setSelectedCategory(e.target.value);
+                  setCurrentPage(1);
+                }}
+              >
+                {categoryOptions.map(opt => (
+                  <option key={opt}>{opt}</option>
+                ))}
+              </select>
+
+              <div className="pointer-events-none absolute inset-y-0 right-3 flex items-center text-gray-500">
+                <FaAngleDown className="text-gray-400" />
+              </div>
+            </div>
           </div>
         </div>
       </motion.div>

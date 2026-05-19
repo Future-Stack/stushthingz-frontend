@@ -9,11 +9,6 @@ import AdminUsers from "@/pages/Admin/AdminUsers";
 import AdminSettings from "@/pages/Admin/AdminSettings";
 import UserDashboard from "@/pages/User/UserDashboard";
 import UserProfile from "@/pages/User/UserProfile";
-// import Login from "@/pages/Login";
-// import Signup from "@/pages/Signup";
-// import ForgotPassword from "@/pages/ForgotPassword";
-// import VerifyOTP from "@/pages/VerifyOTP";
-// import ResetPassword from "@/pages/ResetPassword";
 import AdminLayout from "@/Layout/AdminLayout";
 import UserLayout from "@/Layout/UserLayout";
 import InvestorLayout from "@/Layout/InvestorLayout";
@@ -21,6 +16,7 @@ import AuthLayout from "@/Layout/AuthLayout";
 import InvestorDashboard from "@/pages/Investor/InvestorDashboard";
 import PropertyListing from "@/pages/Investor/PropertyListing";
 import PropertyDetails from "@/pages/Investor/PropertyDetails";
+import ExpressInterest from "@/pages/Investor/ExpressInterest";
 import Onboarding from "@/pages/Onboarding";
 import FinancialAssessment from "@/pages/FinancialAssessment";
 import InvestmentGuide from "@/pages/InvestmentGuide";
@@ -101,6 +97,7 @@ const routes = createBrowserRouter([
           { path: "dashboard", element: <InvestorDashboard /> },
           { path: "opportunities", element: <PropertyListing /> },
           { path: "opportunities/:id", element: <PropertyDetails /> },
+          { path: "interest", element: <ExpressInterest /> },
           // 🛠️ Add more investor pages here
         ],
       },

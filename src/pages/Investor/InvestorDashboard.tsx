@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { ShieldCheck, ArrowRight, Home, Upload, House, TrendingUp } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import watermark from "@/assets/home/watermark.png";
@@ -182,7 +182,7 @@ const InvestorDashboard: React.FC = () => {
                   <h3 className="font-bold text-xl text-color-jet-black">Document Status</h3>
                   <button
                     onClick={() => setActiveTab("Documents")}
-                    className="text-xs font-medium text-gray-600 hover:text-[#212a31] flex items-center gap-1 bg-gray-50 px-3 py-1.5 rounded-lg"
+                    className="text-xs font-medium text-gray-600 hover:text-[#212a31] flex items-center gap-1 bg-gray-50 px-3 py-1.5 border border-[#0000001A] rounded-lg cursor-pointer"
                   >
                     Manage All <ArrowRight size={14} />
                   </button>
@@ -215,12 +215,11 @@ const InvestorDashboard: React.FC = () => {
                       <h4 className="text-base font-semibold text-color-jet-black mb-1.5">Upload remaining documents</h4>
                       <p className="text-sm font-normal text-[#4A5565]">3 documents pending: Proof of Address, Bank statement (recent), Tax returns</p>
                     </div>
-                    <button
-                      onClick={() => navigate("/onboarding/documents")}
-                      className="mt-3 sm:mt-0 bg-color-main hover:bg-[#c2185b] text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors inline-flex items-center gap-1.5"
+                    <Link to="/onboarding/documents" 
+                      className="mt-3 sm:mt-0 bg-color-main hover:bg-[#c2185b] text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors inline-flex items-center gap-1.5 cursor-pointer"
                     >
                       Upload Now <ArrowRight size={14} />
-                    </button>
+                    </Link>
                   </motion.div>
 
                   <motion.div whileHover={{ scale: 1.01 }} className="bg-white border border-gray-100 rounded-xl p-5 shadow-sm flex flex-col sm:flex-row items-start sm:items-center gap-4">
@@ -231,9 +230,9 @@ const InvestorDashboard: React.FC = () => {
                       <h4 className="text-base font-semibold text-color-jet-black mb-1.5">Review financing options</h4>
                       <p className="text-sm font-normal text-[#4A5565]">Based on your profile, you qualify for pre-approval with recommended institutions</p>
                     </div>
-                    <button className="mt-3 sm:mt-0 bg-color-main hover:bg-[#c2185b] text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors inline-flex items-center gap-1.5">
+                    <Link to="/onboarding/assessment" className="mt-3 sm:mt-0 bg-color-main hover:bg-[#c2185b] text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors inline-flex items-center gap-1.5 cursor-pointer">
                       Learn More <ArrowRight size={14} />
-                    </button>
+                    </Link>
                   </motion.div>
 
                   <motion.div whileHover={{ scale: 1.01 }} className="bg-white border border-gray-100 rounded-xl p-5 shadow-sm flex flex-col sm:flex-row items-start sm:items-center gap-4">
@@ -244,12 +243,9 @@ const InvestorDashboard: React.FC = () => {
                       <h4 className="text-base font-semibold text-color-jet-black mb-1.5">Browse Investment Opportunities</h4>
                       <p className="text-sm font-normal text-[#4A5565]">Start exploring properties matching your budget and preferences</p>
                     </div>
-                    <button
-                      onClick={() => navigate("/investor/opportunities")}
-                      className="mt-3 sm:mt-0 bg-color-main hover:bg-[#c2185b] text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors inline-flex items-center gap-1.5"
-                    >
+                    <Link to="/investor/opportunities" className="mt-3 sm:mt-0 bg-color-main hover:bg-[#c2185b] text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors inline-flex items-center gap-1.5 cursor-pointer">
                       View Properties <ArrowRight size={14} />
-                    </button>
+                    </Link>
                   </motion.div>
                 </div>
               </motion.div>

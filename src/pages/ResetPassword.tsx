@@ -1,9 +1,9 @@
-import React from "react";
+import React, { useState } from "react";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useNavigate } from "react-router-dom";
-import { UserCircle } from "lucide-react";
+import { UserCircle, Eye, EyeOff } from "lucide-react";
 import logo from "@/assets/nav/logo.png";
 
 const resetPasswordSchema = z.object({
@@ -26,6 +26,8 @@ const ResetPassword: React.FC = () => {
   });
 
   const navigate = useNavigate();
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
 
   const onSubmit = (data: ResetPasswordFormInputs) => {
     console.log("Reset Password Data:", data);
@@ -52,11 +54,18 @@ const ResetPassword: React.FC = () => {
               <UserCircle size={20} />
             </div>
             <input
-              type="password"
+              type={showPassword ? "text" : "password"}
               placeholder="admin123"
               {...register("password")}
-              className="w-full pl-10 pr-3 py-3 bg-[#F3F3F5] border border-[#00000000] rounded-lg focus:outline-none focus:ring-2 focus:ring-color-main text-sm placeholder:text-[#454F5B]"
+              className="w-full pl-10 pr-10 py-3 bg-[#F3F3F5] border border-[#00000000] rounded-lg focus:outline-none focus:ring-2 focus:ring-color-main text-sm placeholder:text-[#454F5B]"
             />
+            <button
+              type="button"
+              onClick={() => setShowPassword(!showPassword)}
+              className="absolute inset-y-0 right-3 flex items-center text-gray-500 hover:text-gray-700 cursor-pointer"
+            >
+              {showPassword ? <EyeOff size={20} /> : <Eye size={20} />}
+            </button>
           </div>
           {errors.password && (
             <p className="text-red-500 text-xs mt-1">{errors.password.message}</p>
@@ -72,11 +81,18 @@ const ResetPassword: React.FC = () => {
               <UserCircle size={20} />
             </div>
             <input
-              type="password"
+              type={showConfirmPassword ? "text" : "password"}
               placeholder="admin123"
               {...register("confirmPassword")}
-              className="w-full pl-10 pr-3 py-3 bg-[#F3F3F5] border border-[#00000000] rounded-lg focus:outline-none focus:ring-2 focus:ring-color-main text-sm placeholder:text-[#454F5B]"
+              className="w-full pl-10 pr-10 py-3 bg-[#F3F3F5] border border-[#00000000] rounded-lg focus:outline-none focus:ring-2 focus:ring-color-main text-sm placeholder:text-[#454F5B]"
             />
+            <button
+              type="button"
+              onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+              className="absolute inset-y-0 right-3 flex items-center text-gray-500 hover:text-gray-700 cursor-pointer"
+            >
+              {showConfirmPassword ? <EyeOff size={20} /> : <Eye size={20} />}
+            </button>
           </div>
           {errors.confirmPassword && (
             <p className="text-red-500 text-xs mt-1">{errors.confirmPassword.message}</p>

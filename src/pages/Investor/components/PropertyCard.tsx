@@ -2,13 +2,18 @@ import React from "react";
 import { MapPin, FileText, Users, AlertCircle, Shield } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { Property } from "../../../types/property";
+import { useInterest } from "../../../hooks/useInterest";
 
 interface PropertyCardProps {
   property: Property;
+  isInterestPage?: boolean;
 }
 
-const PropertyCard: React.FC<PropertyCardProps> = ({ property }) => {
+const PropertyCard: React.FC<PropertyCardProps> = ({ property, isInterestPage = false }) => {
   const navigate = useNavigate();
+  const { isInterested, toggleInterest } = useInterest();
+  const interested = isInterested(property.id);
+
   return (
     <div className="bg-white border border-[#919EAB] rounded-2xl overflow-hidden flex flex-col lg:flex-row shadow-sm">
       {/* Image Section */}
@@ -113,9 +118,25 @@ const PropertyCard: React.FC<PropertyCardProps> = ({ property }) => {
           >
             <FileText size={16} /> View Full Opportunity Brief
           </button>
-          <button className="px-6 border border-color-main text-color-main hover:bg-pink-50 py-2.5 rounded-lg text-sm font-medium transition-colors flex justify-center items-center gap-2 cursor-pointer">
-            Express Interest
-          </button>
+          {isInterestPage ? (
+            <button 
+              onClick={() => toggleInterest(property.id)}
+              className="px-6 border border-color-main text-color-main hover:bg-pink-50 py-2.5 rounded-lg text-sm font-medium transition-colors flex justify-center items-center gap-2 cursor-pointer"
+            >
+              Remove from Interest
+            </button>
+          ) : (
+            <button 
+              onClick={() => toggleInterest(property.id)}
+              className={`px-6 py-2.5 rounded-lg text-sm font-medium transition-colors flex justify-center items-center gap-2 cursor-pointer ${
+                interested 
+                  ? "bg-color-main text-white hover:bg-color-main/80" 
+                  : "border border-color-main text-color-main hover:bg-pink-50"
+              }`}
+            >
+              {interested ? "Remove Interest" : "Express Interest"}
+            </button>
+          )}
         </div>
       </div>
     </div>

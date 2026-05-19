@@ -6,6 +6,13 @@ const VerifyOTP: React.FC = () => {
   const [otp, setOtp] = useState(["", "", "", "", "", ""]);
   const [timer, setTimer] = useState(179); // 2:59 in seconds
   const navigate = useNavigate();
+  const inputRefs = React.useRef<(HTMLInputElement | null)[]>([]);
+
+  useEffect(() => {
+    if (inputRefs.current[0]) {
+      inputRefs.current[0].focus();
+    }
+  }, []);
 
   useEffect(() => {
     const interval = setInterval(() => {
@@ -20,13 +27,45 @@ const VerifyOTP: React.FC = () => {
     return `${mins}:${secs.toString().padStart(2, "0")}`;
   };
 
-  const handleChange = (element: HTMLInputElement, index: number) => {
-    if (isNaN(Number(element.value))) return false;
+  const handleChange = (value: string, index: number) => {
+    if (isNaN(Number(value))) return;
 
-    setOtp([...otp.map((d, idx) => (idx === index ? element.value : d))]);
+    const char = value.substring(value.length - 1);
+    const newOtp = [...otp];
+    newOtp[index] = char;
+    setOtp(newOtp);
 
-    if (element.nextSibling && element.value !== "") {
-      (element.nextSibling as HTMLInputElement).focus();
+    if (char !== "" && index < 5) {
+      inputRefs.current[index + 1]?.focus();
+    }
+  };
+
+  const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>, index: number) => {
+    if (e.key === "Backspace") {
+      if (otp[index] !== "") {
+        const newOtp = [...otp];
+        newOtp[index] = "";
+        setOtp(newOtp);
+      } else if (index > 0) {
+        const newOtp = [...otp];
+        newOtp[index - 1] = "";
+        setOtp(newOtp);
+        inputRefs.current[index - 1]?.focus();
+      }
+      e.preventDefault();
+    } else if (e.key === "Enter") {
+      handleVerify();
+      e.preventDefault();
+    }
+  };
+
+  const handlePaste = (e: React.ClipboardEvent<HTMLInputElement>) => {
+    e.preventDefault();
+    const pasteData = e.clipboardData.getData("text").trim();
+    if (/^\d{6}$/.test(pasteData)) {
+      const newOtp = pasteData.split("");
+      setOtp(newOtp);
+      inputRefs.current[5]?.focus();
     }
   };
 
@@ -54,10 +93,13 @@ const VerifyOTP: React.FC = () => {
         {otp.map((data, index) => (
           <input
             key={index}
+            ref={(el) => { inputRefs.current[index] = el; }}
             type="text"
             maxLength={1}
             value={data}
-            onChange={(e) => handleChange(e.target, index)}
+            onChange={(e) => handleChange(e.target.value, index)}
+            onKeyDown={(e) => handleKeyDown(e, index)}
+            onPaste={handlePaste}
             onFocus={(e) => e.target.select()}
             className="w-12 h-12 text-center text-lg font-bold bg-[#F3F3F5] border border-dashed border-color-main rounded-xl focus:outline-none focus:ring-2 focus:ring-color-main"
           />

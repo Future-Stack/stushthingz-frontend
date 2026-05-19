@@ -1,6 +1,7 @@
 import watermark from "@/assets/home/watermark.png"
 import CommonWrapper from "@/common/CommonWrapper"
 import { motion } from "framer-motion"
+import { Link } from "react-router-dom"
 
 export default function StartJourney() {
     return (
@@ -25,7 +26,7 @@ export default function StartJourney() {
                     className="hidden lg:block absolute lg:right-40 top-1/3 -translate-y-1/2 opacity-10 w-32 md:w-20 pointer-events-none -rotate-180"
                 />
 
-                <motion.div 
+                <motion.div
                     initial={{ opacity: 0, y: 30 }}
                     whileInView={{ opacity: 1, y: 0 }}
                     viewport={{ once: true, margin: "-50px" }}
@@ -33,7 +34,7 @@ export default function StartJourney() {
                     className="px-6 py-16 text-center"
                 >
 
-                    <motion.h1 
+                    <motion.h1
                         initial={{ opacity: 0, y: 20 }}
                         whileInView={{ opacity: 1, y: 0 }}
                         viewport={{ once: true }}
@@ -43,7 +44,7 @@ export default function StartJourney() {
                         Start Your Investment Journey
                     </motion.h1>
 
-                    <motion.p 
+                    <motion.p
                         initial={{ opacity: 0, y: 20 }}
                         whileInView={{ opacity: 1, y: 0 }}
                         viewport={{ once: true }}
@@ -53,17 +54,19 @@ export default function StartJourney() {
                         Join foreign investors who trust Vanessa to navigate Jamaica&apos;s real estate market
                     </motion.p>
 
-                    <motion.button 
-                        whileHover={{ scale: 1.05 }}
-                        whileTap={{ scale: 0.95 }}
-                        initial={{ opacity: 0, y: 20 }}
-                        whileInView={{ opacity: 1, y: 0 }}
-                        viewport={{ once: true }}
-                        transition={{ duration: 0.6, delay: 0.4, ease: "easeOut" }}
-                        className="bg-white text-lg text-pink-700 font-medium px-6 py-3 rounded-lg shadow hover:bg-pink-100 transition"
-                    >
-                        Get Started Now →
-                    </motion.button>
+                    <Link to="/signup">
+                        <motion.button
+                            whileHover={{ scale: 1.05 }}
+                            whileTap={{ scale: 0.95 }}
+                            initial={{ opacity: 0, y: 20 }}
+                            whileInView={{ opacity: 1, y: 0 }}
+                            viewport={{ once: true }}
+                            transition={{ duration: 0.6, delay: 0.4, ease: "easeOut" }}
+                            className="bg-white text-lg text-pink-700 font-medium px-6 py-3 rounded-lg shadow hover:bg-pink-100 transition cursor-pointer"
+                        >
+                            Get Started Now →
+                        </motion.button>
+                    </Link>
                 </motion.div>
             </CommonWrapper>
         </section>
