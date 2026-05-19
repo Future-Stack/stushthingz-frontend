@@ -102,7 +102,7 @@ const AddDocumentModal: React.FC<AddDocumentModalProps> = ({
               className="w-full px-3.5 py-2.5 rounded-xl border border-gray-200 text-sm text-left flex items-center justify-between focus:outline-none focus:ring-2 focus:ring-color-main/30 focus:border-color-main transition-all cursor-pointer"
             >
               <span className={form.category ? "text-gray-800" : "text-gray-400"}>
-                {form.category || "Select categor"}
+                {form.category || "Select category"}
               </span>
               <svg width="12" height="8" viewBox="0 0 12 8" fill="none">
                 <path
