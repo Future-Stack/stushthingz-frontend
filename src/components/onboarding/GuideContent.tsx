@@ -3,38 +3,107 @@ import { motion, AnimatePresence } from "framer-motion";
 import { FaCheck, FaChevronDown, FaChevronUp } from "react-icons/fa";
 import { DollarSign, FileText, House, TriangleAlert } from "lucide-react";
 
+const BuyingProcessContent: React.FC = () => {
+  const [expandedSub, setExpandedSub] = useState<string | null>("property-search");
+
+  const subSections = [
+    {
+      id: "property-search",
+      title: "1. Property Search",
+      header: "Key considerations:",
+      bullets: [
+        "Location: proximity to amenities, beaches, airports",
+        "Property type: villa, condo, land, commercial",
+        "Title verification: ensure clear ownership",
+        "Development potential and zoning restrictions",
+      ],
+    },
+    {
+      id: "offer-negotiation",
+      title: "2. Offer & Negotiation",
+      header: "Making an offer on Jamaica property:",
+      bullets: [
+        "Written offer through your attorney",
+        "Deposit typically 10% of purchase price",
+        "Include conditions: financing, inspection, title search",
+        "Negotiation period usually 7-14 days",
+      ],
+    },
+    {
+      id: "legal-process",
+      title: "3. Legal Process",
+      header: "Your attorney will handle:",
+      bullets: [
+        "Title search and verification",
+        "Agreement for sale preparation",
+        "Stamp duty calculation and payment",
+        "Transfer tax processing",
+      ],
+    },
+    {
+      id: "closing",
+      title: "4. Closing",
+      header: "Final steps to ownership:",
+      bullets: [
+        "Final inspection of property",
+        "Payment of balance and closing costs",
+        "Signing of transfer documents",
+        "Receipt of registered title",
+      ],
+    },
+  ];
+
+  return (
+    <div className="space-y-4 mt-4 text-sm text-gray-700">
+      {subSections.map((sub, idx) => {
+        const isExpanded = expandedSub === sub.id;
+        return (
+          <div key={sub.id} className={idx > 0 ? "border-t border-[#7171827b] pt-4" : ""}>
+            <div
+              onClick={() => setExpandedSub(isExpanded ? null : sub.id)}
+              className="flex justify-between items-center cursor-pointer py-1"
+            >
+              <span className="text-sm font-medium text-black">{sub.title}</span>
+              {isExpanded ? (
+                <FaChevronUp className="text-gray-400 w-3 h-3" />
+              ) : (
+                <FaChevronDown className="text-gray-400 w-3 h-3" />
+              )}
+            </div>
+            <AnimatePresence initial={false}>
+              {isExpanded && (
+                <motion.div
+                  initial={{ height: 0, opacity: 0 }}
+                  animate={{ height: "auto", opacity: 1 }}
+                  exit={{ height: 0, opacity: 0 }}
+                  transition={{ duration: 0.2 }}
+                  className="overflow-hidden"
+                >
+                  <div className="pt-2 pb-1">
+                    <p className="text-sm font-normal text-[#364153] mb-2">{sub.header}</p>
+                    <ul className="text-sm font-normal text-[#364153] list-disc pl-5 space-y-1">
+                      {sub.bullets.map((b, i) => (
+                        <li key={i}>{b}</li>
+                      ))}
+                    </ul>
+                  </div>
+                </motion.div>
+              )}
+            </AnimatePresence>
+          </div>
+        );
+      })}
+    </div>
+  );
+};
+
 export const SECTIONS = [
   {
     id: "buying-process",
     title: "Buying Process",
     subtitle: "Step-by-step guide to purchasing property in Jamaica",
     icon: <House className="w-6 h-6 text-color-main" />,
-    content: (
-      <div className="space-y-6 mt-4 text-sm text-gray-700">
-        <div>
-          <h4 className="text-sm font-medium text-black mb-4">1. Property Search</h4>
-          <p className="text-sm font-normal text-[#364153] mb-2">Work independently and understands foreign buyer needs. Key considerations:</p>
-          <ul className="text-sm font-normal text-[#364153] list-disc pl-5 space-y-1">
-            <li>Location: proximity to amenities, beaches, airports</li>
-            <li>Property type: villa, condo, land, commercial</li>
-            <li>Title verification: ensure clear ownership</li>
-            <li>Development potential and zoning restrictions</li>
-          </ul>
-        </div>
-        <div className="border-t border-[#7171827b] pt-4 flex justify-between items-center cursor-pointer">
-          <span className="text-sm font-medium text-black">2. Offer & Negotiation</span>
-          <FaChevronDown className="text-gray-400" />
-        </div>
-        <div className="border-t border-[#7171827b] pt-4 flex justify-between items-center cursor-pointer">
-          <span className="text-sm font-medium text-black">3. Legal Process</span>
-          <FaChevronDown className="text-gray-400" />
-        </div>
-        <div className="border-t border-[#7171827b] pt-4 flex justify-between items-center cursor-pointer">
-          <span className="text-sm font-medium text-black">4. Closing</span>
-          <FaChevronDown className="text-gray-400" />
-        </div>
-      </div>
-    ),
+    content: <BuyingProcessContent />,
   },
   {
     id: "cost-overview",
@@ -83,9 +152,9 @@ export const SECTIONS = [
           <h4 className="text-lg font-semibold text-[#364153] mb-2">Eligibility Basics</h4>
           <ul className="text-[#364153] text-base font-normal pl-5 space-y-1">
             <li>Most Jamaican banks offer mortgages to foreign nationals</li>
-            <li>Typical down payment: 15-25% for non-residents</li>
+            <li>Typical down payment: 10-25% for non-residents</li>
             <li>Interest rates: 7-11% depending on bank and profile</li>
-            <li>Maximum loan-to-value: 60-75% for foreign buyers</li>
+            <li>Maximum loan-to-value: 60-90% for foreign buyers</li>
           </ul>
         </div>
         <div>

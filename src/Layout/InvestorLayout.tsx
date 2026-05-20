@@ -16,8 +16,8 @@ const InvestorLayout: React.FC = () => {
       <header className="w-full bg-white border-b border-[#919EAB] sticky top-0 z-30">
         <div className="max-w-7xl mx-auto flex items-center justify-between py-2.5 px-4">
           <img src={logo} alt="logo" className="w-40 cursor-pointer" onClick={() => navigate("/investor/dashboard")} />
-          
-          <button 
+
+          <button
             onClick={() => navigate("/investor/interest")}
             className="relative p-2 text-[#364153] hover:text-color-main transition-colors cursor-pointer flex items-center justify-center"
             title="Express Interest List"

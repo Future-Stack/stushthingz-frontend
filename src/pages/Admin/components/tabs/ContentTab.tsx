@@ -198,7 +198,7 @@ const ContentTab: React.FC = () => {
                 placeholder="4.3"
               />
               <span className="text-xs text-gray-400 mt-1.5 block">
-                Maximum acceptable DTI ratio
+                % of Maximum acceptable DTI ratio
               </span>
             </div>
           </div>

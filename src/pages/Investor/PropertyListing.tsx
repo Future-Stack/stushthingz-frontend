@@ -194,7 +194,7 @@ const PropertyListing: React.FC = () => {
       <div className="bg-white border border-[#919EAB] rounded-2xl p-8 text-center">
         <h3 className="text-3xl font-bold text-color-jet-black mb-4">Ready to Schedule Viewings?</h3>
         <p className="text-[#4A5565] text-base font-normal mb-6 max-w-2xl mx-auto">
-          Interested in an opportunity? Express your interest and our team will connect you with the right local contacts.
+          Interested in an opportunity? Express your interest and connect directly with seller.
         </p>
       </div>
 
