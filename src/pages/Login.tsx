@@ -32,7 +32,8 @@ const Login: React.FC = () => {
   const onSubmit = (data: LoginFormInputs) => {
     console.log("Login Data:", data);
     dispatch(setUser(data));
-    navigate("/investor/opportunities");
+    navigate("/onboarding");
+    // navigate("/investor/opportunities");
   };
 
   return (
