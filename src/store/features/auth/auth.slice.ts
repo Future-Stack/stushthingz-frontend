@@ -7,30 +7,9 @@ type Tstate = {
   accessToken: string | null;
 };
 
-const demoUser: TUser = {
-  id: "demo-12345",
-  email: "admin@example.com",
-  fullName: "Demo Admin",
-  role: "admin",
-  isVerified: true,
-  isActive: true,
-  isDeleted: false,
-  createdAt: new Date().toISOString(),
-  updatedAt: new Date().toISOString(),
-  deletedAt: null,
-  profilePhoto: "",
-  first_name: "Demo",
-  last_name: "Admin",
-  phone_number: "+1 (555) 000-0000",
-  city: "New York",
-  area: "",
-  password: "",
-  confirm_password: "",
-};
-
 const initialState: Tstate = {
-  user: demoUser,
-  accessToken: "demo-token-1234",
+  user: null,
+  accessToken: null,
 };
 
 const authSlice = createSlice({
@@ -39,12 +18,8 @@ const authSlice = createSlice({
   reducers: {
     setUser: (state, action) => {
       const { user, accessToken } = action.payload || {};
-      if (!user || !accessToken) {
-        console.error("Invalid payload received:", action.payload);
-        return;
-      }
-      state.accessToken = accessToken;
-      state.user = user;
+      state.accessToken = accessToken ?? state.accessToken;
+      state.user = user ?? state.user;
     },
 
     logout: (state) => {

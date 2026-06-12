@@ -1,25 +1,47 @@
 import React, { useState, useEffect } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
+import { useAppDispatch } from "@/store/hook";
+import { setUser } from "@/store/features/auth/auth.slice";
+import {
+  useVerifyRegisterOtpMutation,
+  useResendRegisterOtpMutation,
+} from "@/store/features/auth/auth.api";
 import logo from "@/assets/nav/logo.png";
 
+/**
+ * VerifyOTP is used for register-OTP verification only.
+ * It expects location state: { email: string; mode: "register" }
+ * passed from the Signup page.
+ */
 const VerifyOTP: React.FC = () => {
   const [otp, setOtp] = useState(["", "", "", "", "", ""]);
   const [timer, setTimer] = useState(179); // 2:59 in seconds
+  const [serverError, setServerError] = useState<string | null>(null);
+  const [successMsg, setSuccessMsg] = useState<string | null>(null);
+
   const navigate = useNavigate();
+  const location = useLocation();
+  const dispatch = useAppDispatch();
+
   const inputRefs = React.useRef<(HTMLInputElement | null)[]>([]);
 
+  // email passed from Signup page via location state
+  const email: string = (location.state as { email?: string })?.email ?? "";
+
+  const [verifyRegisterOtp, { isLoading: isVerifying }] = useVerifyRegisterOtpMutation();
+  const [resendOtp, { isLoading: isResending }] = useResendRegisterOtpMutation();
+
   useEffect(() => {
-    if (inputRefs.current[0]) {
-      inputRefs.current[0].focus();
-    }
+    inputRefs.current[0]?.focus();
   }, []);
 
   useEffect(() => {
+    if (timer === 0) return;
     const interval = setInterval(() => {
       setTimer((prev) => (prev > 0 ? prev - 1 : 0));
     }, 1000);
     return () => clearInterval(interval);
-  }, []);
+  }, [timer]);
 
   const formatTime = (seconds: number) => {
     const mins = Math.floor(seconds / 60);
@@ -29,12 +51,10 @@ const VerifyOTP: React.FC = () => {
 
   const handleChange = (value: string, index: number) => {
     if (isNaN(Number(value))) return;
-
     const char = value.substring(value.length - 1);
     const newOtp = [...otp];
     newOtp[index] = char;
     setOtp(newOtp);
-
     if (char !== "" && index < 5) {
       inputRefs.current[index + 1]?.focus();
     }
@@ -63,15 +83,72 @@ const VerifyOTP: React.FC = () => {
     e.preventDefault();
     const pasteData = e.clipboardData.getData("text").trim();
     if (/^\d{6}$/.test(pasteData)) {
-      const newOtp = pasteData.split("");
-      setOtp(newOtp);
+      setOtp(pasteData.split(""));
       inputRefs.current[5]?.focus();
     }
   };
 
-  const handleVerify = () => {
-    console.log("Verifying OTP:", otp.join(""));
-    navigate("/reset-password");
+  const handleVerify = async () => {
+    setServerError(null);
+    const otpCode = otp.join("");
+    if (otpCode.length < 6) {
+      setServerError("Please enter the complete 6-digit OTP.");
+      return;
+    }
+
+    try {
+      const res = await verifyRegisterOtp({ email, otp: otpCode }).unwrap();
+      const { accessToken, result } = res.data;
+
+      // Build a minimal user object from the register OTP response
+      dispatch(
+        setUser({
+          accessToken,
+          user: {
+            id: result.id,
+            name: result.name,
+            email: result.email,
+            role: result.role,
+            phone: null,
+            profileImage: null,
+            countryOfResidence: null,
+            investmentBudget: null,
+            investmentGoal: null,
+            investmentTimeline: null,
+            lastPasswordChangeTime: null,
+            registrationTime: new Date().toISOString(),
+            isVerified: true,
+            status: "active",
+            provider: "custom",
+            image: null,
+          },
+        })
+      );
+
+      // Redirect based on role
+      if (result.role === "admin") navigate("/admin");
+      else if (result.role === "bank") navigate("/bank");
+      else navigate("/investor/dashboard");
+    } catch (err: unknown) {
+      const error = err as { data?: { message?: string } };
+      setServerError(error?.data?.message ?? "Invalid OTP. Please try again.");
+    }
+  };
+
+  const handleResend = async () => {
+    if (!email) return;
+    setServerError(null);
+    setSuccessMsg(null);
+    try {
+      await resendOtp({ email }).unwrap();
+      setSuccessMsg("OTP resent successfully. Check your email.");
+      setTimer(179);
+      setOtp(["", "", "", "", "", ""]);
+      inputRefs.current[0]?.focus();
+    } catch (err: unknown) {
+      const error = err as { data?: { message?: string } };
+      setServerError(error?.data?.message ?? "Failed to resend OTP.");
+    }
   };
 
   return (
@@ -81,7 +158,7 @@ const VerifyOTP: React.FC = () => {
         <h2 className="text-4xl font-bold text-black mb-1 font-inter">Verify OTP</h2>
         <p className="text-base text-[#454F5B] font-normal leading-relaxed">
           We have sent you a 6 digit OTP code to your provided email{" "}
-          <span className="font-bold text-black">example@email.com</span> please input that code here to proceed.
+          {email && <span className="font-bold text-black">{email}</span>}. Please input that code here to proceed.
         </p>
       </div>
 
@@ -106,9 +183,22 @@ const VerifyOTP: React.FC = () => {
         ))}
       </div>
 
+      {serverError && (
+        <p className="text-red-500 text-sm text-center mb-4">{serverError}</p>
+      )}
+      {successMsg && (
+        <p className="text-green-600 text-sm text-center mb-4">{successMsg}</p>
+      )}
+
       <div className="text-center mb-8">
-        <button className="text-base font-medium text-black hover:underline cursor-pointer">
-          Resend
+        <button
+          type="button"
+          onClick={handleResend}
+          disabled={isResending || timer > 0}
+          className="text-base font-medium text-black hover:underline cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed"
+        >
+          {isResending ? "Resending..." : "Resend"}
+          {timer > 0 && ` (${formatTime(timer)})`}
         </button>
       </div>
 
@@ -122,9 +212,10 @@ const VerifyOTP: React.FC = () => {
         </button>
         <button
           onClick={handleVerify}
-          className="flex-1 bg-color-main text-white py-3 rounded-xl font-semibold hover:bg-color-main/90 transition-colors shadow-lg cursor-pointer"
+          disabled={isVerifying}
+          className="flex-1 bg-color-main text-white py-3 rounded-xl font-semibold hover:bg-color-main/90 transition-colors shadow-lg cursor-pointer disabled:opacity-60 disabled:cursor-not-allowed"
         >
-          Verify
+          {isVerifying ? "Verifying..." : "Verify"}
         </button>
       </div>
     </div>

@@ -29,14 +29,14 @@ const AdminLayout: React.FC = () => {
           <div className="flex items-center gap-3">
             <div className="hidden sm:flex flex-col items-end">
               <span className="text-sm font-semibold text-gray-900 leading-none">
-                {user?.fullName ?? "Admin User"}
+                {user?.name ?? "Admin User"}
               </span>
               <span className="text-xs text-gray-400 mt-0.5">
                 {user?.email ?? "admin@vanessa.com"}
               </span>
             </div>
             <div className="w-9 h-9 rounded-full bg-color-main flex items-center justify-center text-sm font-bold text-white shrink-0">
-              {user?.fullName?.[0] ?? "A"}
+              {user?.name?.[0] ?? "A"}
             </div>
             <button
               onClick={handleLogout}

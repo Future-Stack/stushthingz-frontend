@@ -5,6 +5,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { Link, useNavigate } from "react-router-dom";
 import { useAppDispatch } from "@/store/hook";
 import { setUser } from "@/store/features/auth/auth.slice";
+import { useLoginMutation, useLazyGetMeQuery } from "@/store/features/auth/auth.api";
 import logo from "@/assets/nav/logo.png";
 import { Eye, EyeOff } from "lucide-react";
 import googleIcon from "@/assets/home/googleIcon.png";
@@ -28,40 +29,70 @@ const Login: React.FC = () => {
   const navigate = useNavigate();
   const dispatch = useAppDispatch();
   const [showPassword, setShowPassword] = useState(false);
+  const [serverError, setServerError] = useState<string | null>(null);
 
-  const onSubmit = (data: LoginFormInputs) => {
-    console.log("Login Data:", data);
-    dispatch(setUser(data));
-    navigate("/onboarding");
-    // navigate("/investor/opportunities");
+  const [login, { isLoading: isLoggingIn }] = useLoginMutation();
+  const [getMe, { isLoading: isFetchingMe }] = useLazyGetMeQuery();
+
+  const isLoading = isLoggingIn || isFetchingMe;
+
+  const redirectByRole = (role: string) => {
+    if (role === "admin") return navigate("/admin");
+    if (role === "user") return navigate("/investor/dashboard");
+    return navigate("/dashboard");
+  };
+
+  const onSubmit = async (data: LoginFormInputs) => {
+    setServerError(null);
+    try {
+      // 1. Login — get access token
+      const loginRes = await login(data).unwrap();
+      const accessToken = loginRes.data.accessToken;
+
+      // Store the token first so getMe can attach it in headers
+      dispatch(setUser({ accessToken }));
+
+      // 2. Fetch user profile
+      const meRes = await getMe().unwrap();
+      const user = meRes.data;
+
+      // 3. Store user + token in Redux (persisted)
+      dispatch(setUser({ user, accessToken }));
+
+      // 4. Redirect based on role
+      redirectByRole(user.role);
+    } catch (err: unknown) {
+      const error = err as { data?: { message?: string } };
+      setServerError(error?.data?.message ?? "Login failed. Please try again.");
+    }
   };
 
   return (
-    <div className="w-full mx-auto">
+    <div className="mx-auto w-full">
       <div className="mb-6">
         <img src={logo} alt="Vanessa" className="mb-6" />
-        <h2 className="text-4xl font-bold text-black mb-1 font-inter">Welcome Back</h2>
-        <p className="text-base text-[#454F5B] font-normal">Continue your investment journey</p>
+        <h2 className="mb-1 font-inter font-bold text-black text-4xl">Welcome Back</h2>
+        <p className="font-normal text-[#454F5B] text-base">Continue your investment journey</p>
       </div>
 
       <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
         <div>
-          <label className="block text-base font-normal text-color-jet-black mb-1">
+          <label className="block mb-1 font-normal text-color-jet-black text-base">
             Email
           </label>
           <input
             type="email"
             placeholder="you@example.com"
             {...register("email")}
-            className="w-full p-3 bg-[#F3F3F5] border border-[#00000000] rounded-lg focus:outline-none focus:ring-2 focus:ring-color-main text-sm placeholder:text-[#454F5B]"
+            className="bg-[#F3F3F5] p-3 border border-[#00000000] rounded-lg focus:outline-none focus:ring-2 focus:ring-color-main w-full placeholder:text-[#454F5B] text-sm"
           />
           {errors.email && (
-            <p className="text-red-500 text-xs mt-1">{errors.email.message}</p>
+            <p className="mt-1 text-red-500 text-xs">{errors.email.message}</p>
           )}
         </div>
 
         <div>
-          <label className="block text-base font-normal text-color-jet-black mb-1">
+          <label className="block mb-1 font-normal text-color-jet-black text-base">
             Password
           </label>
           <div className="relative">
@@ -69,38 +100,43 @@ const Login: React.FC = () => {
               type={showPassword ? "text" : "password"}
               placeholder="••••••••"
               {...register("password")}
-              className="w-full p-3 bg-[#F3F3F5] border border-[#00000000] rounded-lg focus:outline-none focus:ring-2 focus:ring-color-main text-sm pr-10 placeholder:text-[#454F5B]"
+              className="bg-[#F3F3F5] p-3 pr-10 border border-[#00000000] rounded-lg focus:outline-none focus:ring-2 focus:ring-color-main w-full placeholder:text-[#454F5B] text-sm"
             />
             <button
               type="button"
               onClick={() => setShowPassword(!showPassword)}
-              className="absolute inset-y-0 right-3 flex items-center text-gray-500 hover:text-gray-700 cursor-pointer"
+              className="right-3 absolute inset-y-0 flex items-center text-gray-500 hover:text-gray-700 cursor-pointer"
             >
               {showPassword ? <EyeOff size={20} /> : <Eye size={20} />}
             </button>
           </div>
           {errors.password && (
-            <p className="text-red-500 text-xs mt-1">{errors.password.message}</p>
+            <p className="mt-1 text-red-500 text-xs">{errors.password.message}</p>
           )}
         </div>
 
+        {serverError && (
+          <p className="text-red-500 text-sm text-center">{serverError}</p>
+        )}
+
         <button
           type="submit"
-          className="w-full bg-color-main text-white py-3 rounded-lg font-semibold hover:bg-color-main/90 transition-colors shadow-sm cursor-pointer"
+          disabled={isLoading}
+          className="bg-color-main hover:bg-color-main/90 disabled:opacity-60 shadow-sm py-3 rounded-lg w-full font-semibold text-white transition-colors cursor-pointer disabled:cursor-not-allowed"
         >
-          Sign In
+          {isLoading ? "Signing in..." : "Sign In"}
         </button>
       </form>
 
-      <div className="text-right mt-3">
-        <Link to="/forgot-password" title="Forgot Password" className="text-sm font-medium text-black hover:underline">
+      <div className="mt-3 text-right">
+        <Link to="/forgot-password" title="Forgot Password" className="font-medium text-black text-sm hover:underline">
           Forgot Password?
         </Link>
       </div>
 
       <div className="relative my-4">
         <div className="absolute inset-0 flex items-center">
-          <div className="w-full border-t border-[#EAECF0]"></div>
+          <div className="border-[#EAECF0] border-t w-full"></div>
         </div>
         <div className="relative flex justify-center text-xs uppercase">
           <span className="bg-white px-2 text-[#667085]">or</span>
@@ -109,15 +145,15 @@ const Login: React.FC = () => {
 
       <button
         type="button"
-        className="w-full flex items-center justify-center gap-3 px-4 py-3 border border-[#D0D5DD] rounded-lg bg-white text-[#344054] font-semibold text-sm hover:bg-gray-50 transition-colors cursor-pointer mb-3"
+        className="flex justify-center items-center gap-3 bg-white hover:bg-gray-50 mb-3 px-4 py-3 border border-[#D0D5DD] rounded-lg w-full font-semibold text-[#344054] text-sm transition-colors cursor-pointer"
       >
         <img src={googleIcon} alt="Google" className="w-5 h-5" />
         Continue with Google
       </button>
 
-      <p className="text-center text-sm text-[#4A5565]">
+      <p className="text-[#4A5565] text-sm text-center">
         Don't have an account?{" "}
-        <Link to="/signup" className="text-base font-medium text-color-main hover:underline">
+        <Link to="/signup" className="font-medium text-color-main text-base hover:underline">
           Sign up
         </Link>
       </p>

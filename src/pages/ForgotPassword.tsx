@@ -1,10 +1,11 @@
-import React from "react";
+import React, { useState } from "react";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useNavigate } from "react-router-dom";
 import { Mail } from "lucide-react";
 import logo from "@/assets/nav/logo.png";
+import { useForgotPasswordMutation } from "@/store/features/auth/auth.api";
 
 const forgotPasswordSchema = z.object({
   email: z.string().email("Invalid email format"),
@@ -22,10 +23,21 @@ const ForgotPassword: React.FC = () => {
   });
 
   const navigate = useNavigate();
+  const [serverError, setServerError] = useState<string | null>(null);
+  const [forgotPassword, { isLoading }] = useForgotPasswordMutation();
 
-  const onSubmit = (data: ForgotPasswordFormInputs) => {
-    console.log("Forgot Password Data:", data);
-    navigate("/verify-otp");
+  const onSubmit = async (data: ForgotPasswordFormInputs) => {
+    setServerError(null);
+    try {
+      await forgotPassword({ email: data.email }).unwrap();
+      // Navigate to reset-password page, passing email for OTP + new password submission
+      navigate("/reset-password", {
+        state: { email: data.email },
+      });
+    } catch (err: unknown) {
+      const error = err as { data?: { message?: string } };
+      setServerError(error?.data?.message ?? "Failed to send OTP. Please try again.");
+    }
   };
 
   return (
@@ -41,7 +53,7 @@ const ForgotPassword: React.FC = () => {
       <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
         <div>
           <label className="block text-base font-normal text-color-jet-black mb-1">
-            Admin Email
+            Email
           </label>
           <div className="relative">
             <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-[#667085]">
@@ -49,7 +61,7 @@ const ForgotPassword: React.FC = () => {
             </div>
             <input
               type="email"
-              placeholder="admin@reviewiq.com"
+              placeholder="you@example.com"
               {...register("email")}
               className="w-full pl-10 pr-3 py-3 bg-[#F3F3F5] border border-[#00000000] rounded-lg focus:outline-none focus:ring-2 focus:ring-color-main text-sm placeholder:text-[#454F5B]"
             />
@@ -58,6 +70,10 @@ const ForgotPassword: React.FC = () => {
             <p className="text-red-500 text-xs mt-1">{errors.email.message}</p>
           )}
         </div>
+
+        {serverError && (
+          <p className="text-red-500 text-sm text-center">{serverError}</p>
+        )}
 
         <div className="flex gap-4">
           <button
@@ -69,9 +85,10 @@ const ForgotPassword: React.FC = () => {
           </button>
           <button
             type="submit"
-            className="flex-1 bg-color-main text-white py-3 rounded-xl font-semibold hover:bg-color-main/90 transition-colors shadow-lg cursor-pointer"
+            disabled={isLoading}
+            className="flex-1 bg-color-main text-white py-3 rounded-xl font-semibold hover:bg-color-main/90 transition-colors shadow-lg cursor-pointer disabled:opacity-60 disabled:cursor-not-allowed"
           >
-            Send OTP
+            {isLoading ? "Sending..." : "Send OTP"}
           </button>
         </div>
       </form>

@@ -32,7 +32,9 @@ const Navbar: React.FC = () => {
   };
 
   const getDashboardLink = () => {
-    return user?.role === "admin" ? "/admin" : "/dashboard";
+    if (user?.role === "admin") return "/admin";
+    if (user?.role === "bank") return "/bank";
+    return "/investor/dashboard";
   };
 
   return (
@@ -77,21 +79,21 @@ const Navbar: React.FC = () => {
                 <PopoverTrigger asChild>
                   <button className="flex items-center gap-2 px-3 py-1.5 rounded-xl hover:bg-white/5 transition-colors">
                     <Avatar className="w-8 h-8">
-                      {user.profilePhoto ? (
-                        <AvatarImage src={user.profilePhoto} alt={user.fullName} />
+                      {user.profileImage ? (
+                        <AvatarImage src={user.profileImage} alt={user.name} />
                       ) : (
                         <AvatarFallback className="bg-linear-to-br from-[#124e66] to-[#748d92] text-white text-sm font-bold">
-                          {user.fullName?.[0] || "U"}
+                          {user.name?.[0] || "U"}
                         </AvatarFallback>
                       )}
                     </Avatar>
-                    <span className="text-sm text-gray-300 max-w-24 truncate">{user.fullName}</span>
+                    <span className="text-sm text-gray-300 max-w-24 truncate">{user.name}</span>
                     <ChevronDown size={14} className="text-gray-400" />
                   </button>
                 </PopoverTrigger>
                 <PopoverContent className="w-52 bg-[#2e3944] border border-white/10 text-white p-2 rounded-xl shadow-2xl">
                   <div className="px-2 py-2 mb-1">
-                    <p className="text-sm font-semibold truncate">{user.fullName}</p>
+                    <p className="text-sm font-semibold truncate">{user.name}</p>
                     <p className="text-xs text-gray-400 truncate">{user.email}</p>
                   </div>
                   <div className="h-px bg-white/10 mb-1" />
@@ -102,7 +104,7 @@ const Navbar: React.FC = () => {
                     <LayoutDashboard size={15} /> Dashboard
                   </Link>
                   <Link
-                    to="/dashboard/profile"
+                    to="/investor/dashboard"
                     className="flex items-center gap-2 px-2 py-2 text-sm text-gray-300 hover:text-white hover:bg-white/10 rounded-lg transition-colors"
                   >
                     <User size={15} /> Profile
@@ -167,10 +169,10 @@ const Navbar: React.FC = () => {
               <>
                 <div className="flex items-center gap-3 px-4 py-2">
                   <div className="w-8 h-8 rounded-full bg-linear-to-br from-[#124e66] to-[#748d92] flex items-center justify-center text-sm font-bold text-white">
-                    {user.fullName?.[0] || "U"}
+                    {user.name?.[0] || "U"}
                   </div>
                   <div>
-                    <p className="text-sm font-medium text-white">{user.fullName}</p>
+                    <p className="text-sm font-medium text-white">{user.name}</p>
                     <p className="text-xs text-gray-400">{user.email}</p>
                   </div>
                 </div>

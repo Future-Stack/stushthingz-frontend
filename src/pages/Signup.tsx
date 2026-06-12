@@ -6,6 +6,7 @@ import { Link, useNavigate } from "react-router-dom";
 import { Eye, EyeOff } from "lucide-react";
 import logo from "@/assets/nav/logo.png";
 import googleIcon from "@/assets/home/googleIcon.png";
+import { useRegisterMutation } from "@/store/features/auth/auth.api";
 
 const signupSchema = z.object({
   fullName: z.string().min(2, "Full name is required"),
@@ -23,6 +24,8 @@ type SignupFormInputs = z.infer<typeof signupSchema>;
 const Signup: React.FC = () => {
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+  const [serverError, setServerError] = useState<string | null>(null);
+
   const {
     register,
     handleSubmit,
@@ -32,10 +35,26 @@ const Signup: React.FC = () => {
   });
 
   const navigate = useNavigate();
+  const [registerUser, { isLoading }] = useRegisterMutation();
 
-  const onSubmit = (data: SignupFormInputs) => {
-    console.log("Signup Data:", data);
-    navigate("/onboarding");
+  const onSubmit = async (data: SignupFormInputs) => {
+    setServerError(null);
+    try {
+      // Backend expects: name, email, password (no phone or file yet)
+      await registerUser({
+        name: data.fullName,
+        email: data.email,
+        password: data.password,
+      }).unwrap();
+
+      // Navigate to OTP page, passing email via state for verification
+      navigate("/verify-otp", {
+        state: { email: data.email, mode: "register" },
+      });
+    } catch (err: unknown) {
+      const error = err as { data?: { message?: string } };
+      setServerError(error?.data?.message ?? "Registration failed. Please try again.");
+    }
   };
 
   return (
@@ -141,13 +160,19 @@ const Signup: React.FC = () => {
           )}
         </div>
 
+        {serverError && (
+          <p className="text-red-500 text-sm text-center">{serverError}</p>
+        )}
+
         <button
           type="submit"
-          className="w-full bg-color-main text-white py-3 rounded-lg font-semibold hover:bg-color-main/90 transition-colors shadow-sm mt-4 cursor-pointer"
+          disabled={isLoading}
+          className="w-full bg-color-main text-white py-3 rounded-lg font-semibold hover:bg-color-main/90 transition-colors shadow-sm mt-4 cursor-pointer disabled:opacity-60 disabled:cursor-not-allowed"
         >
-          Sign Up
+          {isLoading ? "Creating account..." : "Sign Up"}
         </button>
       </form>
+
       <div className="relative my-4">
         <div className="absolute inset-0 flex items-center">
           <div className="w-full border-t border-[#EAECF0]"></div>

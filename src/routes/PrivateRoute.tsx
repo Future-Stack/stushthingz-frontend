@@ -7,7 +7,7 @@ import { selectUser } from "@/store/features/auth/auth.slice";
  * Set BYPASS_AUTH to `true` to allow visiting protected routes without logging in.
  * This is useful for previewing the template. Set it to `false` in production.
  */
-const BYPASS_AUTH = true;
+const BYPASS_AUTH = false;
 
 const PrivateRoute = () => {
     const user = useAppSelector(selectUser);

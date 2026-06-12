@@ -7,10 +7,7 @@ import PrivateRoute from "./PrivateRoute";
 import AdminDashboard from "@/pages/Admin/AdminDashboard";
 import AdminUsers from "@/pages/Admin/AdminUsers";
 import AdminSettings from "@/pages/Admin/AdminSettings";
-import UserDashboard from "@/pages/User/UserDashboard";
-import UserProfile from "@/pages/User/UserProfile";
 import AdminLayout from "@/Layout/AdminLayout";
-import UserLayout from "@/Layout/UserLayout";
 import InvestorLayout from "@/Layout/InvestorLayout";
 import AuthLayout from "@/Layout/AuthLayout";
 import InvestorDashboard from "@/pages/Investor/InvestorDashboard";
@@ -70,21 +67,6 @@ const routes = createBrowserRouter([
     element: <DocumentChecklist />,
   },
 
-  {
-    // ─── User Dashboard (requires login — see PrivateRoute for BYPASS_AUTH) ───
-    path: "/dashboard",
-    element: <PrivateRoute />,
-    children: [
-      {
-        element: <UserLayout />,
-        children: [
-          { path: "", element: <UserDashboard /> },
-          { path: "profile", element: <UserProfile /> },
-          // 🛠️ Add more user pages here
-        ],
-      },
-    ],
-  },
 
   {
     // ─── Investor Dashboard (requires login — see PrivateRoute for BYPASS_AUTH) ───

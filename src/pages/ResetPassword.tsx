@@ -2,13 +2,15 @@ import React, { useState } from "react";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { useNavigate } from "react-router-dom";
-import { UserCircle, Eye, EyeOff } from "lucide-react";
+import { useNavigate, useLocation } from "react-router-dom";
+import { Eye, EyeOff } from "lucide-react";
 import logo from "@/assets/nav/logo.png";
+import { useVerifyForgotPasswordOtpMutation } from "@/store/features/auth/auth.api";
 
 const resetPasswordSchema = z.object({
-  password: z.string().min(6, "Password must be at least 6 characters"),
-  confirmPassword: z.string().min(6, "Confirm password is required"),
+  otp: z.string().length(6, "OTP must be exactly 6 digits").regex(/^\d+$/, "OTP must be numeric"),
+  password: z.string().min(8, "Password must be at least 8 characters"),
+  confirmPassword: z.string().min(8, "Confirm password is required"),
 }).refine((data) => data.password === data.confirmPassword, {
   message: "Passwords don't match",
   path: ["confirmPassword"],
@@ -26,12 +28,31 @@ const ResetPassword: React.FC = () => {
   });
 
   const navigate = useNavigate();
+  const location = useLocation();
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+  const [serverError, setServerError] = useState<string | null>(null);
 
-  const onSubmit = (data: ResetPasswordFormInputs) => {
-    console.log("Reset Password Data:", data);
-    navigate("/login");
+  // email passed from ForgotPassword page via location state
+  const email: string = (location.state as { email?: string })?.email ?? "";
+
+  const [verifyForgotPasswordOtp, { isLoading }] = useVerifyForgotPasswordOtpMutation();
+
+  const onSubmit = async (data: ResetPasswordFormInputs) => {
+    setServerError(null);
+    try {
+      await verifyForgotPasswordOtp({
+        email,
+        otp: data.otp,
+        newPassword: data.password,
+      }).unwrap();
+
+      // On success, redirect to login
+      navigate("/login");
+    } catch (err: unknown) {
+      const error = err as { data?: { message?: string } };
+      setServerError(error?.data?.message ?? "Password reset failed. Please try again.");
+    }
   };
 
   return (
@@ -40,24 +61,40 @@ const ResetPassword: React.FC = () => {
         <img src={logo} alt="Vanessa" className="w-40 mb-6" />
         <h2 className="text-4xl font-bold text-black mb-1 font-inter">Reset Password</h2>
         <p className="text-base text-[#454F5B] font-normal">
-          You are all set. Now it's time to create a new password.
+          Enter the OTP sent to{" "}
+          {email && <span className="font-semibold text-black">{email}</span>} and choose a new password.
         </p>
       </div>
 
-      <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
+      <form onSubmit={handleSubmit(onSubmit)} className="space-y-5">
+        {/* OTP Field */}
+        <div>
+          <label className="block text-base font-normal text-color-jet-black mb-1">
+            OTP Code
+          </label>
+          <input
+            type="text"
+            maxLength={6}
+            placeholder="Enter 6-digit OTP"
+            {...register("otp")}
+            className="w-full p-3 bg-[#F3F3F5] border border-[#00000000] rounded-lg focus:outline-none focus:ring-2 focus:ring-color-main text-sm tracking-widest placeholder:text-[#454F5B] placeholder:tracking-normal"
+          />
+          {errors.otp && (
+            <p className="text-red-500 text-xs mt-1">{errors.otp.message}</p>
+          )}
+        </div>
+
+        {/* New Password */}
         <div>
           <label className="block text-base font-normal text-color-jet-black mb-1">
             New Password
           </label>
           <div className="relative">
-            <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-[#667085]">
-              <UserCircle size={20} />
-            </div>
             <input
               type={showPassword ? "text" : "password"}
-              placeholder="admin123"
+              placeholder="••••••••"
               {...register("password")}
-              className="w-full pl-10 pr-10 py-3 bg-[#F3F3F5] border border-[#00000000] rounded-lg focus:outline-none focus:ring-2 focus:ring-color-main text-sm placeholder:text-[#454F5B]"
+              className="w-full pr-10 p-3 bg-[#F3F3F5] border border-[#00000000] rounded-lg focus:outline-none focus:ring-2 focus:ring-color-main text-sm placeholder:text-[#454F5B]"
             />
             <button
               type="button"
@@ -72,19 +109,17 @@ const ResetPassword: React.FC = () => {
           )}
         </div>
 
+        {/* Confirm Password */}
         <div>
           <label className="block text-base font-normal text-color-jet-black mb-1">
             Confirm Password
           </label>
           <div className="relative">
-            <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-[#667085]">
-              <UserCircle size={20} />
-            </div>
             <input
               type={showConfirmPassword ? "text" : "password"}
-              placeholder="admin123"
+              placeholder="••••••••"
               {...register("confirmPassword")}
-              className="w-full pl-10 pr-10 py-3 bg-[#F3F3F5] border border-[#00000000] rounded-lg focus:outline-none focus:ring-2 focus:ring-color-main text-sm placeholder:text-[#454F5B]"
+              className="w-full pr-10 p-3 bg-[#F3F3F5] border border-[#00000000] rounded-lg focus:outline-none focus:ring-2 focus:ring-color-main text-sm placeholder:text-[#454F5B]"
             />
             <button
               type="button"
@@ -99,11 +134,16 @@ const ResetPassword: React.FC = () => {
           )}
         </div>
 
+        {serverError && (
+          <p className="text-red-500 text-sm text-center">{serverError}</p>
+        )}
+
         <button
           type="submit"
-          className="w-full bg-color-main text-white py-3 rounded-xl font-semibold hover:bg-color-main/90 transition-colors shadow-lg shadow-color-main/20 cursor-pointer"
+          disabled={isLoading}
+          className="w-full bg-color-main text-white py-3 rounded-xl font-semibold hover:bg-color-main/90 transition-colors shadow-lg shadow-color-main/20 cursor-pointer disabled:opacity-60 disabled:cursor-not-allowed"
         >
-          Reset
+          {isLoading ? "Resetting..." : "Reset Password"}
         </button>
       </form>
     </div>
