@@ -14,7 +14,15 @@ createRoot(document.getElementById("root")!).render(
     <Provider store={store}>
       <PersistGate loading={null} persistor={persistor}>
         <RouterProvider router={routes} />
-        <ToastContainer />
+        <ToastContainer
+          position="top-center"
+          autoClose={5000}
+          closeOnClick
+          pauseOnFocusLoss
+          draggable
+          pauseOnHover
+          theme="light"
+        />
       </PersistGate>
     </Provider>
   </StrictMode>

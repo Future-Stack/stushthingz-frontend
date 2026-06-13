@@ -33,6 +33,11 @@ export type TVerifyForgotPasswordOtpRequest = {
   newPassword: string;
 };
 
+export type TChangePasswordRequest = {
+  oldPassword: string;
+  newPassword: string;
+}
+
 // ─── Response Types ──────────────────────────────────────────────────────────
 
 export type TLoginResponse = {
@@ -139,6 +144,18 @@ export const authAPI = baseAPI.injectEndpoints({
         body: data,
       }),
     }),
+
+    // POST /auth/change-password
+    changePassword: build.mutation<{ success: boolean; message: string }, TChangePasswordRequest>({
+      query: (data) => ({
+        url: "/auth/change-password",
+        method: "POST",
+        body: data,
+      }),
+    }),
+
+
+    // ──────────────────────────────Ends──────────────────────────────
   }),
 });
 
@@ -151,4 +168,5 @@ export const {
   useResendRegisterOtpMutation,
   useForgotPasswordMutation,
   useVerifyForgotPasswordOtpMutation,
+  useChangePasswordMutation,
 } = authAPI;
