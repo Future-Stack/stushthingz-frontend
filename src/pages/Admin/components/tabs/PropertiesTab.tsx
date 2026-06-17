@@ -2,11 +2,17 @@ import React, { useState } from "react";
 import { Plus, Trash2, ChevronLeft, ChevronRight, SquarePen } from "lucide-react";
 import AddPropertyModal from "../modals/AddPropertyModal";
 import WarningModal from "../modals/WarningModal";
-import { MOCK_PROPERTIES } from "../../../../data/mockProperties";
 import { Property } from "../../../../types/property";
+import { useGetPropertiesQuery, useDeletePropertyMutation } from "../../../../store/api/propertyApi";
 
 const PropertiesTab: React.FC = () => {
-  const [properties, setProperties] = useState<Property[]>(MOCK_PROPERTIES);
+  const [currentPage, setCurrentPage] = useState(1);
+  const { data, isLoading } = useGetPropertiesQuery({ page: currentPage, limit: 10 });
+  const [deleteProperty] = useDeletePropertyMutation();
+
+  const properties = data?.data || [];
+  const totalPages = data?.meta?.totalPage || 1;
+
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   const [selectedProperty, setSelectedProperty] = useState<Property | null>(null);
@@ -26,80 +32,78 @@ const PropertiesTab: React.FC = () => {
     setIsDeleteModalOpen(true);
   };
 
-  const confirmDelete = () => {
+  const confirmDelete = async () => {
     if (selectedProperty) {
-      setProperties(prev => prev.filter(p => p.id !== selectedProperty.id));
-      setIsDeleteModalOpen(false);
-      setSelectedProperty(null);
+      try {
+        await deleteProperty(selectedProperty.id).unwrap();
+        setIsDeleteModalOpen(false);
+        setSelectedProperty(null);
+      } catch (err) {
+        console.error("Failed to delete property", err);
+      }
     }
-  };
-
-  const handleSaveProperty = (data: any) => {
-    if (selectedProperty) {
-      // Edit mode
-      setProperties(prev => prev.map(p => p.id === selectedProperty.id ? { ...p, ...data } : p));
-    } else {
-      // Add mode
-      const newProperty: Property = {
-        id: String(Date.now()),
-        ...data,
-        statusTag: "Available",
-      };
-      setProperties(prev => [newProperty, ...prev]);
-    }
-    setIsModalOpen(false);
   };
 
   return (
-    <div className="bg-white border border-gray-200 rounded-[14px] p-7">
-      <div className="flex items-center justify-between mb-12">
-        <h2 className="text-xl font-bold text-color-jet-black">Property Management</h2>
+    <div className="bg-white p-7 border border-gray-200 rounded-[14px]">
+      <div className="flex justify-between items-center mb-12">
+        <h2 className="font-bold text-color-jet-black text-xl">Property Management</h2>
         <button
           onClick={handleOpenAddModal}
-          className="bg-color-main hover:bg-[#b5156a] text-white px-3 py-2 rounded-lg font-bold flex items-center gap-2 transition-all cursor-pointer"
+          className="flex items-center gap-2 bg-color-main hover:bg-[#b5156a] px-3 py-2 rounded-lg font-bold text-white transition-all cursor-pointer"
         >
           <Plus size={20} />
-          <span className="text-sm font-medium">Add Property</span>
+          <span className="font-medium text-sm">Add Property</span>
         </button>
       </div>
 
-      <div className="overflow-x-auto scrollbar-thin pb-4">
+      <div className="pb-4 overflow-x-auto scrollbar-thin">
         <table className="w-full text-left border-collapse">
           <thead>
-            <tr className="border-b border-[#0000001A]">
+            <tr className="border-[#0000001A] border-b">
               <th className="pb-5 font-semibold text-gray-800 text-sm whitespace-nowrap">Title</th>
               <th className="pb-5 font-semibold text-gray-800 text-sm whitespace-nowrap">Location</th>
               <th className="pb-5 font-semibold text-gray-800 text-sm whitespace-nowrap">Type</th>
               <th className="pb-5 font-semibold text-gray-800 text-sm whitespace-nowrap">Price Range</th>
-              <th className="pb-5 font-semibold text-gray-800 text-sm whitespace-nowrap">Status</th>
+              {/* <th className="pb-5 font-semibold text-gray-800 text-sm whitespace-nowrap">Status</th> */}
               <th className="pb-5 font-semibold text-gray-800 text-sm text-center whitespace-nowrap">Actions</th>
             </tr>
           </thead>
           <tbody>
-            {properties.map((property) => (
-              <tr key={property.id} className="hover:bg-gray-50/40 transition-colors border-b border-b-[#0000001A]">
+            {isLoading ? (
+              <tr>
+                <td colSpan={6} className="py-6 text-gray-500 text-center">Loading properties...</td>
+              </tr>
+            ) : properties.length === 0 ? (
+              <tr>
+                <td colSpan={6} className="py-6 text-gray-500 text-center">No properties found.</td>
+              </tr>
+            ) : properties.map((property: Property) => (
+              <tr key={property.id} className="hover:bg-gray-50/40 border-b border-b-[#0000001A] transition-colors">
                 <td className="py-6 font-semibold text-color-jet-black text-sm whitespace-nowrap">{property.title}</td>
                 <td className="py-6 font-normal text-color-jet-black text-sm whitespace-nowrap">{property.location}</td>
                 <td className="py-6 font-normal text-color-jet-black text-sm whitespace-nowrap">{property.type}</td>
-                <td className="py-6 font-normal text-color-jet-black text-sm whitespace-nowrap">{property.listedPrice}</td>
-                <td className="py-6 whitespace-nowrap">
-                  <span className={`text-white text-[11px] font-bold px-3 py-1 rounded-lg uppercase tracking-wider ${
-                    property.statusTag === "Funded" ? "bg-blue-500" : "bg-[#22C55E]"
-                  }`}>
-                    {property.statusTag}
-                  </span>
+                <td className="py-6 font-normal text-color-jet-black text-sm whitespace-nowrap">
+                  {property.priceRangeLower} - {property.priceRangeUpper}
                 </td>
+                {/* <td className="py-6 whitespace-nowrap">
+                  <span className={`text-white text-[11px] font-bold px-3 py-1 rounded-lg uppercase tracking-wider ${
+                    (property.developmentStatus || property.statusTag) === "Funded" ? "bg-blue-500" : "bg-[#22C55E]"
+                  }`}>
+                    {property.developmentStatus || property.statusTag}
+                  </span>
+                </td> */}
                 <td className="py-6 whitespace-nowrap">
-                  <div className="flex items-center justify-center gap-3">
+                  <div className="flex justify-center items-center gap-3">
                     <button 
                       onClick={() => handleOpenEditModal(property)}
-                      className="p-2 text-color-jet-black hover:text-gray-900 hover:bg-gray-100 rounded-lg transition-all cursor-pointer border border-gray-100"
+                      className="hover:bg-gray-100 p-2 border border-gray-100 rounded-lg text-color-jet-black hover:text-gray-900 transition-all cursor-pointer"
                     >
                       <SquarePen size={16} />
                     </button>
                     <button 
                       onClick={() => handleDeleteRequest(property)}
-                      className="p-2 text-[#E7000B] hover:bg-red-50 rounded-lg transition-all cursor-pointer border border-[#EF4444]/10"
+                      className="hover:bg-red-50 p-2 border border-[#EF4444]/10 rounded-lg text-[#E7000B] transition-all cursor-pointer"
                     >
                       <Trash2 size={16} />
                     </button>
@@ -112,36 +116,51 @@ const PropertiesTab: React.FC = () => {
       </div>
 
       {/* Pagination */}
-      <div className="flex items-center justify-center mt-12 gap-6">
-        <button className="flex items-center gap-1 text-sm font-medium text-gray-500 hover:text-gray-900 transition-colors cursor-pointer group">
-          <ChevronLeft size={18} className="group-hover:-translate-x-0.5 transition-transform" />
-          <span>Previous</span>
-        </button>
+      {totalPages > 1 && (
+        <div className="flex justify-center items-center gap-6 mt-12">
+          <button 
+            disabled={currentPage === 1}
+            onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
+            className="group flex items-center gap-1 disabled:opacity-50 font-medium text-gray-500 hover:text-gray-900 text-sm transition-colors cursor-pointer disabled:cursor-not-allowed"
+          >
+            <ChevronLeft size={18} className="transition-transform group-hover:-translate-x-0.5" />
+            <span>Previous</span>
+          </button>
 
-        <div className="flex items-center gap-2">
-          <button className="w-9 h-9 flex items-center justify-center text-sm font-medium text-gray-500 hover:bg-gray-50 rounded-xl transition-all cursor-pointer">
-            1
+          <div className="flex items-center gap-2">
+            {Array.from({ length: totalPages }).map((_, idx) => {
+              const page = idx + 1;
+              return (
+                <button 
+                  key={page}
+                  onClick={() => setCurrentPage(page)}
+                  className={`w-9 h-9 flex items-center justify-center text-sm rounded-xl transition-all cursor-pointer ${
+                    currentPage === page 
+                      ? "font-bold bg-[#E6F0FF] text-[#0066FF]" 
+                      : "font-medium text-gray-500 hover:bg-gray-50"
+                  }`}
+                >
+                  {page}
+                </button>
+              );
+            })}
+          </div>
+
+          <button 
+            disabled={currentPage === totalPages}
+            onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
+            className="group flex items-center gap-1 disabled:opacity-50 font-medium text-gray-500 hover:text-gray-900 text-sm transition-colors cursor-pointer disabled:cursor-not-allowed"
+          >
+            <span>Next</span>
+            <ChevronRight size={18} className="transition-transform group-hover:translate-x-0.5" />
           </button>
-          <button className="w-9 h-9 flex items-center justify-center text-sm font-bold bg-[#E6F0FF] text-[#0066FF] rounded-xl cursor-pointer">
-            2
-          </button>
-          <button className="w-9 h-9 flex items-center justify-center text-sm font-medium text-gray-500 hover:bg-gray-50 rounded-xl transition-all cursor-pointer">
-            3
-          </button>
-          <span className="text-gray-300 px-1 font-medium">...</span>
         </div>
-
-        <button className="flex items-center gap-1 text-sm font-medium text-gray-500 hover:text-gray-900 transition-colors cursor-pointer group">
-          <span>Next</span>
-          <ChevronRight size={18} className="group-hover:translate-x-0.5 transition-transform" />
-        </button>
-      </div>
+      )}
 
       <AddPropertyModal 
         isOpen={isModalOpen} 
         onClose={() => setIsModalOpen(false)} 
         initialData={selectedProperty}
-        onSubmit={handleSaveProperty}
       />
 
       <WarningModal

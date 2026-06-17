@@ -2,15 +2,16 @@ import React from "react";
 import { Link } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import { Home, Sparkles } from "lucide-react";
-import { MOCK_PROPERTIES } from "../../data/mockProperties";
-import { useInterest } from "../../hooks/useInterest";
+import { useGetWishlistPropertiesQuery } from "../../store/api/propertyApi";
 import PropertyCard from "./components/PropertyCard";
 
 const ExpressInterest: React.FC = () => {
-  const { interestedIds } = useInterest();
+  const { data, isLoading } = useGetWishlistPropertiesQuery();
   
-  // Filter MOCK_PROPERTIES to get only those that are in interestedIds
-  const interestedProperties = MOCK_PROPERTIES.filter(prop => interestedIds.includes(prop.id));
+  const interestedProperties = data?.data?.map((item: any) => ({
+    ...item.property,
+    isFavourite: true, // It's in the wishlist
+  })) || [];
 
   const containerVariants = {
     hidden: { opacity: 0 },
@@ -52,7 +53,11 @@ const ExpressInterest: React.FC = () => {
       {/* Properties List */}
       <motion.div variants={itemVariants} className="space-y-8">
         <AnimatePresence mode="popLayout">
-          {interestedProperties.length > 0 ? (
+          {isLoading ? (
+            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="text-center py-12 bg-white border border-gray-200 rounded-2xl">
+              <h3 className="text-lg font-medium text-gray-900">Loading wishlist...</h3>
+            </motion.div>
+          ) : interestedProperties.length > 0 ? (
             interestedProperties.map((prop) => (
               <motion.div 
                 key={prop.id} 
@@ -91,3 +96,4 @@ const ExpressInterest: React.FC = () => {
 };
 
 export default ExpressInterest;
+

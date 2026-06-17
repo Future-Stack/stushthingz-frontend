@@ -2,41 +2,45 @@ export interface Property {
   id: string;
   title: string;
   location: string;
-  statusTag: string;
-  categoryTag: string;
-  image: string;
-  gallery?: string[];
-  description: string;
-  fullDescription?: string;
-  listedPrice: string;
-  area: string;
   type: string;
-  mutualSource: {
+  sizeArea: number;
+  description: string;
+  priceRangeUpper: string;
+  priceRangeLower: string;
+  estimatedClosingCost: string;
+  priceDetails: string;
+  closingCostBreakdown: string;
+  investmentStructure: string;
+  projectedReturns: string;
+  taxIncentives: string;
+  currenyAvailability: string;
+  typicalClosingPeriod: string;
+  developmentStatus: string;
+  keyHighlights: { id?: string; propertyId?: string; content: string }[];
+  diasporaInvestorConsiderations: { id?: string; propertyId?: string; content: string }[];
+  propertyFeatures: { id?: string; propertyId?: string; content: string }[];
+  ongoingCost: { id?: string; propertyId?: string; content: string }[];
+  legalConsiderations: { id?: string; propertyId?: string; content: string }[];
+  localContext: { id?: string; propertyId?: string; title: string; description: string }[];
+  propertyImages: { id?: string; propertyId?: string; url: string }[];
+  isFavourite?: boolean;
+  
+  // UI-specific optional fields (might not be from backend yet)
+  statusTag?: string;
+  categoryTag?: string;
+  mutualSource?: {
     name: string;
     description: string;
     role?: string;
   };
-  keyDetails?: { label: string; value: string }[];
-  highlights: string[];
-  considerations: string[];
-  features?: string[];
-  financials?: {
-    investmentBreakdown: { label: string; value: string; details?: string }[];
-    ongoingCosts: { label: string; value: string; details?: string }[];
-    investmentStructure: string;
-    projectedReturns: string;
-    taxIncentives: string;
-  };
-  timeline?: { label: string; value: string; details?: string }[];
-  legalConsiderations?: string[];
-  localContext?: {
-    marketTrends: string;
-    communityInfo: string;
-    infrastructure: string;
-  };
-  investmentRange?: {
-    min: string;
-    max: string;
-  };
   vettedBy?: string;
+}
+
+export interface WishlistProperty {
+  id: string;
+  userId: string;
+  propertyId: string;
+  createdAt: string;
+  updatedAt: string;
+  property: Property;
 }

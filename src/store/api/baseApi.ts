@@ -42,6 +42,6 @@ const baseQueryWithToast: BaseQueryFn<string | FetchArgs, unknown, FetchBaseQuer
 export const baseAPI = createApi({
   reducerPath: "baseAPI",
   baseQuery: baseQueryWithToast,
-  tagTypes: ["Auth", "Overview", "userProfile"],
+  tagTypes: ["Auth", "Overview", "userProfile", "Property", "Wishlist"],
   endpoints: () => ({}),
 });

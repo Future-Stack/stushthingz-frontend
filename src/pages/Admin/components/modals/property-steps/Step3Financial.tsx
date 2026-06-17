@@ -23,18 +23,29 @@ const Step3Financial: React.FC<Step3Props> = ({
       <div>
         <h3 className="text-lg font-bold text-color-main mb-8">Financial Details</h3>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
-          <div>
+          <div className="md:col-span-2">
             <label className="block text-[13px] font-bold text-gray-700 mb-2 uppercase tracking-wide">Price Range</label>
-            <input
-              type="text"
-              name="priceRange"
-              value={formData.priceRange}
-              onChange={handleChange}
-              placeholder="e.g., $180,000 - $250,000 USD"
-              className="w-full px-4 py-3.5 rounded-xl border border-gray-200 bg-gray-50/30 focus:outline-none focus:ring-2 focus:ring-color-main/20 focus:border-color-main transition-all"
-            />
+            <div className="flex gap-4">
+              <input
+                type="text"
+                name="priceRangeLower"
+                value={formData.priceRangeLower}
+                onChange={handleChange}
+                placeholder="Lower limit (e.g., $180,000)"
+                className="w-full px-4 py-3.5 rounded-xl border border-gray-200 bg-gray-50/30 focus:outline-none focus:ring-2 focus:ring-color-main/20 focus:border-color-main transition-all"
+              />
+              <span className="flex items-center text-gray-400 font-bold">-</span>
+              <input
+                type="text"
+                name="priceRangeUpper"
+                value={formData.priceRangeUpper}
+                onChange={handleChange}
+                placeholder="Upper limit (e.g., $250,000 USD)"
+                className="w-full px-4 py-3.5 rounded-xl border border-gray-200 bg-gray-50/30 focus:outline-none focus:ring-2 focus:ring-color-main/20 focus:border-color-main transition-all"
+              />
+            </div>
           </div>
-          <div>
+          <div className="md:col-span-2">
             <label className="block text-[13px] font-bold text-gray-700 mb-2 uppercase tracking-wide">Estimated Closing Costs</label>
             <input
               type="text"

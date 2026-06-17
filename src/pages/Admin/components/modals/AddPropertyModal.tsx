@@ -5,12 +5,12 @@ import Step2Features from "./property-steps/Step2Features";
 import Step3Financial from "./property-steps/Step3Financial";
 import Step4LegalContext from "./property-steps/Step4LegalContext";
 import { Property } from "../../../../types/property";
+import { useCreatePropertyMutation, useUpdatePropertyMutation } from "../../../../store/api/propertyApi";
 
 interface AddPropertyModalProps {
   isOpen: boolean;
   onClose: () => void;
   initialData?: Property | null;
-  onSubmit: (data: any) => void;
 }
 
 const STEPS = [
@@ -29,7 +29,8 @@ const INITIAL_FORM_STATE = {
   highlights: [""],
   considerations: [""],
   features: [""],
-  priceRange: "",
+  priceRangeUpper: "",
+  priceRangeLower: "",
   closingCosts: "",
   priceDetails: "",
   closingCostsBreakdown: "",
@@ -49,42 +50,41 @@ const INITIAL_FORM_STATE = {
   images: [] as File[],
 };
 
-const AddPropertyModal: React.FC<AddPropertyModalProps> = ({ isOpen, onClose, initialData, onSubmit }) => {
+const AddPropertyModal: React.FC<AddPropertyModalProps> = ({ isOpen, onClose, initialData }) => {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [currentStep, setCurrentStep] = useState(1);
   const [formData, setFormData] = useState(INITIAL_FORM_STATE);
 
+  const [createProperty] = useCreatePropertyMutation();
+  const [updateProperty] = useUpdatePropertyMutation();
+
   useEffect(() => {
     if (isOpen) {
       if (initialData) {
-        // Map Property object to Form structure
         setFormData({
           title: initialData.title || "",
           location: initialData.location || "",
           type: initialData.type || "",
-          size: initialData.area || "",
-          description: initialData.fullDescription || initialData.description || "",
-          highlights: initialData.highlights && initialData.highlights.length > 0 ? initialData.highlights : [""],
-          considerations: initialData.considerations && initialData.considerations.length > 0 ? initialData.considerations : [""],
-          features: initialData.features && initialData.features.length > 0 ? initialData.features : [""],
-          priceRange: initialData.listedPrice || "",
-          closingCosts: initialData.financials?.investmentBreakdown.find(b => b.label.includes("Closing"))?.value || "",
-          priceDetails: initialData.financials?.investmentBreakdown.find(b => b.label.includes("Price"))?.details || "",
-          closingCostsBreakdown: initialData.financials?.investmentBreakdown.find(b => b.label.includes("Closing"))?.details || "",
-          ongoingCosts: initialData.financials?.ongoingCosts.map(c => `${c.label}: ${c.value}`) || [""],
-          investmentStructure: initialData.financials?.investmentStructure || "",
-          projectedReturns: initialData.financials?.projectedReturns || "",
-          taxIncentives: initialData.financials?.taxIncentives || "",
-          currentAvailability: initialData.timeline?.find(t => t.label.includes("Availability"))?.value || "",
-          closingPeriod: initialData.timeline?.find(t => t.label.includes("Closing"))?.value || "",
-          developmentStatus: initialData.timeline?.find(t => t.label.includes("Status"))?.value || "",
-          legalConsiderations: initialData.legalConsiderations && initialData.legalConsiderations.length > 0 ? initialData.legalConsiderations : [""],
-          localContexts: initialData.localContext ? [
-            { title: "Market Trends", description: initialData.localContext.marketTrends || "" },
-            { title: "Community Info", description: initialData.localContext.communityInfo || "" },
-            { title: "Infrastructure", description: initialData.localContext.infrastructure || "" },
-          ] : INITIAL_FORM_STATE.localContexts,
-          images: [], // Images are usually handled separately, keeping empty for now
+          size: initialData.sizeArea?.toString() || "",
+          description: initialData.description || "",
+          highlights: initialData.keyHighlights?.map(h => h.content) || [""],
+          considerations: initialData.diasporaInvestorConsiderations?.map(c => c.content) || [""],
+          features: initialData.propertyFeatures?.map(f => f.content) || [""],
+          priceRangeUpper: initialData.priceRangeUpper || "",
+          priceRangeLower: initialData.priceRangeLower || "",
+          closingCosts: initialData.estimatedClosingCost || "",
+          priceDetails: initialData.priceDetails || "",
+          closingCostsBreakdown: initialData.closingCostBreakdown || "",
+          ongoingCosts: initialData.ongoingCost?.map(c => c.content) || [""],
+          investmentStructure: initialData.investmentStructure || "",
+          projectedReturns: initialData.projectedReturns || "",
+          taxIncentives: initialData.taxIncentives || "",
+          currentAvailability: initialData.currenyAvailability || "",
+          closingPeriod: initialData.typicalClosingPeriod || "",
+          developmentStatus: initialData.developmentStatus || "",
+          legalConsiderations: initialData.legalConsiderations?.map(l => l.content) || [""],
+          localContexts: initialData.localContext?.length ? initialData.localContext.map(lc => ({ title: lc.title, description: lc.description })) : INITIAL_FORM_STATE.localContexts,
+          images: [],
         });
       } else {
         setFormData(INITIAL_FORM_STATE);
@@ -98,9 +98,8 @@ const AddPropertyModal: React.FC<AddPropertyModalProps> = ({ isOpen, onClose, in
   const nextStep = () => setCurrentStep((prev) => Math.min(prev + 1, 4));
   const prevStep = () => setCurrentStep((prev) => Math.max(prev - 1, 1));
 
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
-    const { name, value } = e.target;
-    setFormData((prev) => ({ ...prev, [name]: value }));
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
+    setFormData((prev) => ({ ...prev, [e.target.name]: e.target.value }));
   };
 
   const handleDynamicChange = (field: string, index: number, value: string) => {
@@ -169,19 +168,53 @@ const AddPropertyModal: React.FC<AddPropertyModalProps> = ({ isOpen, onClose, in
     }));
   };
 
-  const handleSubmit = () => {
-    onSubmit(formData);
-    onClose();
+  const handleSubmit = async () => {
+    const data = new FormData();
+    data.append("title", formData.title);
+    data.append("location", formData.location);
+    data.append("type", formData.type);
+    data.append("sizeArea", formData.size);
+    data.append("description", formData.description);
+    data.append("priceRangeUpper", formData.priceRangeUpper);
+    data.append("priceRangeLower", formData.priceRangeLower);
+    data.append("estimatedClosingCost", formData.closingCosts);
+    data.append("priceDetails", formData.priceDetails);
+    data.append("closingCostBreakdown", formData.closingCostsBreakdown);
+    data.append("investmentStructure", formData.investmentStructure);
+    data.append("projectedReturns", formData.projectedReturns);
+    data.append("taxIncentives", formData.taxIncentives);
+    data.append("currenyAvailability", formData.currentAvailability);
+    data.append("typicalClosingPeriod", formData.closingPeriod);
+    data.append("developmentStatus", formData.developmentStatus);
+
+    data.append("keyHighlights", JSON.stringify(formData.highlights.filter(h => h).map(h => ({ content: h }))));
+    data.append("diasporaInvestorConsiderations", JSON.stringify(formData.considerations.filter(c => c).map(c => ({ content: c }))));
+    data.append("propertyFeatures", JSON.stringify(formData.features.filter(f => f).map(f => ({ content: f }))));
+    data.append("ongoingCost", JSON.stringify(formData.ongoingCosts.filter(o => o).map(o => ({ content: o }))));
+    data.append("legalConsiderations", JSON.stringify(formData.legalConsiderations.filter(l => l).map(l => ({ content: l }))));
+    data.append("localContext", JSON.stringify(formData.localContexts.filter(lc => lc.title || lc.description)));
+
+    formData.images.forEach((file) => {
+      data.append("images", file);
+    });
+
+    try {
+      if (initialData) {
+        await updateProperty({ id: initialData.id, data }).unwrap();
+      } else {
+        await createProperty(data).unwrap();
+      }
+      onClose();
+    } catch (err) {
+      console.error("Failed to submit property", err);
+    }
   };
 
   return (
     <div className="fixed inset-0 z-60 flex items-center justify-center p-4">
-      {/* Backdrop */}
       <div className="absolute inset-0 bg-black/60 backdrop-blur-md animate-in fade-in duration-300" onClick={onClose} />
 
-      {/* Modal Container */}
       <div className="relative bg-white rounded-4xl shadow-2xl w-full max-w-2xl max-h-[92vh] overflow-y-auto flex flex-col animate-in fade-in zoom-in-95 duration-300">
-        {/* Header Section */}
         <div className="p-8 pb-4 bg-white sticky top-0 z-10">
           <div className="flex items-start justify-between mb-2">
             <div>
@@ -202,7 +235,6 @@ const AddPropertyModal: React.FC<AddPropertyModalProps> = ({ isOpen, onClose, in
             </button>
           </div>
 
-          {/* Progress Stepper */}
           <div className="flex items-center justify-between mt-10 px-4 relative">
             <div className="absolute top-1/2 left-10 right-10 h-0.75 bg-gray-100 -translate-y-1/2 z-0" />
             <div
@@ -234,7 +266,6 @@ const AddPropertyModal: React.FC<AddPropertyModalProps> = ({ isOpen, onClose, in
           </div>
         </div>
 
-        {/* Content Scrollable Section */}
         <div className="flex-1 overflow-y-auto px-8 py-6 custom-scrollbar">
           {currentStep === 1 && (
             <Step1BasicInfo
@@ -285,7 +316,6 @@ const AddPropertyModal: React.FC<AddPropertyModalProps> = ({ isOpen, onClose, in
           )}
         </div>
 
-        {/* Footer Navigation Section */}
         <div className="px-6 py-4 bg-gray-50/50 border-t border-gray-100 flex items-center gap-4 sticky bottom-0 z-10">
           {currentStep > 1 && (
             <button

@@ -4,8 +4,8 @@ import { motion, AnimatePresence } from "framer-motion";
 
 import PropertyCard from "./components/PropertyCard";
 import icon from "@/assets/home/watermark.png"
-import { MOCK_PROPERTIES } from "../../data/mockProperties";
 import { FaAngleDown } from "react-icons/fa";
+import { useGetPropertiesQuery } from "../../store/api/propertyApi";
 
 const PropertyListing: React.FC = () => {
   const [currentPage, setCurrentPage] = useState(1);
@@ -14,21 +14,19 @@ const PropertyListing: React.FC = () => {
   const [selectedCategory, setSelectedCategory] = useState("All Categories");
   const ITEMS_PER_PAGE = 3;
 
-  const typeOptions = ["All Types", "Land", "Development Land", "Residential", "Mixed-Use", "Agricultural"];
+  const typeOptions = ["All Types", "land", "developmentLand", "residencial", "mixedUse", "agriculture"];
   const categoryOptions = ["All Categories", "Heritage Property", "Commercial Investment", "Rental Investment", "Agricultural Investment"];
 
-  const filteredProperties = MOCK_PROPERTIES.filter(prop => {
-    const matchesSearch = prop.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      prop.location.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      prop.description.toLowerCase().includes(searchTerm.toLowerCase());
-    const matchesType = selectedType === "All Types" || prop.type === selectedType;
-    const matchesCategory = selectedCategory === "All Categories" || prop.categoryTag === selectedCategory;
-    return matchesSearch && matchesType && matchesCategory;
+  const { data, isLoading } = useGetPropertiesQuery({
+    page: currentPage,
+    limit: ITEMS_PER_PAGE,
+    searchTerm: searchTerm || undefined,
+    type: selectedType !== "All Types" ? selectedType : undefined
   });
 
-  const totalPages = Math.ceil(filteredProperties.length / ITEMS_PER_PAGE);
-  const startIndex = (currentPage - 1) * ITEMS_PER_PAGE;
-  const paginatedProperties = filteredProperties.slice(startIndex, startIndex + ITEMS_PER_PAGE);
+  const paginatedProperties = data?.data || [];
+  const totalPages = data?.meta?.totalPage || 1;
+  const totalProperties = data?.meta?.total || 0;
 
   const containerVariants = {
     hidden: { opacity: 0 },
@@ -132,13 +130,17 @@ const PropertyListing: React.FC = () => {
 
       <div className="flex items-center gap-2">
         <Sparkles className="text-color-main mt-0.5" size={18} />
-        <span className="text-[#4A5565]">6 curated opportunities available</span>
+        <span className="text-[#4A5565]">{totalProperties} curated opportunities available</span>
       </div>
 
       {/* Properties List */}
       <motion.div variants={itemVariants} className="space-y-8">
         <AnimatePresence mode="wait">
-          {paginatedProperties.length > 0 ? (
+          {isLoading ? (
+            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="text-center py-12 bg-white border border-gray-200 rounded-2xl">
+              <h3 className="text-lg font-medium text-gray-900">Loading properties...</h3>
+            </motion.div>
+          ) : paginatedProperties.length > 0 ? (
             paginatedProperties.map((prop) => (
               <motion.div key={prop.id} layout initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
                 <PropertyCard property={prop} />
