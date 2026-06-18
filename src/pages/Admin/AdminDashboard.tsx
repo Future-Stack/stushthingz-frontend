@@ -52,24 +52,25 @@ const AdminDashboard: React.FC = () => {
   const [activeTab, setActiveTab] = useState("users");
   const [addUserOpen, setAddUserOpen] = useState(false);
 
-  const handleGlobalAddUser = (_data: AddUserFormData) => {
-    // TODO: wire to API — POST /api/admin/users
-    setAddUserOpen(false);
-  };
+  // const handleGlobalAddUser = (data: AddUserFormData) => {
+  //   // TODO: wire to API — POST /api/admin/users
+
+  //   console.log("banker added", data);
+  // };
 
   return (
     <div className="space-y-6">
       {/* ── Page Header ──────────────────────────────────────────────────── */}
-      <div className="flex items-start justify-between flex-wrap gap-4">
+      <div className="flex flex-wrap justify-between items-start gap-4">
         <div>
-          <h1 className="text-3xl font-bold text-color-jet-black">Admin Dashboard</h1>
-          <p className="text-base font-normal text-[#4A5565] mt-1">
+          <h1 className="font-bold text-color-jet-black text-3xl">Admin Dashboard</h1>
+          <p className="mt-1 font-normal text-[#4A5565] text-base">
             Manage users, content, and system configuration
           </p>
         </div>
         <button
           onClick={() => setAddUserOpen(true)}
-          className="flex items-center gap-2 bg-color-main hover:bg-[#b5156a] text-white px-5 py-2.5 rounded-lg text-sm font-semibold transition-all cursor-pointer shadow-sm active:scale-95"
+          className="flex items-center gap-2 bg-color-main hover:bg-[#b5156a] shadow-sm px-5 py-2.5 rounded-lg font-semibold text-white text-sm active:scale-95 transition-all cursor-pointer"
         >
           <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
             <path d="M7 1V13M1 7H13" stroke="white" strokeWidth="2" strokeLinecap="round" />
@@ -79,14 +80,14 @@ const AdminDashboard: React.FC = () => {
       </div>
 
       {/* ── Stat Cards ───────────────────────────────────────────────────── */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-5">
+      <div className="gap-5 grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4">
         {STATS.map(({ label, value, icon: Icon, iconBg, valueColor }) => (
           <div
             key={label}
-            className="bg-white border border-gray-200 rounded-[14px] p-5 flex items-center justify-between hover:shadow-md transition-shadow"
+            className="flex justify-between items-center bg-white hover:shadow-md p-5 border border-gray-200 rounded-[14px] transition-shadow"
           >
             <div className="space-y-2">
-              <p className="text-base text-[#4A5565] font-medium">{label}</p>
+              <p className="font-medium text-[#4A5565] text-base">{label}</p>
               <p className={`text-3xl font-bold ${valueColor}`}>{value}</p>
             </div>
             <div className={`w-12 h-12 rounded-xl ${iconBg} flex items-center justify-center shrink-0`}>
@@ -99,7 +100,7 @@ const AdminDashboard: React.FC = () => {
       {/* ── Tabs — pill style matching PropertyTabs ───────────────────────── */}
       <div>
         {/* Tab Bar */}
-        <div className="bg-[#ECECF0] p-1 rounded-full flex max-w-full overflow-x-auto scrollbar-thin scroll-smooth">
+        <div className="flex bg-[#ECECF0] p-1 rounded-full max-w-full overflow-x-auto scroll-smooth scrollbar-thin">
           {TABS.map((tab) => (
             <button
               key={tab.id}
@@ -111,12 +112,12 @@ const AdminDashboard: React.FC = () => {
               {activeTab === tab.id && (
                 <motion.div
                   layoutId="adminActiveTab"
-                  className="absolute inset-0 bg-white rounded-full shadow-sm"
+                  className="absolute inset-0 bg-white shadow-sm rounded-full"
                   transition={{ type: "spring", duration: 0.45 }}
                 />
               )}
               {/* Icon + label */}
-              <span className="relative z-10 flex items-center gap-1.5">
+              <span className="z-10 relative flex items-center gap-1.5">
                 {tab.icon}
                 {tab.label}
               </span>
@@ -137,7 +138,7 @@ const AdminDashboard: React.FC = () => {
       <AddUserModal
         isOpen={addUserOpen}
         onClose={() => setAddUserOpen(false)}
-        onSubmit={handleGlobalAddUser}
+        // onSubmit={handleGlobalAddUser}
       />
     </div>
   );

@@ -1,5 +1,7 @@
 import React, { useState } from "react";
 import { X } from "lucide-react";
+import { useCreateUserByAdminMutation } from "@/store/features/auth/auth.api";
+import { toast } from "react-toastify";
 
 interface AddUserModalProps {
   isOpen: boolean;
@@ -8,20 +10,21 @@ interface AddUserModalProps {
 }
 
 export interface AddUserFormData {
-  fullName: string;
+  name: string;
   email: string;
   password: string;
   role: string;
   status: string;
 }
 
-const AddUserModal: React.FC<AddUserModalProps> = ({ isOpen, onClose, onSubmit }) => {
+const AddUserModal: React.FC<AddUserModalProps> = ({ isOpen, onClose }) => {
+  const [createUserByAdmin] = useCreateUserByAdminMutation()
   const [form, setForm] = useState<AddUserFormData>({
-    fullName: "",
+    name: "",
     email: "",
     password: "",
-    role: "Investor",
-    status: "Active",
+    role: "bank_operator",
+    status: "active",
   });
   const [loading, setLoading] = useState(false);
 
@@ -35,33 +38,37 @@ const AddUserModal: React.FC<AddUserModalProps> = ({ isOpen, onClose, onSubmit }
     e.preventDefault();
     setLoading(true);
     try {
-      await onSubmit?.(form);
+      await createUserByAdmin(form).unwrap()
+      toast.success("User created successfully")
       onClose();
+    } catch (error: any) {
+      console.log("error", error?.data?.message)
+      // toast.error(error?.data?.message || "Failed to create user")
     } finally {
       setLoading(false);
     }
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center">
+    <div className="z-50 fixed inset-0 flex justify-center items-center">
       {/* Backdrop */}
       <div
         className="absolute inset-0 bg-black/40 backdrop-blur-sm"
         onClick={onClose}
       />
       {/* Modal */}
-      <div className="relative bg-white rounded-2xl shadow-2xl w-full max-w-md mx-4 p-6 animate-in fade-in zoom-in-95 duration-200">
+      <div className="relative bg-white shadow-2xl mx-4 p-6 rounded-2xl w-full max-w-md max-h-[90vh] overflow-y-auto animate-in duration-200 scroll-bar scroll-smooth fade-in zoom-in-95 scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-gray-100">
         {/* Header */}
-        <div className="flex items-start justify-between mb-1">
+        <div className="flex justify-between items-start mb-1">
           <div>
-            <h2 className="text-lg font-bold text-gray-900">Add New User</h2>
-            <p className="text-sm text-gray-500 mt-0.5">
+            <h2 className="font-bold text-gray-900 text-lg">Add New User</h2>
+            <p className="mt-0.5 text-gray-500 text-sm">
               Create a new user account and assign their role in the platform.
             </p>
           </div>
           <button
             onClick={onClose}
-            className="p-1.5 rounded-lg text-gray-400 hover:text-gray-600 hover:bg-gray-100 transition-colors cursor-pointer"
+            className="hover:bg-gray-100 p-1.5 rounded-lg text-gray-400 hover:text-gray-600 transition-colors cursor-pointer"
           >
             <X size={18} />
           </button>
@@ -70,23 +77,23 @@ const AddUserModal: React.FC<AddUserModalProps> = ({ isOpen, onClose, onSubmit }
         <form onSubmit={handleSubmit} className="space-y-4 mt-5">
           {/* Full Name */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1.5">
+            <label className="block mb-1.5 font-medium text-gray-700 text-sm">
               Full Name
             </label>
             <input
               type="text"
-              name="fullName"
-              value={form.fullName}
+              name="name"
+              value={form.name}
               onChange={handleChange}
               placeholder="Enter full name"
               required
-              className="w-full px-3.5 py-2.5 rounded-xl border border-gray-200 text-sm text-gray-800 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-color-main/30 focus:border-color-main transition-all"
+              className="px-3.5 py-2.5 border border-gray-200 focus:border-color-main rounded-xl focus:outline-none focus:ring-2 focus:ring-color-main/30 w-full text-gray-800 text-sm transition-all placeholder-gray-400"
             />
           </div>
 
           {/* Email */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1.5">
+            <label className="block mb-1.5 font-medium text-gray-700 text-sm">
               Email
             </label>
             <input
@@ -96,13 +103,13 @@ const AddUserModal: React.FC<AddUserModalProps> = ({ isOpen, onClose, onSubmit }
               onChange={handleChange}
               placeholder="Enter email address"
               required
-              className="w-full px-3.5 py-2.5 rounded-xl border border-gray-200 text-sm text-gray-800 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-color-main/30 focus:border-color-main transition-all"
+              className="px-3.5 py-2.5 border border-gray-200 focus:border-color-main rounded-xl focus:outline-none focus:ring-2 focus:ring-color-main/30 w-full text-gray-800 text-sm transition-all placeholder-gray-400"
             />
           </div>
 
           {/* Password */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1.5">
+            <label className="block mb-1.5 font-medium text-gray-700 text-sm">
               Password
             </label>
             <input
@@ -112,13 +119,13 @@ const AddUserModal: React.FC<AddUserModalProps> = ({ isOpen, onClose, onSubmit }
               onChange={handleChange}
               placeholder="Enter password"
               required
-              className="w-full px-3.5 py-2.5 rounded-xl border border-gray-200 text-sm text-gray-800 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-color-main/30 focus:border-color-main transition-all"
+              className="px-3.5 py-2.5 border border-gray-200 focus:border-color-main rounded-xl focus:outline-none focus:ring-2 focus:ring-color-main/30 w-full text-gray-800 text-sm transition-all placeholder-gray-400"
             />
           </div>
 
           {/* Role */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1.5">
+            <label className="block mb-1.5 font-medium text-gray-700 text-sm">
               Role
             </label>
             <div className="relative">
@@ -126,13 +133,13 @@ const AddUserModal: React.FC<AddUserModalProps> = ({ isOpen, onClose, onSubmit }
                 name="role"
                 value={form.role}
                 onChange={handleChange}
-                className="w-full px-3.5 py-2.5 rounded-xl border border-gray-200 text-sm text-gray-800 focus:outline-none focus:ring-2 focus:ring-color-main/30 focus:border-color-main transition-all appearance-none bg-white cursor-pointer"
+                className="bg-white px-3.5 py-2.5 border border-gray-200 focus:border-color-main rounded-xl focus:outline-none focus:ring-2 focus:ring-color-main/30 w-full text-gray-800 text-sm transition-all appearance-none cursor-pointer"
               >
-                <option value="Investor">Investor</option>
-                <option value="Bank User">Bank User</option>
-                <option value="Admin">Admin</option>
+                <option value="user">Investor</option>
+                <option value="bank_operator">Bank User</option>
+                {/* <option value="admin">Admin</option> */}
               </select>
-              <div className="absolute right-3.5 top-1/2 -translate-y-1/2 pointer-events-none">
+              <div className="top-1/2 right-3.5 absolute -translate-y-1/2 pointer-events-none">
                 <svg width="12" height="8" viewBox="0 0 12 8" fill="none">
                   <path d="M1 1L6 6L11 1" stroke="#9CA3AF" strokeWidth="1.5" strokeLinecap="round" />
                 </svg>
@@ -142,7 +149,7 @@ const AddUserModal: React.FC<AddUserModalProps> = ({ isOpen, onClose, onSubmit }
 
           {/* Status */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1.5">
+            <label className="block mb-1.5 font-medium text-gray-700 text-sm">
               Status
             </label>
             <div className="relative">
@@ -150,12 +157,12 @@ const AddUserModal: React.FC<AddUserModalProps> = ({ isOpen, onClose, onSubmit }
                 name="status"
                 value={form.status}
                 onChange={handleChange}
-                className="w-full px-3.5 py-2.5 rounded-xl border border-gray-200 text-sm text-gray-800 focus:outline-none focus:ring-2 focus:ring-color-main/30 focus:border-color-main transition-all appearance-none bg-white cursor-pointer"
+                className="bg-white px-3.5 py-2.5 border border-gray-200 focus:border-color-main rounded-xl focus:outline-none focus:ring-2 focus:ring-color-main/30 w-full text-gray-800 text-sm transition-all appearance-none cursor-pointer"
               >
-                <option value="Active">Active</option>
-                <option value="Inactive">Inactive</option>
+                <option value="active">Active</option>
+                <option value="inactive">Inactive</option>
               </select>
-              <div className="absolute right-3.5 top-1/2 -translate-y-1/2 pointer-events-none">
+              <div className="top-1/2 right-3.5 absolute -translate-y-1/2 pointer-events-none">
                 <svg width="12" height="8" viewBox="0 0 12 8" fill="none">
                   <path d="M1 1L6 6L11 1" stroke="#9CA3AF" strokeWidth="1.5" strokeLinecap="round" />
                 </svg>
@@ -168,14 +175,14 @@ const AddUserModal: React.FC<AddUserModalProps> = ({ isOpen, onClose, onSubmit }
             <button
               type="submit"
               disabled={loading}
-              className="flex-1 bg-color-main hover:bg-[#b5156a] text-white py-2.5 rounded-xl text-sm font-semibold transition-all disabled:opacity-60 cursor-pointer"
+              className="flex-1 bg-color-main hover:bg-[#b5156a] disabled:opacity-60 py-2.5 rounded-xl font-semibold text-white text-sm transition-all cursor-pointer"
             >
               {loading ? "Adding..." : "Add User"}
             </button>
             <button
               type="button"
               onClick={onClose}
-              className="flex-1 border border-gray-200 text-gray-600 hover:bg-gray-50 py-2.5 rounded-xl text-sm font-semibold transition-all cursor-pointer"
+              className="flex-1 hover:bg-gray-50 py-2.5 border border-gray-200 rounded-xl font-semibold text-gray-600 text-sm transition-all cursor-pointer"
             >
               Cancel
             </button>

@@ -1,3 +1,4 @@
+import { AddUserFormData } from "@/pages/Admin/components/modals/AddUserModal";
 import { baseAPI } from "@/store/api/baseApi";
 import { TUser } from "@/store/storeTypes/user";
 
@@ -155,6 +156,18 @@ export const authAPI = baseAPI.injectEndpoints({
     }),
 
 
+    // create user by admin
+    createUserByAdmin: build.mutation<{ success: boolean; message: string }, AddUserFormData>({
+      query: (data) => {
+        return {
+          url: "/auth/admin-create-user",
+          method: "POST",
+          body: data,
+        };
+      },
+    }),
+
+
     // ──────────────────────────────Ends──────────────────────────────
   }),
 });
@@ -169,4 +182,5 @@ export const {
   useForgotPasswordMutation,
   useVerifyForgotPasswordOtpMutation,
   useChangePasswordMutation,
+  useCreateUserByAdminMutation,
 } = authAPI;

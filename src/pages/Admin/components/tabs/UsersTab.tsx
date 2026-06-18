@@ -63,19 +63,19 @@ const UsersTab: React.FC = () => {
   };
 
   // ── Handlers ──────────────────────────────────────────────────────────────
-  const handleAddUser = (data: AddUserFormData) => {
-    const newUser: AdminUser = {
-      id: String(Date.now()),
-      name: data.fullName,
-      email: data.email,
-      role: data.role,
-      status: data.status,
-      joined: new Date().toISOString().split("T")[0],
-      lastActive: new Date().toISOString().split("T")[0],
-    };
-    setUsers((prev) => [newUser, ...prev]);
-    setAddModalOpen(false);
-  };
+  // const handleAddUser = (data: AddUserFormData) => {
+  //   const newUser: AdminUser = {
+  //     id: String(Date.now()),
+  //     name: data.fullName,
+  //     email: data.email,
+  //     role: data.role,
+  //     status: data.status,
+  //     joined: new Date().toISOString().split("T")[0],
+  //     lastActive: new Date().toISOString().split("T")[0],
+  //   };
+  //   setUsers((prev) => [newUser, ...prev]);
+  //   setAddModalOpen(false);
+  // };
 
   const handleViewUser = (user: AdminUser) => {
     setSelectedUser(user);
@@ -104,13 +104,13 @@ const UsersTab: React.FC = () => {
 
   return (
     <>
-      <div className="bg-white border border-gray-300 rounded-2xl py-4 px-6">
+      <div className="bg-white px-6 py-4 border border-gray-300 rounded-2xl">
         {/* Header */}
-        <div className="flex items-center justify-between mb-7">
-          <h2 className="text-xl font-bold text-color-jet-black">User Management</h2>
+        <div className="flex justify-between items-center mb-7">
+          <h2 className="font-bold text-color-jet-black text-xl">User Management</h2>
           <button
             onClick={() => setAddModalOpen(true)}
-            className="flex items-center gap-2 bg-color-main hover:bg-[#b5156a] text-white px-4 py-2.5 rounded-lg text-sm font-semibold transition-all cursor-pointer shadow-sm active:scale-95"
+            className="flex items-center gap-2 bg-color-main hover:bg-[#b5156a] shadow-sm px-4 py-2.5 rounded-lg font-semibold text-white text-sm active:scale-95 transition-all cursor-pointer"
           >
             <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
               <path d="M7 1V13M1 7H13" stroke="white" strokeWidth="2" strokeLinecap="round" />
@@ -120,12 +120,12 @@ const UsersTab: React.FC = () => {
         </div>
 
         {/* Table */}
-        <div className="overflow-x-auto scrollbar-thin pb-4">
+        <div className="pb-4 overflow-x-auto scrollbar-thin">
           <table className="w-full">
             <thead>
-              <tr className="border-b border-gray-100">
+              <tr className="border-gray-100 border-b">
                 {["Name", "Email", "Role", "Status", "Joined", "Last Active", "Actions"].map((h) => (
-                  <th key={h} className="text-left text-sm font-medium text-color-jet-black pb-3 pr-4 last:pr-0 whitespace-nowrap">
+                  <th key={h} className="pr-4 last:pr-0 pb-3 font-medium text-color-jet-black text-sm text-left whitespace-nowrap">
                     {h}
                   </th>
                 ))}
@@ -133,33 +133,33 @@ const UsersTab: React.FC = () => {
             </thead>
             <tbody>
               {pagedUsers.map((user) => (
-                <tr key={user.id} className="border-b border-gray-200 hover:bg-gray-50/60 transition-colors">
-                  <td className="py-3.5 pr-4 text-sm font-semibold text-color-jet-black whitespace-nowrap">{user.name}</td>
-                  <td className="py-3.5 pr-4 text-sm font-normal text-color-jet-black whitespace-nowrap">{user.email}</td>
+                <tr key={user.id} className="hover:bg-gray-50/60 border-gray-200 border-b transition-colors">
+                  <td className="py-3.5 pr-4 font-semibold text-color-jet-black text-sm whitespace-nowrap">{user.name}</td>
+                  <td className="py-3.5 pr-4 font-normal text-color-jet-black text-sm whitespace-nowrap">{user.email}</td>
                   <td className="py-3.5 pr-4 whitespace-nowrap">
                     <span className={`inline-block px-3 py-1 rounded-full text-xs font-semibold ${getRoleBadge(user.role)}`}>
                       {user.role}
                     </span>
                   </td>
                   <td className="py-3.5 pr-4 whitespace-nowrap">
-                    <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-[#4CAF50] text-white">
+                    <span className="inline-flex items-center gap-1.5 bg-[#4CAF50] px-3 py-1 rounded-full font-semibold text-white text-xs">
                       {user.status}
                     </span>
                   </td>
-                  <td className="py-3.5 pr-4 text-sm font-normal text-color-jet-black whitespace-nowrap">{user.joined}</td>
-                  <td className="py-3.5 pr-4 text-sm font-normal text-color-jet-black whitespace-nowrap">{user.lastActive}</td>
+                  <td className="py-3.5 pr-4 font-normal text-color-jet-black text-sm whitespace-nowrap">{user.joined}</td>
+                  <td className="py-3.5 pr-4 font-normal text-color-jet-black text-sm whitespace-nowrap">{user.lastActive}</td>
                   <td className="py-3.5 whitespace-nowrap">
                     <div className="flex items-center gap-2">
                       <button
                         onClick={() => handleViewUser(user)}
-                        className="px-2.5 py-1.75 rounded-lg text-color-jet-black hover:text-gray-600 hover:bg-gray-100 transition-colors border border-[#0000001A] bg-white cursor-pointer"
+                        className="bg-white hover:bg-gray-100 px-2.5 py-1.75 border border-[#0000001A] rounded-lg text-color-jet-black hover:text-gray-600 transition-colors cursor-pointer"
                         title="View user"
                       >
                         <Eye size={16} />
                       </button>
                       <button
                         onClick={() => requestRowDelete(user.id)}
-                        className="px-2.5 py-1.75 rounded-lg text-red-400 hover:text-red-600 hover:bg-red-50 transition-colors border border-[#0000001A] bg-white cursor-pointer"
+                        className="bg-white hover:bg-red-50 px-2.5 py-1.75 border border-[#0000001A] rounded-lg text-red-400 hover:text-red-600 transition-colors cursor-pointer"
                         title="Delete user"
                       >
                         <Trash2 size={16} />
@@ -173,11 +173,11 @@ const UsersTab: React.FC = () => {
         </div>
 
         {/* Pagination */}
-        <div className="flex items-center justify-center gap-1.5 mt-8">
+        <div className="flex justify-center items-center gap-1.5 mt-8">
           <button
             onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
             disabled={currentPage === 1}
-            className="px-4 py-2 rounded-xl text-sm font-medium text-gray-600 hover:bg-gray-100 disabled:opacity-40 disabled:cursor-not-allowed transition-colors cursor-pointer flex items-center gap-1.5"
+            className="flex items-center gap-1.5 hover:bg-gray-100 disabled:opacity-40 px-4 py-2 rounded-xl font-medium text-gray-600 text-sm transition-colors cursor-pointer disabled:cursor-not-allowed"
           >
             <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
               <path d="M10 12L6 8L10 4" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
@@ -203,7 +203,7 @@ const UsersTab: React.FC = () => {
           <button
             onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
             disabled={currentPage === totalPages}
-            className="px-4 py-2 rounded-xl text-sm font-medium text-gray-600 hover:bg-gray-100 disabled:opacity-40 disabled:cursor-not-allowed transition-colors cursor-pointer flex items-center gap-1.5"
+            className="flex items-center gap-1.5 hover:bg-gray-100 disabled:opacity-40 px-4 py-2 rounded-xl font-medium text-gray-600 text-sm transition-colors cursor-pointer disabled:cursor-not-allowed"
           >
             Next
             <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
@@ -217,7 +217,7 @@ const UsersTab: React.FC = () => {
       <AddUserModal
         isOpen={addModalOpen}
         onClose={() => setAddModalOpen(false)}
-        onSubmit={handleAddUser}
+        // onSubmit={handleAddUser}
       />
       <ViewUserModal
         isOpen={viewModalOpen}

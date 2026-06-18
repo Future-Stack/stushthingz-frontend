@@ -39,6 +39,7 @@ const Login: React.FC = () => {
   const redirectByRole = (role: string) => {
     if (role === "admin") return navigate("/admin");
     if (role === "user") return navigate("/investor/dashboard");
+    if (role === "bank_operator") return navigate("/bank");
     return navigate("/dashboard");
   };
 
