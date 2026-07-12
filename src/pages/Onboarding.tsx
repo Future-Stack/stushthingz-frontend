@@ -4,6 +4,9 @@ import { IoSend } from "react-icons/io5";
 import { motion, AnimatePresence } from "framer-motion";
 import logo from "@/assets/nav/logo.png";
 import chatLogo from "@/assets/nav/chatLogo.png";
+import { sendChatMessage } from "@/utils/chatbotService";
+import { useAppSelector } from "@/store/hook";
+import { selectUser } from "@/store/features/auth/auth.slice";
 
 interface Message {
   id: string;
@@ -11,35 +14,163 @@ interface Message {
   text: string;
 }
 
-const QUESTIONS = [
-  "Welcome to Vanessa. I'll guide you through your Jamaica investment journey.\nLet's start by understanding your goals.\n\nWhat is your primary investment goal? For example: rental income, vacation home, retirement property, or capital appreciation.",
-  "Great! What is your budget range for this investment?",
-  "What is your timeline for making this investment?",
-  "What country are you currently residing in?",
-  "Is this your first time investing in real estate? (Yes/No)",
-  "What type of property are you interested in? (Residential, Rental, Vacation)",
-  "How do you plan to finance this investment? (Cash or Mortgage)",
+interface QuestionConfig {
+  key: string;
+  text: string;
+  options?: { label: string; value: string }[];
+}
+
+const QUESTIONS: QuestionConfig[] = [
+  {
+    key: "investmentGoal",
+    text: "Welcome to Vanessa. I'll guide you through your Jamaica investment journey.\nLet's start by understanding your goals.\n\nWhat is your primary investment goal?",
+    options: [
+      { label: "Rental Income", value: "Rental Income" },
+      { label: "Vacation Home", value: "Vacation Home" },
+      { label: "Retirement Property", value: "Retirement Property" },
+      { label: "Capital Appreciation", value: "Capital Appreciation" },
+    ],
+  },
+  {
+    key: "budgetRange",
+    text: "Great! What is your budget range for this investment?",
+  },
+  {
+    key: "timeline",
+    text: "What is your timeline for making this investment?",
+  },
+  {
+    key: "country",
+    text: "What country are you currently residing in?",
+  },
+  {
+    key: "firstTime",
+    text: "Is this your first time investing in real estate?",
+    options: [
+      { label: "Yes", value: "Yes" },
+      { label: "No", value: "No" },
+    ],
+  },
+  {
+    key: "propertyType",
+    text: "What type of property are you interested in?",
+    options: [
+      { label: "Residential", value: "Residential" },
+      { label: "Rental", value: "Rental" },
+      { label: "Vacation", value: "Vacation" },
+    ],
+  },
+  {
+    key: "financing",
+    text: "How do you plan to finance this investment?",
+    options: [
+      { label: "Cash", value: "Cash" },
+      { label: "Mortgage", value: "Mortgage" },
+    ],
+  },
+  {
+    key: "propertyIntent",
+    text: "Are you looking to buy an existing property or build/develop?",
+    options: [
+      { label: "Buy Existing", value: "buy_existing" },
+      { label: "Build / Develop", value: "build_develop" },
+    ],
+  },
+  {
+    key: "selectedLender",
+    text: "Which lender are you interested in?",
+    options: [
+      { label: "NCB", value: "NCB" },
+      { label: "VMBS", value: "VMBS" },
+      { label: "JN", value: "JN" },
+      { label: "JMMB", value: "JMMB" },
+      { label: "Scotiabank", value: "SCOTIABANK" },
+      { label: "Sagicor", value: "SAGICOR" },
+      { label: "None / Other", value: "null" },
+    ],
+  },
+  {
+    key: "employmentType",
+    text: "What is your employment type?",
+    options: [
+      { label: "Employed", value: "employed" },
+      { label: "Self Employed", value: "self_employed" },
+      { label: "Employed (Commission)", value: "employed_commission" },
+      { label: "Self Employed Contractor", value: "self_employed_contractor" },
+      { label: "Self Employed (Business Separate)", value: "self_employed_business_separate" },
+      { label: "Self Employed (Business Mixed)", value: "self_employed_business_mixed" },
+      { label: "Employed (Overseas)", value: "employed_overseas" },
+      { label: "Self Employed (Overseas)", value: "self_employed_overseas" },
+    ],
+  },
 ];
 
-const KEYS = [
-  "investmentGoal",
-  "budgetRange",
-  "timeline",
-  "country",
-  "firstTime",
-  "propertyType",
-  "financing",
-];
+const parseInlineMarkdown = (text: string) => {
+  const parts = text.split(/(\*\*.*?\*\*)/g);
+  return parts.map((part, i) => {
+    if (part.startsWith("**") && part.endsWith("**")) {
+      return (
+        <strong key={i} className="font-bold text-gray-900">
+          {part.slice(2, -2)}
+        </strong>
+      );
+    }
+    return part;
+  });
+};
+
+const renderMarkdown = (text: string) => {
+  return text.split("\n").map((line, idx) => {
+    const headingMatch = line.match(/^(#{1,6})\s+(.*)$/);
+    if (headingMatch) {
+      const level = headingMatch[1].length;
+      const content = parseInlineMarkdown(headingMatch[2]);
+      if (level === 1) return <h1 key={idx} className="text-xl font-bold my-2 text-gray-950">{content}</h1>;
+      if (level === 2) return <h2 key={idx} className="text-lg font-bold my-2 text-gray-950">{content}</h2>;
+      return <h3 key={idx} className="text-base font-bold my-1 text-gray-950">{content}</h3>;
+    }
+
+    const listMatch = line.match(/^[\*\-]\s+(.*)$/);
+    if (listMatch) {
+      return (
+        <div key={idx} className="flex gap-2 pl-4 my-1 text-gray-800">
+          <span className="text-gray-900 shrink-0 select-none">•</span>
+          <span className="flex-1">{parseInlineMarkdown(listMatch[1])}</span>
+        </div>
+      );
+    }
+
+    const numListMatch = line.match(/^(\d+)\.\s+(.*)$/);
+    if (numListMatch) {
+      return (
+        <div key={idx} className="flex gap-1.5 pl-2 my-1 text-gray-800">
+          <span className="font-semibold text-gray-900 shrink-0 select-none">{numListMatch[1]}.</span>
+          <span className="flex-1">{parseInlineMarkdown(numListMatch[2])}</span>
+        </div>
+      );
+    }
+
+    if (line.trim() === "") return <div key={idx} className="h-2" />;
+    return (
+      <p key={idx} className="my-1 text-gray-800">
+        {parseInlineMarkdown(line)}
+      </p>
+    );
+  });
+};
 
 const Onboarding = () => {
   const navigate = useNavigate();
+  const user = useAppSelector(selectUser);
+
   const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
   const [messages, setMessages] = useState<Message[]>([
-    { id: "msg-0", sender: "ai", text: QUESTIONS[0] },
+    { id: "msg-0", sender: "ai", text: QUESTIONS[0].text },
   ]);
   const [inputValue, setInputValue] = useState("");
   const [answers, setAnswers] = useState<Record<string, string>>({});
-  const [isFinished, setIsFinished] = useState(false);
+  const [surveyCompleted, setSurveyCompleted] = useState(false);
+  const [isTyping, setIsTyping] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   const scrollToBottom = () => {
@@ -48,25 +179,78 @@ const Onboarding = () => {
 
   useEffect(() => {
     scrollToBottom();
-  }, [messages]);
+  }, [messages, isTyping]);
 
-  const handleSend = () => {
-    if (!inputValue.trim()) return;
+  const submitAnswer = async (valueText: string, valueToSave: string) => {
+    // If onboarding survey is already completed, it's a general chatbot message
+    if (surveyCompleted) {
+      const userMessage: Message = {
+        id: `msg-${Date.now()}`,
+        sender: "user",
+        text: valueText,
+      };
+      setMessages((prev) => [...prev, userMessage]);
+      setInputValue("");
+      setIsTyping(true);
 
+      try {
+        const user_id = user?.id || "guest";
+        const property_intent = (answers.propertyIntent as "buy_existing" | "build_develop") || "buy_existing";
+        const lender_code = answers.selectedLender && answers.selectedLender !== "null"
+          ? answers.selectedLender
+          : "general";
+
+        const response = await sendChatMessage({
+          question: valueText,
+          user_id,
+          property_intent,
+          lender_code,
+        });
+
+        const aiMessage: Message = {
+          id: `ai-${Date.now()}`,
+          sender: "ai",
+          text: response.answer,
+        };
+        setMessages((prev) => [...prev, aiMessage]);
+
+        // Keep local chat history in sync
+        const currentHistory = [...messages, userMessage, aiMessage];
+        localStorage.setItem("investor_chat_history", JSON.stringify(currentHistory));
+      } catch (error) {
+        console.error("Chat error:", error);
+        setMessages((prev) => [
+          ...prev,
+          {
+            id: `ai-err-${Date.now()}`,
+            sender: "ai",
+            text: "Sorry, I ran into an issue processing your query. Please try again.",
+          },
+        ]);
+      } finally {
+        setIsTyping(false);
+      }
+      return;
+    }
+
+    // Otherwise, we are still answering the onboarding survey questions
     const userMessage: Message = {
       id: `msg-${Date.now()}`,
       sender: "user",
-      text: inputValue.trim(),
+      text: valueText,
+    };
+
+    const newAnswers = {
+      ...answers,
+      [QUESTIONS[currentQuestionIndex].key]: valueToSave,
     };
 
     setMessages((prev) => [...prev, userMessage]);
-    setAnswers((prev) => ({
-      ...prev,
-      [KEYS[currentQuestionIndex]]: inputValue.trim(),
-    }));
+    setAnswers(newAnswers);
     setInputValue("");
 
     const nextIndex = currentQuestionIndex + 1;
+
     if (nextIndex < QUESTIONS.length) {
       // Simulate AI typing delay
       setTimeout(() => {
@@ -75,79 +259,116 @@ const Onboarding = () => {
           {
             id: `msg-${Date.now() + 1}`,
             sender: "ai",
-            text: QUESTIONS[nextIndex],
+            text: QUESTIONS[nextIndex].text,
           },
         ]);
         setCurrentQuestionIndex(nextIndex);
       }, 600);
     } else {
-      // Finished all questions, show summary
-      setTimeout(() => {
-        setIsFinished(true);
-        // Add summary message
-      }, 600);
+      // Finished all 10 questions! Save answers and call the AI API immediately
+      setIsTyping(true);
+      localStorage.setItem("onboarding_answers", JSON.stringify(newAnswers));
+      localStorage.setItem("onboarding_completed", "true");
+
+      try {
+        const user_id = user?.id || "guest";
+        const property_intent = (newAnswers.propertyIntent as "buy_existing" | "build_develop") || "buy_existing";
+        const lender_code = newAnswers.selectedLender && newAnswers.selectedLender !== "null"
+          ? newAnswers.selectedLender
+          : "general";
+
+        const response = await sendChatMessage({
+          question: JSON.stringify(newAnswers),
+          user_id,
+          property_intent,
+          lender_code,
+        });
+
+        const initialAnalysisMessage: Message = {
+          id: `ai-analysis-${Date.now()}`,
+          sender: "ai",
+          text: response.answer,
+        };
+
+        setMessages((prev) => [...prev, initialAnalysisMessage]);
+        setSurveyCompleted(true);
+
+        // Save this initial analysis message to the chat history too!
+        localStorage.setItem("investor_chat_history", JSON.stringify([initialAnalysisMessage]));
+      } catch (error) {
+        console.error("Failed to fetch initial AI analysis:", error);
+        const fallbackMessage: Message = {
+          id: `ai-fallback-${Date.now()}`,
+          sender: "ai",
+          text: "Perfect! I've saved your goals and budget details. You can now chat with me about your real estate plans here, or proceed to the next step when you are ready.",
+        };
+        setMessages((prev) => [...prev, fallbackMessage]);
+        setSurveyCompleted(true);
+      } finally {
+        setIsTyping(false);
+      }
     }
   };
 
+  const handleSend = () => {
+    if (!inputValue.trim()) return;
+    submitAnswer(inputValue.trim(), inputValue.trim());
+  };
+
   const handleKeyDown = (e: React.KeyboardEvent) => {
-    if (e.key === "Enter") {
+    if (e.key === "Enter" && !e.shiftKey) {
       e.preventDefault();
       handleSend();
     }
   };
 
-  const generateSummaryText = () => {
-    return `Perfect! Let me summarize what we've discussed:\n• Investment Goal: ${answers.investmentGoal}\n• Budget Range: ${answers.budgetRange}\n• Timeline: ${answers.timeline}\n• Country of Residence: ${answers.country}\n• First-time Investor: ${answers.firstTime}\n• Property Type: ${answers.propertyType}\n• Financing: ${answers.financing}\n\nDoes this look correct?`;
-  };
-
-  useEffect(() => {
-    if (isFinished) {
-      setMessages((prev) => [
-        ...prev,
-        {
-          id: `msg-summary-${Date.now()}`,
-          sender: "ai",
-          text: generateSummaryText(),
-        },
-      ]);
-    }
-  }, [isFinished]);
-
-  const handleConfirm = () => {
-    // Save answers if needed, then redirect
-    console.log("Onboarding complete. Answers:", answers);
+  const handleProceed = () => {
     navigate("/onboarding/assessment");
   };
 
   return (
     <div className="flex flex-col h-screen bg-[#f8f9fa] font-sans">
       {/* Header */}
-      <header className="flex items-center justify-between px-8 py-2 bg-white border-b border-gray-200 shrink-0">
+      <header className="flex items-center justify-between px-6 py-3 bg-white border-b border-gray-200 shrink-0">
         <div className="flex items-center space-x-2">
-          <div>
-            <img src={logo} alt="logo" className="w-50" />
-          </div>
+          <img src={logo} alt="logo" className="w-40" />
         </div>
-        <div className="flex items-center space-x-1.5">
-          {QUESTIONS.map((_, index) => (
-            <motion.div
-              key={index}
-              animate={{
-                backgroundColor:
-                  index <= currentQuestionIndex || isFinished
-                    ? "#ec4899"
-                    : "#d1d5db",
-                scale: index === currentQuestionIndex && !isFinished ? 1.2 : 1,
-              }}
-              transition={{ duration: 0.3 }}
-              className="w-2 h-2 rounded-full"
-            />
-          ))}
+        
+        {/* Progress Tracker / Action Button */}
+        <div className="flex items-center space-x-4">
+          {!surveyCompleted ? (
+            <div className="flex items-center space-x-1.5 overflow-x-auto max-w-[200px] py-1">
+              {QUESTIONS.map((_, index) => (
+                <motion.div
+                  key={index}
+                  animate={{
+                    backgroundColor:
+                      index <= currentQuestionIndex
+                        ? "#ec4899"
+                        : "#d1d5db",
+                    scale: index === currentQuestionIndex ? 1.2 : 1,
+                  }}
+                  transition={{ duration: 0.3 }}
+                  className="w-2 h-2 rounded-full shrink-0"
+                />
+              ))}
+            </div>
+          ) : (
+            <motion.button
+              initial={{ scale: 0.9, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              onClick={handleProceed}
+              className="bg-color-main hover:bg-[#d01958] text-white px-5 py-2 rounded-lg font-medium text-sm transition-all shadow-md flex items-center gap-1.5 cursor-pointer"
+            >
+              <span>Financial Assessment</span>
+              <span>→</span>
+            </motion.button>
+          )}
         </div>
       </header>
 
       {/* Chat Area */}
-      <main className="flex-1 overflow-y-auto p-4 sm:p-8">
+      <main className="flex-1 overflow-y-auto p-4 sm:p-8 bg-[#f8fafc]">
         <div className="max-w-3xl mx-auto space-y-6">
           <AnimatePresence initial={false}>
             {messages.map((msg) => (
@@ -156,92 +377,106 @@ const Onboarding = () => {
                 initial={{ opacity: 0, y: 30, scale: 0.98 }}
                 animate={{ opacity: 1, y: 0, scale: 1 }}
                 transition={{ duration: 0.3 }}
-                className={`flex items-end ${msg.sender === "user" ? "justify-end" : "justify-start"
-                  }`}
+                className={`flex items-end ${
+                  msg.sender === "user" ? "justify-end" : "justify-start"
+                }`}
               >
                 {msg.sender === "ai" && (
                   <div className="shrink-0 w-10 h-10 rounded-full bg-color-main flex items-center justify-center mr-3 mb-1">
-                    <img src={chatLogo} alt="logo" className="" />
+                    <img src={chatLogo} alt="Vanessa" className="" />
                   </div>
                 )}
 
                 <div
-                  className={`px-5 py-3.5 rounded-2xl max-w-[80%] whitespace-pre-wrap text-[#212B36] font-poppins font-normal text-sm ${msg.sender === "user"
-                    ? "bg-color-main text-white rounded-br-sm"
-                    : "bg-white text-gray-800 border border-gray-100 shadow-sm rounded-bl-sm"
-                    }`}
+                  className={`px-5 py-3.5 rounded-2xl max-w-[85%] text-[#212B36] font-poppins font-normal text-sm shadow-sm leading-relaxed ${
+                    msg.sender === "user"
+                      ? "bg-color-main text-white rounded-br-sm whitespace-pre-wrap"
+                      : "bg-white text-gray-800 border border-gray-100 rounded-bl-sm"
+                  }`}
                 >
-                  {msg.text}
+                  {msg.sender === "user" ? msg.text : renderMarkdown(msg.text)}
                 </div>
 
                 {msg.sender === "user" && (
-                  <div className="shrink-0 w-8 h-8 rounded-full bg-gray-300 ml-3 mb-1 overflow-hidden">
-                    <img
-                      src="https://ui-avatars.com/api/?name=User&background=random"
-                      alt="User"
-                      className="w-full h-full object-cover"
-                    />
+                  <div className="shrink-0 w-8 h-8 rounded-full bg-pink-100 border border-pink-200 ml-3 mb-1 overflow-hidden flex items-center justify-center">
+                    <span className="text-xs font-bold text-color-main">
+                      {user?.name ? user.name[0].toUpperCase() : "U"}
+                    </span>
                   </div>
                 )}
               </motion.div>
             ))}
-          </AnimatePresence>
-          <div ref={messagesEndRef} />
 
-          {/* Confirm Button Area */}
-          <AnimatePresence>
-            {isFinished && (
+            {isTyping && (
               <motion.div
-                initial={{ opacity: 0, scale: 0.9 }}
-                animate={{ opacity: 1, scale: 1 }}
-                transition={{ duration: 0.4, delay: 0.3 }}
-                className="flex justify-center mt-8 pb-4"
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                className="flex items-center justify-start"
               >
-                <button
-                  onClick={handleConfirm}
-                  className="bg-color-main hover:bg-[#d01958] text-white px-8 py-3 rounded-md font-medium flex items-center space-x-2 transition-colors cursor-pointer"
-                >
-                  <span>✓</span>
-                  <span>Confirm & Continue</span>
-                </button>
+                <div className="shrink-0 w-10 h-10 rounded-full bg-color-main flex items-center justify-center mr-3">
+                  <img src={chatLogo} alt="Vanessa" className="" />
+                </div>
+                <div className="bg-white border border-gray-100 px-5 py-3.5 rounded-2xl rounded-bl-sm flex space-x-1 items-center shadow-sm">
+                  <span className="w-2.5 h-2.5 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: "0ms" }}></span>
+                  <span className="w-2.5 h-2.5 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: "150ms" }}></span>
+                  <span className="w-2.5 h-2.5 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: "300ms" }}></span>
+                </div>
               </motion.div>
             )}
           </AnimatePresence>
+          <div ref={messagesEndRef} />
         </div>
       </main>
 
       {/* Input Area */}
-      <AnimatePresence>
-        {!isFinished && (
-          <motion.footer
-            initial={{ opacity: 0, y: 50 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: 50 }}
-            transition={{ duration: 0.3 }}
-            className="bg-white border-t border-gray-200 p-4 shrink-0"
-          >
-            <div className="max-w-3xl mx-auto flex items-center space-x-4">
-              <div className="flex-1 bg-gray-100 rounded-lg px-4 py-3 flex items-center">
-                <input
-                  type="text"
+      <footer className="bg-white border-t border-gray-200 p-4 shrink-0">
+        <div className="max-w-3xl mx-auto flex flex-col space-y-4">
+          {/* Predefined Options - only show if current question has them and we haven't completed the survey */}
+          {!surveyCompleted && QUESTIONS[currentQuestionIndex]?.options && (
+            <div className="flex flex-wrap gap-2 justify-center py-2 max-h-[160px] overflow-y-auto">
+              {QUESTIONS[currentQuestionIndex].options.map((option, idx) => (
+                <motion.button
+                  key={option.value}
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: idx * 0.04 }}
+                  onClick={() => submitAnswer(option.label, option.value)}
+                  className="px-4 py-2.5 bg-pink-50 hover:bg-[#ec4899] text-[#ec4899] hover:text-white rounded-full font-medium text-sm transition-colors border border-[#f48fb1]/30 cursor-pointer shadow-sm hover:shadow-md"
+                >
+                  {option.label}
+                </motion.button>
+              ))}
+            </div>
+          )}
+
+          {/* Text Input - show if no options exist, or if survey is completed so they can chat */}
+          {(surveyCompleted || !QUESTIONS[currentQuestionIndex]?.options) && (
+            <div className="flex items-center space-x-4">
+              <div className="flex-1 bg-gray-100 rounded-xl px-4 py-3 flex items-center focus-within:ring-2 focus-within:ring-pink-400 focus-within:border-transparent transition-all">
+                <textarea
                   value={inputValue}
                   onChange={(e) => setInputValue(e.target.value)}
                   onKeyDown={handleKeyDown}
-                  placeholder="Type your response..."
-                  className="bg-transparent w-full focus:outline-none text-gray-700"
+                  placeholder={
+                    surveyCompleted
+                      ? "Ask Vanessa anything about your investment..."
+                      : "Type your response..."
+                  }
+                  rows={1}
+                  className="bg-transparent w-full focus:outline-none text-gray-700 text-sm resize-none"
                 />
               </div>
               <button
                 onClick={handleSend}
-                disabled={!inputValue.trim()}
-                className="w-12 h-12 bg-[#f48fb1] hover:bg-[#f06292] text-white rounded-lg flex items-center justify-center transition-colors disabled:opacity-50 cursor-pointer"
+                disabled={!inputValue.trim() || isTyping}
+                className="w-12 h-12 bg-color-main hover:bg-[#d01958] text-white rounded-xl flex items-center justify-center transition-colors disabled:opacity-50 cursor-pointer shrink-0 shadow-sm"
               >
                 <IoSend className="w-5 h-5" />
               </button>
             </div>
-          </motion.footer>
-        )}
-      </AnimatePresence>
+          )}
+        </div>
+      </footer>
     </div>
   );
 };

@@ -15,6 +15,7 @@ import PropertyListing from "@/pages/Investor/PropertyListing";
 import PropertyDetails from "@/pages/Investor/PropertyDetails";
 import ExpressInterest from "@/pages/Investor/ExpressInterest";
 import Onboarding from "@/pages/Onboarding";
+import InvestorChat from "@/pages/Investor/InvestorChat";
 import FinancialAssessment from "@/pages/FinancialAssessment";
 import InvestmentGuide from "@/pages/InvestmentGuide";
 import DocumentChecklist from "@/pages/DocumentChecklist";
@@ -80,6 +81,7 @@ const routes = createBrowserRouter([
           { path: "opportunities", element: <PropertyListing /> },
           { path: "opportunities/:id", element: <PropertyDetails /> },
           { path: "interest", element: <ExpressInterest /> },
+          { path: "chat", element: <InvestorChat /> },
           // 🛠️ Add more investor pages here
         ],
       },
