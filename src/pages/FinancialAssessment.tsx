@@ -2,11 +2,14 @@ import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import logo from "@/assets/nav/logo.png";
-import { CircleCheck } from "lucide-react";
+import { CircleCheck, Loader2 } from "lucide-react";
+import { getFinancialAssessment, FinancialAssessmentResponse } from "@/utils/chatbotService";
 
 const FinancialAssessment = () => {
   const navigate = useNavigate();
   const [isCalculated, setIsCalculated] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
+  const [resultData, setResultData] = useState<FinancialAssessmentResponse | null>(null);
 
   // Form State
   const [formData, setFormData] = useState({
@@ -21,14 +24,29 @@ const FinancialAssessment = () => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
   };
 
-  const handleCalculate = (e: React.FormEvent) => {
+  const handleCalculate = async (e: React.FormEvent) => {
     e.preventDefault();
-    // Normally would do calculation here. We just transition to the result view.
-    setIsCalculated(true);
+    setIsLoading(true);
+    try {
+      const response = await getFinancialAssessment({
+        monthly_income: Number(formData.monthlyIncome),
+        available_savings: Number(formData.availableSavings),
+        monthly_debt_obligations: Number(formData.monthlyDebt),
+        estimated_investment_amount: Number(formData.estimatedInvestment),
+        credit_score: Number(formData.creditScore) || 0,
+      });
+      setResultData(response);
+      setIsCalculated(true);
+    } catch (error) {
+      console.error(error);
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   const handleReassess = () => {
     setIsCalculated(false);
+    setResultData(null);
   };
 
   return (
@@ -74,6 +92,7 @@ const FinancialAssessment = () => {
                     placeholder="e.g. 5000"
                     className="w-full bg-[#F3F3F5] border-none rounded-lg px-4 py-3 focus:ring-2 focus:ring-pink-500 outline-none text-gray-800"
                     required
+                    disabled={isLoading}
                   />
                 </div>
 
@@ -89,6 +108,7 @@ const FinancialAssessment = () => {
                     placeholder="e.g. 50000"
                     className="w-full bg-[#F3F3F5] border-none rounded-lg px-4 py-3 focus:ring-2 focus:ring-pink-500 outline-none text-gray-800"
                     required
+                    disabled={isLoading}
                   />
                 </div>
 
@@ -107,6 +127,7 @@ const FinancialAssessment = () => {
                     placeholder="e.g. 1500"
                     className="w-full bg-[#F3F3F5] border-none rounded-lg px-4 py-3 focus:ring-2 focus:ring-pink-500 outline-none text-gray-800"
                     required
+                    disabled={isLoading}
                   />
                 </div>
 
@@ -121,6 +142,7 @@ const FinancialAssessment = () => {
                     onChange={handleChange}
                     placeholder="e.g. 700"
                     className="w-full bg-[#F3F3F5] border-none rounded-lg px-4 py-3 focus:ring-2 focus:ring-pink-500 outline-none text-gray-800"
+                    disabled={isLoading}
                   />
                 </div>
 
@@ -136,14 +158,17 @@ const FinancialAssessment = () => {
                     placeholder="e.g. 150000"
                     className="w-full bg-[#F3F3F5] border-none rounded-lg px-4 py-3 focus:ring-2 focus:ring-pink-500 outline-none text-gray-800"
                     required
+                    disabled={isLoading}
                   />
                 </div>
 
                 <button
                   type="submit"
-                  className="w-full bg-color-main hover:bg-[#d01958] text-white py-4 text-lg rounded-lg font-bold transition-colors cursor-pointer mt-4"
+                  disabled={isLoading}
+                  className="w-full bg-color-main hover:bg-[#d01958] text-white py-4 text-lg rounded-lg font-bold transition-colors cursor-pointer mt-4 flex items-center justify-center space-x-2 disabled:opacity-50"
                 >
-                  Calculate Readiness Score
+                  {isLoading && <Loader2 className="w-5 h-5 animate-spin" />}
+                  <span>Calculate Readiness Score</span>
                 </button>
               </form>
             </motion.div>
@@ -156,35 +181,52 @@ const FinancialAssessment = () => {
               transition={{ duration: 0.3 }}
               className="space-y-6"
             >
-              <div className="bg-white rounded-xl border border-[#DFE3E8] flex flex-col items-center justify-center text-center py-12">
-                <CircleCheck className="w-12 h-12 text-black mb-12" />
+              <div className="bg-white rounded-xl border border-[#DFE3E8] flex flex-col items-center justify-center text-center py-12 px-6">
+                <CircleCheck className="w-12 h-12 text-[#ec4899] mb-6" />
                 <h2 className="text-4xl font-bold text-color-jet-black mb-4.5">
-                  You're 73% Ready
+                  You're {resultData?.readiness_score}% Ready
                 </h2>
-                <p className="text-xl font-normal text-[#4A5565]">
-                  Your financial profile shows strong readiness for this investment
+                <div className="mb-4">
+                  <span className={`px-4 py-1.5 rounded-full text-sm font-bold text-white uppercase ${
+                    resultData?.readiness_label.toLowerCase() === "strong" || resultData?.readiness_label.toLowerCase() === "high"
+                      ? "bg-green-500"
+                      : resultData?.readiness_label.toLowerCase() === "moderate"
+                      ? "bg-yellow-500"
+                      : "bg-red-500"
+                  }`}>
+                    {resultData?.readiness_label} Readiness
+                  </span>
+                </div>
+                <p className="text-xl font-normal text-[#4A5565] max-w-2xl">
+                  {resultData?.summary}
                 </p>
+                {resultData?.dti_ratio !== undefined && (
+                  <p className="text-sm text-gray-500 mt-3 font-semibold">
+                    Debt-to-Income (DTI) Ratio: {resultData.dti_ratio}%
+                  </p>
+                )}
+                {resultData?.confirm_with_lender && (
+                  <div className="mt-4 p-3 bg-pink-50 border border-pink-100 rounded-lg text-xs text-[#ec4899] font-medium max-w-md">
+                    💡 Tip: We highly recommend confirming eligibility requirements with your selected lender.
+                  </div>
+                )}
               </div>
 
-              <div className="bg-white p-8 rounded-xl border border-[#DFE3E8]">
-                <h3 className="text-2xl font-bold text-color-jet-black mb-6">
-                  Recommendations
-                </h3>
-                <ul className="space-y-4 text-gray-600">
-                  <li className="flex items-start">
-                    <span className="mr-2">•</span>
-                    Continue to the Investment Guide to learn about the Jamaica market
-                  </li>
-                  <li className="flex items-start">
-                    <span className="mr-2">•</span>
-                    Maintain your current savings rate throughout the process
-                  </li>
-                  <li className="flex items-start">
-                    <span className="mr-2">•</span>
-                    Keep debt levels stable during your property search
-                  </li>
-                </ul>
-              </div>
+              {resultData?.recommendations && resultData.recommendations.length > 0 && (
+                <div className="bg-white p-8 rounded-xl border border-[#DFE3E8]">
+                  <h3 className="text-2xl font-bold text-color-jet-black mb-6">
+                    Recommendations
+                  </h3>
+                  <ul className="space-y-4 text-gray-600">
+                    {resultData.recommendations.map((rec, i) => (
+                      <li key={i} className="flex items-start">
+                        <span className="mr-2 text-color-main">•</span>
+                        {rec}
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              )}
 
               <div className="flex items-center space-x-4">
                 <button
@@ -205,7 +247,7 @@ const FinancialAssessment = () => {
           )}
         </AnimatePresence>
       </main>
-    </div >
+    </div>
   );
 };
 

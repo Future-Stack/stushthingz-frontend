@@ -9,8 +9,50 @@ export interface ChatResponse {
   answer: string;
 }
 
+export interface FinancialAssessmentRequest {
+  monthly_income: number;
+  available_savings: number;
+  monthly_debt_obligations: number;
+  estimated_investment_amount: number;
+  credit_score: number;
+}
+
+export interface FinancialAssessmentResponse {
+  readiness_score: number;
+  readiness_label: string;
+  summary: string;
+  recommendations: string[];
+  dti_ratio: number;
+  confirm_with_lender: boolean;
+}
+
+export interface Lender {
+  code: string;
+  name: string;
+}
+
+export interface LenderDocumentRequirement {
+  doc_type: string;
+  rule_type: string;
+  months_required?: number;
+  accepted_any_of?: string[];
+  min_age?: number;
+  count_required?: number;
+}
+
+export interface LenderDocumentsResponse {
+  lender_code: string;
+  lender_name: string;
+  employment_type: string;
+  documents: LenderDocumentRequirement[];
+}
+
+const getBaseUrl = () => {
+  return import.meta.env.VITE_AI_API_URL || "https://stusthingz-ai.duckdns.org";
+};
+
 export const sendChatMessage = async (data: ChatRequest): Promise<ChatResponse> => {
-  const response = await fetch("http://72.60.96.242:8013/api/v1/chatbot/chat", {
+  const response = await fetch(`${getBaseUrl()}/api/v1/chatbot/chat`, {
     method: "POST",
     headers: {
       "accept": "application/json",
@@ -28,5 +70,57 @@ export const sendChatMessage = async (data: ChatRequest): Promise<ChatResponse> 
     throw new Error(`Chat API error: ${response.statusText}`);
   }
 
+  return response.json();
+};
+
+export const getFinancialAssessment = async (
+  data: FinancialAssessmentRequest
+): Promise<FinancialAssessmentResponse> => {
+  const response = await fetch(`${getBaseUrl()}/api/v1/chatbot/financial-assessment`, {
+    method: "POST",
+    headers: {
+      "accept": "application/json",
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify(data),
+  });
+
+  if (!response.ok) {
+    throw new Error(`Financial Assessment API error: ${response.statusText}`);
+  }
+
+  return response.json();
+};
+
+export const getLendersList = async (): Promise<{ lenders: Lender[] }> => {
+  const response = await fetch(`${getBaseUrl()}/api/v1/document/lenders`, {
+    method: "GET",
+    headers: {
+      "accept": "application/json",
+    },
+  });
+  if (!response.ok) {
+    throw new Error(`Get Lenders API error: ${response.statusText}`);
+  }
+  return response.json();
+};
+
+export const getLenderDocuments = async (
+  lenderCode: string,
+  employmentType?: string
+): Promise<LenderDocumentsResponse> => {
+  const url = new URL(`${getBaseUrl()}/api/v1/document/lenders/${lenderCode}/documents`);
+  if (employmentType) {
+    url.searchParams.append("employment_type", employmentType);
+  }
+  const response = await fetch(url.toString(), {
+    method: "GET",
+    headers: {
+      "accept": "application/json",
+    },
+  });
+  if (!response.ok) {
+    throw new Error(`Get Lender Documents API error: ${response.statusText}`);
+  }
   return response.json();
 };
