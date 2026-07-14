@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 import { X } from "lucide-react";
 import WarningModal from "./WarningModal";
+import { useUpdateUserStatusMutation } from "@/store/features/auth/auth.api";
 
 export interface AdminUser {
   id: string;
@@ -16,23 +17,26 @@ interface ViewUserModalProps {
   isOpen: boolean;
   onClose: () => void;
   user: AdminUser | null;
-  onDelete?: (userId: string) => void;
 }
 
-const ViewUserModal: React.FC<ViewUserModalProps> = ({ isOpen, onClose, user, onDelete }) => {
+const ViewUserModal: React.FC<ViewUserModalProps> = ({ isOpen, onClose, user }) => {
   const [warnOpen, setWarnOpen] = useState(false);
-  const [deleting, setDeleting] = useState(false);
+  const [updateStatus, { isLoading: isUpdating }] = useUpdateUserStatusMutation();
 
   if (!isOpen || !user) return null;
 
-  const handleDeleteConfirm = async () => {
-    setDeleting(true);
+  const isSuspended = user.status.toLowerCase() === "suspended";
+  const nextStatus: "active" | "suspended" = isSuspended ? "active" : "suspended";
+  const actionLabel = isSuspended ? "Activate" : "Suspend";
+  const buttonLabel = isSuspended ? "Activate User" : "Suspend User";
+
+  const handleStatusUpdate = async () => {
     try {
-      await onDelete?.(user.id);
-    } finally {
-      setDeleting(false);
+      await updateStatus({ id: user.id, status: nextStatus }).unwrap();
       setWarnOpen(false);
       onClose();
+    } catch (err) {
+      console.error("Failed to update status", err);
     }
   };
 
@@ -104,9 +108,9 @@ const ViewUserModal: React.FC<ViewUserModalProps> = ({ isOpen, onClose, user, on
               <button
                 type="button"
                 onClick={() => setWarnOpen(true)}
-                className="flex-1 bg-color-main hover:bg-[#b5156a] text-white py-2.5 rounded-xl text-sm font-semibold transition-all cursor-pointer active:scale-95"
+                className="flex-1 bg-color-main hover:bg-[#b5156a] text-white py-2.5 rounded-xl text-sm font-semibold transition-all cursor-pointer active:scale-95 text-center"
               >
-                Delete User
+                {buttonLabel}
               </button>
               <button
                 type="button"
@@ -124,11 +128,11 @@ const ViewUserModal: React.FC<ViewUserModalProps> = ({ isOpen, onClose, user, on
       <WarningModal
         isOpen={warnOpen}
         onClose={() => setWarnOpen(false)}
-        onConfirm={handleDeleteConfirm}
-        title="Delete User?"
-        message={`Are you sure you want to permanently delete "${user.name}"? This action cannot be undone.`}
-        confirmLabel="Delete User"
-        loading={deleting}
+        onConfirm={handleStatusUpdate}
+        title={`${actionLabel} User?`}
+        message={`Are you sure you want to ${actionLabel.toLowerCase()} "${user.name}"?`}
+        confirmLabel={buttonLabel}
+        loading={isUpdating}
       />
     </>
   );

@@ -6,14 +6,7 @@ import ContentTab from "./components/tabs/ContentTab";
 import DocumentsTab from "./components/tabs/DocumentsTab";
 import PropertiesTab from "./components/tabs/PropertiesTab";
 import AddUserModal, { AddUserFormData } from "./components/modals/AddUserModal";
-
-// ─── Stat Cards ───────────────────────────────────────────────────────────────
-const STATS = [
-  { label: "Total Users", value: "54", icon: Users, iconBg: "bg-[#2B7FFF]", valueColor: "text-color-main" },
-  { label: "Investors", value: "25", icon: TrendingUp, iconBg: "bg-[#F0B100]", valueColor: "text-[#E45339]" },
-  { label: "Bank Users", value: "13", icon: Building2, iconBg: "bg-[#7CA17A]", valueColor: "text-[#13C018]" },
-  { label: "Properties", value: "120", icon: FileText, iconBg: "bg-[#B82FBA]", valueColor: "text-[#701AD9]" },
-];
+import { useGetAdminDashboardStatsQuery } from "@/store/features/auth/auth.api";
 
 // ─── Tabs ─────────────────────────────────────────────────────────────────────
 const TABS = [
@@ -51,6 +44,14 @@ const TABS = [
 const AdminDashboard: React.FC = () => {
   const [activeTab, setActiveTab] = useState("users");
   const [addUserOpen, setAddUserOpen] = useState(false);
+  const { data: statsData, isLoading } = useGetAdminDashboardStatsQuery();
+
+  const stats = [
+    { label: "Total Users", value: isLoading ? "..." : String(statsData?.data?.totalUsers ?? 0), icon: Users, iconBg: "bg-[#2B7FFF]", valueColor: "text-color-main" },
+    { label: "Investors", value: isLoading ? "..." : String(statsData?.data?.investors ?? 0), icon: TrendingUp, iconBg: "bg-[#F0B100]", valueColor: "text-[#E45339]" },
+    { label: "Bank Users", value: isLoading ? "..." : String(statsData?.data?.bankOperators ?? 0), icon: Building2, iconBg: "bg-[#7CA17A]", valueColor: "text-[#13C018]" },
+    { label: "Properties", value: isLoading ? "..." : String(statsData?.data?.totalProperties ?? 0), icon: FileText, iconBg: "bg-[#B82FBA]", valueColor: "text-[#701AD9]" },
+  ];
 
   // const handleGlobalAddUser = (data: AddUserFormData) => {
   //   // TODO: wire to API — POST /api/admin/users
@@ -81,7 +82,7 @@ const AdminDashboard: React.FC = () => {
 
       {/* ── Stat Cards ───────────────────────────────────────────────────── */}
       <div className="gap-5 grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4">
-        {STATS.map(({ label, value, icon: Icon, iconBg, valueColor }) => (
+        {stats.map(({ label, value, icon: Icon, iconBg, valueColor }) => (
           <div
             key={label}
             className="flex justify-between items-center bg-white hover:shadow-md p-5 border border-gray-200 rounded-[14px] transition-shadow"

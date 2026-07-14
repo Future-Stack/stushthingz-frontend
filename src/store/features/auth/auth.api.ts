@@ -70,6 +70,47 @@ export type TGetMeResponse = {
   data: TUser;
 };
 
+export type TAdminDashboardStatsResponse = {
+  statusCode: number;
+  success: boolean;
+  message: string;
+  data: {
+    totalUsers: number;
+    investors: number;
+    bankOperators: number;
+    totalProperties: number;
+  };
+};
+
+export type TAllUsersQueryParams = {
+  searchTerm?: string;
+  page?: number;
+  limit?: number;
+};
+
+export type TBackendUser = {
+  id: string;
+  name: string;
+  email: string;
+  role: string;
+  status: string;
+  createdAt: string;
+  isVerified: boolean;
+};
+
+export type TAllUsersResponse = {
+  statusCode: number;
+  success: boolean;
+  message: string;
+  meta: {
+    page: number;
+    limit: number;
+    total: number;
+    totalPage: number;
+  };
+  data: TBackendUser[];
+};
+
 // ─── API ─────────────────────────────────────────────────────────────────────
 
 export const authAPI = baseAPI.injectEndpoints({
@@ -167,6 +208,34 @@ export const authAPI = baseAPI.injectEndpoints({
       },
     }),
 
+    // GET /auth/admin/dashboard-stats
+    getAdminDashboardStats: build.query<TAdminDashboardStatsResponse, void>({
+      query: () => ({
+        url: "/auth/admin/dashboard-stats",
+        method: "GET",
+      }),
+      providesTags: ["Overview"],
+    }),
+
+    // GET /auth/all-users
+    getAllUsers: build.query<TAllUsersResponse, TAllUsersQueryParams>({
+      query: (params) => ({
+        url: "/auth/all-users",
+        method: "GET",
+        params,
+      }),
+      providesTags: ["Auth"],
+    }),
+
+    // PATCH /auth/update-user-status/:id
+    updateUserStatus: build.mutation<{ success: boolean; message: string }, { id: string; status: "active" | "suspended" }>({
+      query: ({ id, status }) => ({
+        url: `/auth/update-user-status/${id}`,
+        method: "PATCH",
+        body: { status },
+      }),
+      invalidatesTags: ["Auth", "Overview"],
+    }),
 
     // ──────────────────────────────Ends──────────────────────────────
   }),
@@ -183,4 +252,7 @@ export const {
   useVerifyForgotPasswordOtpMutation,
   useChangePasswordMutation,
   useCreateUserByAdminMutation,
+  useGetAdminDashboardStatsQuery,
+  useGetAllUsersQuery,
+  useUpdateUserStatusMutation,
 } = authAPI;
