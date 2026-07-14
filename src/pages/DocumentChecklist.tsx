@@ -1,10 +1,7 @@
 import { useState } from "react";
-import { useNavigate } from "react-router-dom";
-import { motion } from "framer-motion";
 import DocumentChecklistContent from "@/components/onboarding/DocumentChecklistContent";
 
 const DocumentChecklist = () => {
-  const navigate = useNavigate();
   const [progress, setProgress] = useState({ uploadedDocs: 0, totalDocs: 0 });
 
   const handleProgressUpdate = (uploadedCount: number, totalCount: number) => {
@@ -23,14 +20,6 @@ const DocumentChecklist = () => {
                 {progress.uploadedDocs} of {progress.totalDocs} documents uploaded
               </p>
             </div>
-            <motion.button
-              whileHover={{ scale: 1.05 }}
-              whileTap={{ scale: 0.95 }}
-              onClick={() => navigate("/investor/dashboard")}
-              className="bg-color-main hover:bg-color-main/90 text-white px-6 py-3 rounded-lg font-medium transition-colors cursor-pointer shadow-md"
-            >
-              Complete Setup
-            </motion.button>
           </div>
           {/* Progress Bar */}
           <div className="h-2 w-full bg-gray-200 rounded-full overflow-hidden mt-4">

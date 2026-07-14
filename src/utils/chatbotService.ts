@@ -47,6 +47,22 @@ export interface LenderDocumentsResponse {
   documents: LenderDocumentRequirement[];
 }
 
+export interface DocumentValidationResponse {
+  valid: boolean;
+  lender: string;
+  employment_type: string;
+  results?: {
+    doc_type: string;
+    valid: boolean;
+    issues?: string[];
+    resolution_paths?: string[];
+  }[];
+  issues?: string[];
+  resolution_paths?: string[];
+  confirm_with_lender?: boolean;
+  engine_note?: string;
+}
+
 const getBaseUrl = () => {
   return import.meta.env.VITE_AI_API_URL || "https://stusthingz-ai.duckdns.org";
 };
@@ -122,5 +138,21 @@ export const getLenderDocuments = async (
   if (!response.ok) {
     throw new Error(`Get Lender Documents API error: ${response.statusText}`);
   }
+  return response.json();
+};
+
+export const validateDocuments = async (formData: FormData): Promise<DocumentValidationResponse> => {
+  const response = await fetch(`${getBaseUrl()}/api/v1/document/validate`, {
+    method: "POST",
+    headers: {
+      "accept": "application/json",
+    },
+    body: formData,
+  });
+
+  if (!response.ok) {
+    throw new Error(`Validate Documents API error: ${response.statusText}`);
+  }
+
   return response.json();
 };
