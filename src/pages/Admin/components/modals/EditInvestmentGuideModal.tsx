@@ -1,7 +1,9 @@
 import React, { useState, useEffect } from "react";
 import { X } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
+import type { TGuideSection } from "@/store/storeTypes/investmentGuide";
 
+// Keep the old GuideItem export for any other imports that might use it
 export interface GuideItem {
   id: number;
   title: string;
@@ -13,40 +15,40 @@ export interface GuideItem {
 interface EditInvestmentGuideModalProps {
   isOpen: boolean;
   onClose: () => void;
-  guide: GuideItem | null;
-  onSave: (updatedGuide: GuideItem) => void;
+  section: TGuideSection | null;
+  onSave: (id: string, data: { title: string; subtitle: string; content: string }) => void;
 }
 
 const EditInvestmentGuideModal: React.FC<EditInvestmentGuideModalProps> = ({
   isOpen,
   onClose,
-  guide,
+  section,
   onSave,
 }) => {
   const [title, setTitle] = useState("");
+  const [subtitle, setSubtitle] = useState("");
   const [content, setContent] = useState("");
-  const [sections, setSections] = useState<number>(0);
-  const [lastUpdated, setLastUpdated] = useState("");
 
   useEffect(() => {
-    if (guide) {
-      setTitle(guide.title || "");
-      setContent(guide.content || "");
-      setSections(guide.sections || 0);
-      setLastUpdated(guide.lastUpdated || "");
+    if (section) {
+      setTitle(section.title || "");
+      setSubtitle(section.subtitle || "");
+      // Combine all item content into a single editable string
+      // Each item is separated by a blank line, prefixed with its title if it has one
+      const combined = section.items
+        .map((item) => {
+          if (item.title) return `${item.title}\n${item.content}`;
+          return item.content;
+        })
+        .join("\n\n");
+      setContent(combined);
     }
-  }, [guide]);
+  }, [section]);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!guide) return;
-    onSave({
-      ...guide,
-      title,
-      content,
-      sections,
-      lastUpdated,
-    });
+    if (!section) return;
+    onSave(section.id, { title, subtitle, content });
   };
 
   return (
@@ -68,7 +70,7 @@ const EditInvestmentGuideModal: React.FC<EditInvestmentGuideModalProps> = ({
             animate={{ opacity: 1, scale: 1, y: 0 }}
             exit={{ opacity: 0, scale: 0.95, y: 20 }}
             transition={{ duration: 0.2 }}
-            className="relative bg-white rounded-2xl shadow-2xl w-full max-w-[500px] mx-4 p-6"
+            className="relative bg-white rounded-2xl shadow-2xl w-full max-w-[520px] mx-4 p-6"
           >
             {/* Close Button */}
             <button
@@ -84,7 +86,7 @@ const EditInvestmentGuideModal: React.FC<EditInvestmentGuideModalProps> = ({
                 Edit Investment Guide Content
               </h2>
               <p className="text-sm text-gray-500 font-normal mt-1 leading-relaxed">
-                Update the content for {guide?.title || "Buying Process"}. Changes will be reflected in the Investment Guide.
+                Update the content for <strong>{section?.title}</strong>. Changes will be reflected in the Investment Guide.
               </p>
             </div>
 
@@ -105,49 +107,34 @@ const EditInvestmentGuideModal: React.FC<EditInvestmentGuideModalProps> = ({
                 />
               </div>
 
-              {/* Content (Markdown Supported) */}
+              {/* Subtitle */}
               <div>
                 <label className="block text-sm font-semibold text-gray-700 mb-2">
-                  Content (Markdown Supported)
+                  Subtitle
                 </label>
-                <textarea
-                  value={content}
-                  onChange={(e) => setContent(e.target.value)}
-                  className="w-full px-4 py-3 bg-[#F8FAFC] border border-gray-100 rounded-xl text-sm text-gray-700 focus:outline-none focus:ring-2 focus:ring-color-main/20 focus:border-color-main focus:bg-white transition-all min-h-[140px] resize-none font-mono placeholder:font-mono placeholder:text-gray-400"
-                  placeholder="Enter guide content using Markdown formatting..."
+                <input
+                  type="text"
+                  value={subtitle}
+                  onChange={(e) => setSubtitle(e.target.value)}
+                  className="w-full px-4 py-3 bg-[#F8FAFC] border border-gray-100 rounded-xl text-sm text-gray-700 focus:outline-none focus:ring-2 focus:ring-color-main/20 focus:border-color-main focus:bg-white transition-all font-medium"
+                  placeholder="Enter subtitle"
                 />
               </div>
 
-              {/* Number of Sections & Last Updated */}
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-sm font-semibold text-gray-700 mb-2">
-                    Number of Sections
-                  </label>
-                  <input
-                    type="number"
-                    required
-                    min={1}
-                    value={sections}
-                    onChange={(e) => setSections(parseInt(e.target.value) || 0)}
-                    className="w-full px-4 py-3 bg-[#F8FAFC] border border-gray-100 rounded-xl text-sm text-gray-700 focus:outline-none focus:ring-2 focus:ring-color-main/20 focus:border-color-main focus:bg-white transition-all font-medium"
-                    placeholder="4"
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-sm font-semibold text-gray-700 mb-2">
-                    Last Updated
-                  </label>
-                  <input
-                    type="text"
-                    required
-                    value={lastUpdated}
-                    onChange={(e) => setLastUpdated(e.target.value)}
-                    className="w-full px-4 py-3 bg-[#F8FAFC] border border-gray-100 rounded-xl text-sm text-gray-700 focus:outline-none focus:ring-2 focus:ring-color-main/20 focus:border-color-main focus:bg-white transition-all font-medium"
-                    placeholder="YYYY-MM-DD"
-                  />
-                </div>
+              {/* Content — one item per line, sections separated by blank lines */}
+              <div>
+                <label className="block text-sm font-semibold text-gray-700 mb-1">
+                  Content
+                </label>
+                <p className="text-xs text-gray-400 mb-2">
+                  Each line is a bullet point. Separate groups with a blank line. The first line of a group becomes the heading.
+                </p>
+                <textarea
+                  value={content}
+                  onChange={(e) => setContent(e.target.value)}
+                  className="w-full px-4 py-3 bg-[#F8FAFC] border border-gray-100 rounded-xl text-sm text-gray-700 focus:outline-none focus:ring-2 focus:ring-color-main/20 focus:border-color-main focus:bg-white transition-all min-h-[180px] resize-none font-mono placeholder:font-mono placeholder:text-gray-400"
+                  placeholder={"1. Property Search\nLocation: proximity to amenities\nProperty type: villa, condo\n\n2. Offer & Negotiation\nWritten offer through attorney"}
+                />
               </div>
 
               {/* Actions */}

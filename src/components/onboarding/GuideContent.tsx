@@ -2,68 +2,38 @@ import React, { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { FaCheck, FaChevronDown, FaChevronUp } from "react-icons/fa";
 import { DollarSign, FileText, House, TriangleAlert } from "lucide-react";
+import { useGetInvestmentGuideQuery, useMarkSectionAsReadMutation } from "@/store/features/investmentGuide/investmentGuide.api";
+import type { TGuideSection, TGuideSectionType } from "@/store/storeTypes/investmentGuide";
 
-const BuyingProcessContent: React.FC = () => {
-  const [expandedSub, setExpandedSub] = useState<string | null>("property-search");
+// ─── Section type → icon mapping ─────────────────────────────────────────────
+const getSectionIcon = (type: TGuideSectionType, icon: string | null) => {
+  if (icon === "triangle-alert" || type === "warning") return <TriangleAlert className="w-6 h-6 text-[#E17100]" />;
+  if (icon === "dollar-sign") return <DollarSign className="w-6 h-6 text-color-main" />;
+  if (icon === "file-text") return <FileText className="w-6 h-6 text-color-main" />;
+  return <House className="w-6 h-6 text-color-main" />;
+};
 
-  const subSections = [
-    {
-      id: "property-search",
-      title: "1. Property Search",
-      header: "Key considerations:",
-      bullets: [
-        "Location: proximity to amenities, beaches, airports",
-        "Property type: villa, condo, land, commercial",
-        "Title verification: ensure clear ownership",
-        "Development potential and zoning restrictions",
-      ],
-    },
-    {
-      id: "offer-negotiation",
-      title: "2. Offer & Negotiation",
-      header: "Making an offer on Jamaica property:",
-      bullets: [
-        "Written offer through your attorney",
-        "Deposit typically 10% of purchase price",
-        "Include conditions: financing, inspection, title search",
-        "Negotiation period usually 7-14 days",
-      ],
-    },
-    {
-      id: "legal-process",
-      title: "3. Legal Process",
-      header: "Your attorney will handle:",
-      bullets: [
-        "Title search and verification",
-        "Agreement for sale preparation",
-        "Stamp duty calculation and payment",
-        "Transfer tax processing",
-      ],
-    },
-    {
-      id: "closing",
-      title: "4. Closing",
-      header: "Final steps to ownership:",
-      bullets: [
-        "Final inspection of property",
-        "Payment of balance and closing costs",
-        "Signing of transfer documents",
-        "Receipt of registered title",
-      ],
-    },
-  ];
+const getSectionIconBg = (type: TGuideSectionType) => {
+  if (type === "warning") return "bg-[#FEF3C6]";
+  return "bg-[#FFF0F7]";
+};
+
+// ─── Accordion sub-section renderer (for type=accordion) ─────────────────────
+const AccordionContent: React.FC<{ section: TGuideSection }> = ({ section }) => {
+  const [expandedSub, setExpandedSub] = useState<string | null>(section.items[0]?.id ?? null);
 
   return (
     <div className="space-y-4 mt-4 text-sm text-gray-700">
-      {subSections.map((sub, idx) => {
-        const isExpanded = expandedSub === sub.id;
+      {section.items.map((item, idx) => {
+        const isExpanded = expandedSub === item.id;
+        const bullets = item.content.split("\n").filter(Boolean);
         return (
-          <div key={sub.id} className={idx > 0 ? "border-t border-[#7171827b] pt-4" : ""}>
+          <div key={item.id} className={idx > 0 ? "border-t border-[#7171827b] pt-4" : ""}>
             <div
-              onClick={() => setExpandedSub(isExpanded ? null : sub.id)}
+              onClick={() => setExpandedSub(isExpanded ? null : item.id)}
               className="flex justify-between items-center cursor-pointer py-1"
             >
-              <span className="text-sm font-medium text-black">{sub.title}</span>
+              <span className="text-sm font-medium text-black">{item.title}</span>
               {isExpanded ? (
                 <FaChevronUp className="text-gray-400 w-3 h-3" />
               ) : (
@@ -80,11 +50,8 @@ const BuyingProcessContent: React.FC = () => {
                   className="overflow-hidden"
                 >
                   <div className="pt-2 pb-1">
-                    <p className="text-sm font-normal text-[#364153] mb-2">{sub.header}</p>
                     <ul className="text-sm font-normal text-[#364153] list-disc pl-5 space-y-1">
-                      {sub.bullets.map((b, i) => (
-                        <li key={i}>{b}</li>
-                      ))}
+                      {bullets.map((b, i) => <li key={i}>{b}</li>)}
                     </ul>
                   </div>
                 </motion.div>
@@ -97,180 +64,152 @@ const BuyingProcessContent: React.FC = () => {
   );
 };
 
-export const SECTIONS = [
-  {
-    id: "buying-process",
-    title: "Buying Process",
-    subtitle: "Step-by-step guide to purchasing property in Jamaica",
-    icon: <House className="w-6 h-6 text-color-main" />,
-    content: <BuyingProcessContent />,
-  },
-  {
-    id: "cost-overview",
-    title: "Cost Overview",
-    subtitle: "Understanding the full financial picture",
-    icon: <DollarSign className="w-6 h-6 text-color-main" />,
-    content: (
-      <div className="space-y-4 mt-4 text-sm text-gray-700">
-        <div className="border-l-4 pl-5 border-color-main">
-          <h4 className="text-lg text-color-jet-black mb-1.5 font-semibold">Stamp Duty</h4>
-          <p className="text-gray-600">5-7.5% of property value depending on price tier</p>
+// ─── Article renderer (for type=article, cost-overview style) ─────────────────
+const ArticleContent: React.FC<{ section: TGuideSection }> = ({ section }) => (
+  <div className="space-y-4 mt-4 text-sm text-gray-700">
+    {section.items.map((item) => {
+      const isNote = item.type === "note";
+      const bullets = item.content.split("\n").filter(Boolean);
+      return (
+        <div
+          key={item.id}
+          className={`border-l-4 pl-5 ${isNote ? "border-[#FE9A00]" : "border-color-main"}`}
+        >
+          {item.title && (
+            <h4 className="text-lg text-color-jet-black mb-1.5 font-semibold">{item.title}</h4>
+          )}
+          {bullets.length > 1 ? (
+            <ul className="list-disc pl-5 space-y-1 text-gray-600">
+              {bullets.map((b, i) => <li key={i}>{b}</li>)}
+            </ul>
+          ) : (
+            <p className="text-gray-600">{item.content}</p>
+          )}
         </div>
-        <div className="border-l-4 pl-5 border-color-main">
-          <h4 className="text-lg text-color-jet-black mb-1.5 font-semibold">Transfer Tax</h4>
-          <p className="text-gray-600">4-5% of property value</p>
-        </div>
-        <div className="border-l-4 pl-5 border-color-main">
-          <h4 className="text-lg text-color-jet-black mb-1.5 font-semibold">Legal Fees</h4>
-          <p className="text-gray-600">Typically 2-3% of purchase price plus disbursements</p>
-        </div>
-        <div className="border-l-4 pl-5 border-color-main">
-          <h4 className="text-lg text-color-jet-black mb-1.5 font-semibold">Agent Commission</h4>
-          <p className="text-gray-600">Usually 5% paid by seller, but verify in agreement</p>
-        </div>
-        <div className="border-l-4 pl-5 border-[#FE9A00]">
-          <h4 className="text-lg text-color-jet-black mb-1.5 font-semibold">Hidden Costs to Consider</h4>
-          <ul className="list-disc pl-5 space-y-1 text-gray-600">
-            <li>Property insurance</li>
-            <li>Ongoing maintenance and property management</li>
-            <li>Utilities setup and deposits</li>
-            <li>Annual property tax (0.75-1% of property value)</li>
-            <li>Currency exchange fees</li>
-          </ul>
-        </div>
-      </div>
-    ),
-  },
-  {
-    id: "financing-guide",
-    title: "Financing Guide",
-    subtitle: "Mortgage options for foreign buyers",
-    icon: <FileText className="w-6 h-6 text-color-main" />,
-    content: (
-      <div className="space-y-4 mt-4 text-sm text-gray-700">
-        <div>
-          <h4 className="text-lg font-semibold text-[#364153] mb-2">Eligibility Basics</h4>
-          <ul className="text-[#364153] text-base font-normal pl-5 space-y-1">
-            <li>Most Jamaican banks offer mortgages to foreign nationals</li>
-            <li>Typical down payment: 10-25% for non-residents</li>
-            <li>Interest rates: 7-11% depending on bank and profile</li>
-            <li>Maximum loan-to-value: 60-90% for foreign buyers</li>
-          </ul>
-        </div>
-        <div>
-          <h4 className="text-lg font-semibold text-[#364153] mb-2">Required Documents</h4>
-          <ul className="text-[#364153] text-base font-normal pl-5 space-y-1">
-            <li>Proof of income (pay stubs, tax returns, employment letter)</li>
-            <li>Bank statements (last 6 months)</li>
-            <li>Credit report from home country</li>
-            <li>Valid passport and proof of address</li>
-            <li>Property valuation and title documents</li>
-          </ul>
-        </div>
-        <div>
-          <h4 className="text-lg font-semibold text-[#364153] mb-2">Bank Expectations</h4>
-          <ul className="text-[#364153] text-base font-normal pl-5 space-y-1">
-            <li>Debt-to-income ratio below 40%</li>
-            <li>Strong credit history in home country</li>
-            <li>Stable employment (2+ years)</li>
-            <li>Sufficient reserves for 6+ months payments</li>
-          </ul>
-        </div>
-      </div>
-    ),
-  },
-  {
-    id: "risks-considerations",
-    title: "Risks & Considerations",
-    subtitle: "Important factors to understand",
-    icon: <TriangleAlert className="w-6 h-6 text-[#E17100]" />,
-    iconBg: "bg-[#FEF3C6]",
-    content: (
-      <div className="space-y-4 mt-4 text-sm text-gray-700">
-        <div>
-          <h4 className="text-lg text-[#BB4D00] font-semibold mb-2">Legal Risks</h4>
-          <ul className="text-base font-normal text-[#364153] list-disc pl-5 space-y-1">
-            <li>Always use a qualified local attorney</li>
-            <li>Verify clear title before committing</li>
-            <li>Understand zoning and building restrictions</li>
-            <li>Be aware of squatter's rights laws</li>
-          </ul>
-        </div>
-        <div>
-          <h4 className="text-lg text-[#BB4D00] font-semibold mb-2">Market Risks</h4>
-          <ul className="text-base font-normal text-[#364153] list-disc pl-5 space-y-1">
-            <li>Property values can fluctuate with tourism trends</li>
-            <li>Currency exchange rate volatility (JMD/USD)</li>
-            <li>Limited liquidity in some market segments</li>
-            <li>Rental income may vary seasonally</li>
-          </ul>
-        </div>
-        <div>
-          <h4 className="text-lg text-[#BB4D00] font-semibold mb-2">Foreign Ownership Considerations</h4>
-          <ul className="text-base font-normal text-[#364153] list-disc pl-5 space-y-1">
-            <li>Non-residents can own property but some restrictions apply</li>
-            <li>Properties over 0.5 acres may require government approval</li>
-            <li>Estate planning: understand inheritance laws</li>
-            <li>Tax implications in both Jamaica and home country</li>
-          </ul>
-        </div>
-      </div>
-    ),
-  },
-];
+      );
+    })}
+  </div>
+);
 
+// ─── Warning renderer (for type=warning, risks style) ────────────────────────
+const WarningContent: React.FC<{ section: TGuideSection }> = ({ section }) => (
+  <div className="space-y-4 mt-4 text-sm text-gray-700">
+    {section.items.map((item) => {
+      const bullets = item.content.split("\n").filter(Boolean);
+      return (
+        <div key={item.id}>
+          {item.title && (
+            <h4 className="text-lg text-[#BB4D00] font-semibold mb-2">{item.title}</h4>
+          )}
+          <ul className="text-base font-normal text-[#364153] list-disc pl-5 space-y-1">
+            {bullets.map((b, i) => <li key={i}>{b}</li>)}
+          </ul>
+        </div>
+      );
+    })}
+  </div>
+);
+
+// ─── Dynamic content by section type ─────────────────────────────────────────
+const SectionContent: React.FC<{ section: TGuideSection }> = ({ section }) => {
+  if (section.type === "accordion") return <AccordionContent section={section} />;
+  if (section.type === "warning") return <WarningContent section={section} />;
+  return <ArticleContent section={section} />;
+};
+
+// ─── Loading skeleton ─────────────────────────────────────────────────────────
+const GuideSkeleton: React.FC = () => (
+  <div className="space-y-4">
+    {[...Array(4)].map((_, i) => (
+      <div key={i} className="rounded-2xl border border-gray-200 py-4 px-6 animate-pulse">
+        <div className="flex items-center space-x-4">
+          <div className="w-12 h-12 rounded-xl bg-gray-200" />
+          <div className="space-y-2">
+            <div className="h-5 w-40 bg-gray-200 rounded" />
+            <div className="h-4 w-56 bg-gray-100 rounded" />
+          </div>
+        </div>
+      </div>
+    ))}
+  </div>
+);
+
+// ─── Main exported component ──────────────────────────────────────────────────
 interface GuideContentProps {
   onProgressUpdate?: (completedCount: number, isAllCompleted: boolean) => void;
 }
 
 const GuideContent: React.FC<GuideContentProps> = ({ onProgressUpdate }) => {
-  const [expandedSection, setExpandedSection] = useState<string | null>("buying-process");
-  const [completedSections, setCompletedSections] = useState<Record<string, boolean>>({});
+  const { data, isLoading, isError } = useGetInvestmentGuideQuery();
+  const [markSectionAsRead, { isLoading: isMarking }] = useMarkSectionAsReadMutation();
+  const [expandedSection, setExpandedSection] = useState<string | null>(null);
+  const [pendingId, setPendingId] = useState<string | null>(null);
+
+  const sections = data?.data ?? [];
+
+  // Notify parent of progress whenever sections change
+  React.useEffect(() => {
+    if (sections.length === 0) return;
+    const completedCount = sections.filter((s) => s.isCompleted).length;
+    const isAllCompleted = completedCount === sections.length;
+    onProgressUpdate?.(completedCount, isAllCompleted);
+    // Auto-open first incomplete section on initial load
+    if (expandedSection === null) {
+      const firstIncomplete = sections.find((s) => !s.isCompleted);
+      setExpandedSection(firstIncomplete?.id ?? sections[0]?.id ?? null);
+    }
+  }, [sections]);
 
   const toggleSection = (id: string) => {
     setExpandedSection(expandedSection === id ? null : id);
   };
 
-  const markAsRead = (id: string, e: React.MouseEvent) => {
+  const handleMarkAsRead = async (sectionId: string, e: React.MouseEvent) => {
     e.stopPropagation();
-    const newCompleted = { ...completedSections, [id]: true };
-    setCompletedSections(newCompleted);
-
-    const completedCount = Object.values(newCompleted).filter(Boolean).length;
-    const isAllCompleted = SECTIONS.every((s) => newCompleted[s.id]);
-
-    if (onProgressUpdate) {
-      onProgressUpdate(completedCount, isAllCompleted);
-    }
-
-    // Auto-expand next section if available
-    const currentIndex = SECTIONS.findIndex((s) => s.id === id);
-    if (currentIndex >= 0 && currentIndex < SECTIONS.length - 1) {
-      setExpandedSection(SECTIONS[currentIndex + 1].id);
-    } else {
-      setExpandedSection(null);
+    setPendingId(sectionId);
+    try {
+      await markSectionAsRead(sectionId).unwrap();
+      // Auto-expand next incomplete section
+      const currentIndex = sections.findIndex((s) => s.id === sectionId);
+      const nextIncomplete = sections.slice(currentIndex + 1).find((s) => !s.isCompleted);
+      setExpandedSection(nextIncomplete?.id ?? null);
+    } catch {
+      // error toast is handled by baseQueryWithToast
+    } finally {
+      setPendingId(null);
     }
   };
 
+  if (isLoading) return <GuideSkeleton />;
+  if (isError) {
+    return (
+      <div className="text-center py-12 text-gray-500">
+        <p>Failed to load investment guide. Please try again.</p>
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-4">
-      {SECTIONS.map((section) => {
+      {sections.map((section) => {
         const isExpanded = expandedSection === section.id;
-        const isCompleted = completedSections[section.id];
+        const isCompleted = section.isCompleted;
+        const isCurrentlyMarking = pendingId === section.id && isMarking;
 
         return (
           <div
             key={section.id}
-            className={`rounded-2xl border overflow-hidden transition-colors py-4 px-4 md:px-6 ${isCompleted ? "border-green-200" : "border-[#919EAB]"
-              }`}
+            className={`rounded-2xl border overflow-hidden transition-colors py-4 px-4 md:px-6 ${
+              isCompleted ? "border-green-200" : "border-[#919EAB]"
+            }`}
           >
             <div
               onClick={() => toggleSection(section.id)}
               className="flex items-start justify-between cursor-pointer transition-colors"
             >
               <div className="flex items-center space-x-3 md:space-x-4">
-                <div className={`p-2 md:p-3 rounded-xl ${section.iconBg || "bg-[#FFF0F7]"}`}>
-                  {section.icon}
+                <div className={`p-2 md:p-3 rounded-xl ${getSectionIconBg(section.type)}`}>
+                  {getSectionIcon(section.type, section.icon)}
                 </div>
                 <div>
                   <h3 className="md:text-2xl text-lg font-bold text-black">{section.title}</h3>
@@ -296,7 +235,7 @@ const GuideContent: React.FC<GuideContentProps> = ({ onProgressUpdate }) => {
                   className="border-t border-[#717182]"
                 >
                   <div className="pt-2">
-                    {section.content}
+                    <SectionContent section={section} />
 
                     <div className="mt-6 pt-4">
                       {isCompleted ? (
@@ -305,10 +244,11 @@ const GuideContent: React.FC<GuideContentProps> = ({ onProgressUpdate }) => {
                         </div>
                       ) : (
                         <button
-                          onClick={(e) => markAsRead(section.id, e)}
-                          className="text-sm font-medium text-gray-700 hover:text-black hover:bg-gray-100 px-4 py-2 rounded-md transition-colors cursor-pointer border border-gray-200"
+                          onClick={(e) => handleMarkAsRead(section.id, e)}
+                          disabled={isCurrentlyMarking}
+                          className="text-sm font-medium text-gray-700 hover:text-black hover:bg-gray-100 px-4 py-2 rounded-md transition-colors cursor-pointer border border-gray-200 disabled:opacity-60 disabled:cursor-not-allowed"
                         >
-                          Mark as Read
+                          {isCurrentlyMarking ? "Saving..." : "Mark as Read"}
                         </button>
                       )}
                     </div>
@@ -322,5 +262,9 @@ const GuideContent: React.FC<GuideContentProps> = ({ onProgressUpdate }) => {
     </div>
   );
 };
+
+// Keep SECTIONS export for backward compat with InvestmentGuide.tsx header count
+// It will now reflect the count from API data length or default 4
+export const SECTIONS = [1, 2, 3, 4]; // placeholder — InvestmentGuide.tsx should use API data length
 
 export default GuideContent;

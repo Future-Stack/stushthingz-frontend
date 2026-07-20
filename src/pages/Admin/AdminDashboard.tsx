@@ -5,8 +5,9 @@ import UsersTab from "./components/tabs/UsersTab";
 import ContentTab from "./components/tabs/ContentTab";
 import DocumentsTab from "./components/tabs/DocumentsTab";
 import PropertiesTab from "./components/tabs/PropertiesTab";
-import AddUserModal, { AddUserFormData } from "./components/modals/AddUserModal";
+// import AddUserModal, { AddUserFormData } from "./components/modals/AddUserModal";
 import { useGetAdminDashboardStatsQuery } from "@/store/features/auth/auth.api";
+import AddUserModal from "./components/modals/AddUserModal";
 
 // ─── Tabs ─────────────────────────────────────────────────────────────────────
 const TABS = [

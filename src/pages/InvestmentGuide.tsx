@@ -1,10 +1,14 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import GuideContent, { SECTIONS } from "@/components/onboarding/GuideContent";
+import GuideContent from "@/components/onboarding/GuideContent";
+import { useGetInvestmentGuideQuery } from "@/store/features/investmentGuide/investmentGuide.api";
 
 const InvestmentGuide = () => {
   const navigate = useNavigate();
+  const { data } = useGetInvestmentGuideQuery();
   const [progress, setProgress] = useState({ completedCount: 0, isAllCompleted: false });
+
+  const totalSections = data?.data?.length ?? 4;
 
   const handleProgressUpdate = (completedCount: number, isAllCompleted: boolean) => {
     setProgress({ completedCount, isAllCompleted });
@@ -19,27 +23,29 @@ const InvestmentGuide = () => {
             <div>
               <h1 className="text-3xl font-bold text-color-jet-black">Jamaica Investment Guide</h1>
               <p className="text-base text-[#4A5565] font-normal mb-4.5">
-                {progress.completedCount} of {SECTIONS.length} sections completed
+                {progress.completedCount} of {totalSections} sections completed
               </p>
             </div>
             <button
               onClick={() => navigate("/onboarding/documents")}
               disabled={!progress.isAllCompleted}
-              className={`text-sm px-2 py-2 rounded-lg font-medium transition-colors ${progress.isAllCompleted
-                ? "bg-color-main hover:bg-[#d01958] text-white cursor-pointer"
-                : "bg-pink-200 text-white cursor-not-allowed"
-                }`}
+              className={`text-sm px-2 py-2 rounded-lg font-medium transition-colors ${
+                progress.isAllCompleted
+                  ? "bg-color-main hover:bg-[#d01958] text-white cursor-pointer"
+                  : "bg-pink-200 text-white cursor-not-allowed"
+              }`}
             >
               Continue to Documents →
             </button>
           </div>
           {/* Progress Bar */}
           <div className="flex space-x-1 mx-8 mt-2 mb-4.5">
-            {SECTIONS.map((_, idx) => (
+            {Array.from({ length: totalSections }).map((_, idx) => (
               <div
                 key={idx}
-                className={`h-2 w-full rounded-full ${idx < progress.completedCount ? "bg-color-main" : "bg-gray-200"
-                  }`}
+                className={`h-2 w-full rounded-full ${
+                  idx < progress.completedCount ? "bg-color-main" : "bg-gray-200"
+                }`}
               />
             ))}
           </div>
@@ -53,6 +59,5 @@ const InvestmentGuide = () => {
     </div>
   );
 };
-
 
 export default InvestmentGuide;
