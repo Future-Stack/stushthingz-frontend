@@ -1,27 +1,53 @@
 import React, { useState, useRef } from "react";
 import { ChevronDown, Check } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
-import { InvestorProfileDetails, ApplicationStatus } from "../data/mockData";
 import { useOnClickOutside } from "../../../../hooks/useOnClickOutside";
+import { TInvestorProfileData, useUpdateDocumentStatusMutation, TDocumentStatus } from "@/store/api/bankApi";
 
 interface OverviewTabProps {
-  profile: InvestorProfileDetails;
+  profile: TInvestorProfileData;
 }
 
+type ApplicationStatus = "Under Review" | "Approved" | "Rejected" | "Need More Info";
+
 const STATUS_OPTIONS: ApplicationStatus[] = ["Under Review", "Approved", "Rejected", "Need More Info"];
+
+const STATUS_TO_DOC_STATUS: Record<ApplicationStatus, TDocumentStatus> = {
+  "Under Review": "underReview",
+  "Approved": "accepted",
+  "Rejected": "rejected",
+  "Need More Info": "pending",
+};
 
 const OverviewTab: React.FC<OverviewTabProps> = ({ profile }) => {
   const [statusDropdownOpen, setStatusDropdownOpen] = useState(false);
   const [selectedStatus, setSelectedStatus] = useState<ApplicationStatus>(
-    profile.overview.applicationStatus
+    (profile.overview.applicationStatusLabel as ApplicationStatus) || "Under Review"
   );
   const dropdownRef = useRef<HTMLDivElement>(null);
 
+  const [updateDocumentStatus] = useUpdateDocumentStatusMutation();
+
   useOnClickOutside(dropdownRef, () => setStatusDropdownOpen(false));
 
-  const handleStatusSelect = (status: ApplicationStatus) => {
+  const handleStatusSelect = async (status: ApplicationStatus) => {
     setSelectedStatus(status);
     setStatusDropdownOpen(false);
+
+    const uploadedDocs = profile.documents.uploadedDocuments;
+    if (uploadedDocs && uploadedDocs.length > 0) {
+      try {
+        await updateDocumentStatus({
+          id: uploadedDocs[0].id,
+          body: {
+            status: STATUS_TO_DOC_STATUS[status],
+            note: `Application status changed to ${status}`,
+          },
+        }).unwrap();
+      } catch (err) {
+        console.error("Failed to update status from overview:", err);
+      }
+    }
   };
 
   return (
@@ -29,37 +55,42 @@ const OverviewTab: React.FC<OverviewTabProps> = ({ profile }) => {
       <div className="grid grid-cols-2 gap-6">
         <div>
           <p className="text-xs font-semibold text-[#4B5A7A] mb-1">Full Name</p>
-          <p className="text-sm text-gray-900">{profile.overview.fullName}</p>
+          <p className="text-sm text-gray-900">{profile.overview.fullName || "N/A"}</p>
         </div>
         <div>
           <p className="text-xs font-semibold text-[#4B5A7A] mb-1">Country of Residence</p>
-          <p className="text-sm text-gray-900">{profile.overview.country}</p>
+          <p className="text-sm text-gray-900">{profile.overview.countryOfResidence || "N/A"}</p>
         </div>
         <div>
           <p className="text-xs font-semibold text-[#4B5A7A] mb-1">Investment Goal</p>
-          <p className="text-sm text-gray-900">{profile.overview.investmentGoal}</p>
+          <p className="text-sm text-gray-900">{profile.overview.investmentGoal || "N/A"}</p>
         </div>
         <div>
           <p className="text-xs font-semibold text-[#4B5A7A] mb-1">Budget Range</p>
-          <p className="text-sm text-gray-900">{profile.overview.budgetRange}</p>
+          <p className="text-sm text-gray-900">{profile.overview.budgetRange || "N/A"}</p>
         </div>
         <div>
           <p className="text-xs font-semibold text-[#4B5A7A] mb-1">Timeline</p>
-          <p className="text-sm text-gray-900">{profile.overview.timeline}</p>
+          <p className="text-sm text-gray-900">{profile.overview.timeline || "N/A"}</p>
         </div>
         <div>
           <p className="text-xs font-semibold text-[#4B5A7A] mb-1">Readiness Status</p>
-          <p className="text-sm text-gray-900">{profile.overview.readinessStatus}</p>
+          <p className="text-sm text-gray-900">
+            {profile.overview.readinessLabel
+              ? `${profile.overview.readinessPercentage}% ${profile.overview.readinessLabel}`
+              : "N/A"}
+          </p>
         </div>
       </div>
 
       <div>
         <p className="text-xs font-semibold text-[#4B5A7A] mb-1">Application Status</p>
-        {/* Dropdown wrapper — position:relative so the menu pops above this container */}
+        {/* Dropdown wrapper */}
         <div className="relative mt-2" ref={dropdownRef}>
           <button
+            type="button"
             onClick={() => setStatusDropdownOpen(!statusDropdownOpen)}
-            className="w-full bg-gray-50 border border-gray-100 rounded-lg py-2.5 px-4 flex items-center justify-between text-sm font-semibold text-gray-900 hover:bg-gray-100 transition-colors"
+            className="w-full bg-gray-50 border border-gray-100 rounded-lg py-2.5 px-4 flex items-center justify-between text-sm font-semibold text-gray-900 hover:bg-gray-100 cursor-pointer transition-colors"
           >
             {selectedStatus}
             <motion.span
@@ -71,7 +102,6 @@ const OverviewTab: React.FC<OverviewTabProps> = ({ profile }) => {
             </motion.span>
           </button>
 
-          {/* Dropdown — opens ABOVE the button via bottom-full */}
           <AnimatePresence>
             {statusDropdownOpen && (
               <motion.div
@@ -87,9 +117,10 @@ const OverviewTab: React.FC<OverviewTabProps> = ({ profile }) => {
                 <div className="px-1">
                   {STATUS_OPTIONS.map((option) => (
                     <button
+                      type="button"
                       key={option}
                       onClick={() => handleStatusSelect(option)}
-                      className={`w-full text-left px-3 py-2.5 text-sm rounded-lg flex justify-between items-center transition-colors ${
+                      className={`w-full text-left px-3 py-2.5 text-sm rounded-lg flex justify-between items-center cursor-pointer transition-colors ${
                         selectedStatus === option
                           ? "bg-gray-50 text-gray-900 font-semibold"
                           : "text-gray-600 hover:bg-gray-50 font-medium"

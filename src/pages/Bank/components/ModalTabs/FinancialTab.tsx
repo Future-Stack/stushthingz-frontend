@@ -1,42 +1,61 @@
 import React from "react";
 import { Info } from "lucide-react";
-import { InvestorProfileDetails } from "../data/mockData";
+import { TInvestorProfileData } from "@/store/api/bankApi";
 
 interface FinancialTabProps {
-  profile: InvestorProfileDetails;
+  profile: TInvestorProfileData;
 }
 
 const FinancialTab: React.FC<FinancialTabProps> = ({ profile }) => {
+  const { financial, overview } = profile;
+
   return (
     <div className="space-y-6">
-      <div className="border border-gray-100 rounded-xl p-5">
-        <h3 className="text-sm font-bold text-gray-900 mb-5">Financial Summary</h3>
-        <div className="grid grid-cols-2 gap-y-6 gap-x-4">
+      <div className="p-5 border border-gray-100 rounded-xl">
+        <h3 className="mb-5 font-bold text-gray-900 text-sm">Financial Summary</h3>
+        <div className="gap-x-4 gap-y-6 grid grid-cols-2">
           <div>
-            <p className="text-xs font-semibold text-[#4B5A7A] mb-1">Monthly Income</p>
-            <p className="text-sm text-gray-900">{profile.financial.monthlyIncome}</p>
+            <p className="mb-1 font-semibold text-[#4B5A7A] text-xs">Monthly Income / Employment</p>
+            <p className="text-gray-900 text-sm">{financial.employmentType || "N/A"}</p>
           </div>
           <div>
-            <p className="text-xs font-semibold text-[#4B5A7A] mb-1">Savings Available</p>
-            <p className="text-sm text-gray-900">{profile.financial.savingsAvailable}</p>
+            <p className="mb-1 font-semibold text-[#4B5A7A] text-xs">Savings / Income Type</p>
+            <p className="text-gray-900 text-sm">
+              {financial.incomeIsVariable !== null
+                ? financial.incomeIsVariable
+                  ? "Variable Income"
+                  : "Fixed / Stable Income"
+                : "N/A"}
+            </p>
           </div>
           <div>
-            <p className="text-xs font-semibold text-[#4B5A7A] mb-1">Debt Obligations</p>
-            <p className="text-sm text-gray-900">{profile.financial.debtObligations}</p>
+            <p className="mb-1 font-semibold text-[#4B5A7A] text-xs">Property Intent</p>
+            <p className="text-gray-900 text-sm">{financial.propertyIntent || "N/A"}</p>
           </div>
           <div>
-            <p className="text-xs font-semibold text-[#4B5A7A] mb-1">Investment Budget</p>
-            <p className="text-sm text-gray-900">{profile.financial.investmentBudget}</p>
+            <p className="mb-1 font-semibold text-[#4B5A7A] text-xs">Investment Budget</p>
+            <p className="text-gray-900 text-sm">
+              {financial.investmentBudgetLabel ||
+                (financial.investmentBudget
+                  ? `$${financial.investmentBudget.toLocaleString()}`
+                  : "N/A")}
+            </p>
           </div>
         </div>
       </div>
 
-      <div className="bg-[#F0F7FF] border border-[#DCEAFC] rounded-xl p-4 flex gap-3">
-        <Info size={18} className="text-[#193CB8] shrink-0 mt-0.5" />
+      <div className="flex gap-3 bg-[#F0F7FF] p-4 border border-[#DCEAFC] rounded-xl">
+        <Info size={18} className="mt-0.5 text-[#193CB8] shrink-0" />
         <div>
-          <h4 className="text-sm font-bold text-[#1E3A8A]">Readiness Classification</h4>
-          <p className="text-xs text-[#193CB8] mt-1 leading-relaxed">
-            Based on financial assessment, this investor is classified as 80% Ready. Debt-to-income ratio and available savings meet bank requirements.
+          <h4 className="font-bold text-[#1E3A8A] text-sm">Readiness Classification</h4>
+          <p className="mt-1 text-[#193CB8] text-xs leading-relaxed">
+            Based on financial assessment, this investor is classified as{" "}
+            <span className="font-bold">
+              {overview.readinessLabel
+                ? `${overview.readinessPercentage}% ${overview.readinessLabel}`
+                : "80% Ready"}
+            </span>
+            . Debt-to-income ratio and available savings meet bank requirements.
           </p>
         </div>
       </div>
