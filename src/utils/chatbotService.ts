@@ -141,6 +141,38 @@ export const getLenderDocuments = async (
   return response.json();
 };
 
+export interface UserDocument {
+  id: string;
+  name: string;
+  url: string;
+  note?: string | null;
+  status?: string;
+  last_updated?: string;
+  created_at?: string;
+  lender_code?: string;
+  doc_type: string;
+  validation_status?: string;
+  is_legible?: boolean;
+  used_ocr?: boolean;
+  validation_result?: {
+    valid: boolean;
+    issues?: string[];
+    lender?: string;
+    results?: {
+      doc_type: string;
+      valid: boolean;
+      issues?: string[];
+      resolution_paths?: string[];
+    }[];
+  };
+}
+
+export interface UserDocumentsResponse {
+  user_id: string;
+  total: number;
+  documents: UserDocument[];
+}
+
 export const validateDocuments = async (formData: FormData): Promise<DocumentValidationResponse> => {
   const response = await fetch(`${getBaseUrl()}/api/v1/document/validate`, {
     method: "POST",
@@ -156,3 +188,50 @@ export const validateDocuments = async (formData: FormData): Promise<DocumentVal
 
   return response.json();
 };
+
+export const getUserDocuments = async (userId: string): Promise<UserDocumentsResponse> => {
+  const response = await fetch(`${getBaseUrl()}/api/v1/document/user/${userId}/documents`, {
+    method: "GET",
+    headers: {
+      "accept": "application/json",
+    },
+  });
+
+  if (!response.ok) {
+    throw new Error(`Get User Documents API error: ${response.statusText}`);
+  }
+
+  return response.json();
+};
+
+export const updateDocument = async (documentId: string, formData: FormData): Promise<UserDocument> => {
+  const response = await fetch(`${getBaseUrl()}/api/v1/document/${documentId}`, {
+    method: "PATCH",
+    headers: {
+      "accept": "application/json",
+    },
+    body: formData,
+  });
+
+  if (!response.ok) {
+    throw new Error(`Update Document API error: ${response.statusText}`);
+  }
+
+  return response.json();
+};
+
+export const deleteDocument = async (documentId: string): Promise<{ success: boolean; message?: string }> => {
+  const response = await fetch(`${getBaseUrl()}/api/v1/document/${documentId}`, {
+    method: "DELETE",
+    headers: {
+      "accept": "application/json",
+    },
+  });
+
+  if (!response.ok) {
+    throw new Error(`Delete Document API error: ${response.statusText}`);
+  }
+
+  return response.json();
+};
+

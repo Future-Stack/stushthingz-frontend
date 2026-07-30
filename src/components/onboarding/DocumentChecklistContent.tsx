@@ -4,13 +4,20 @@ import { FaCheckCircle, FaRegCircle, FaTimes, FaCloudUploadAlt } from "react-ico
 import { Loader2, AlertCircle } from "lucide-react";
 import { toast } from "react-toastify";
 import Modal from "@/components/ui/Modal";
+import { useAppSelector } from "@/store/hook";
+import { selectUser } from "@/store/features/auth/auth.slice";
 import { 
   getLendersList, 
   getLenderDocuments, 
   validateDocuments,
+  getUserDocuments,
+  updateDocument,
+  deleteDocument,
   Lender, 
-  LenderDocumentRequirement 
+  LenderDocumentRequirement,
+  UserDocument
 } from "@/utils/chatbotService";
+import { Eye, Edit, Trash2 } from "lucide-react";
 
 export interface DocFile {
   name: string;
@@ -106,6 +113,7 @@ interface DocumentChecklistContentProps {
 
 const DocumentChecklistContent: React.FC<DocumentChecklistContentProps> = ({ onProgressUpdate }) => {
   const navigate = useNavigate();
+  const user = useAppSelector(selectUser);
   
   const [lenders, setLenders] = useState<Lender[]>([]);
   const [selectedLender, setSelectedLender] = useState<string>("");
@@ -146,6 +154,28 @@ const DocumentChecklistContent: React.FC<DocumentChecklistContentProps> = ({ onP
     fetchLenders();
   }, []);
 
+  // Storing server-saved user documents per doc_type
+  const [serverUserDocs, setServerUserDocs] = useState<UserDocument[]>([]);
+  const [updatingDocId, setUpdatingDocId] = useState<string | null>(null);
+
+  // Fetch user uploaded documents from API
+  const fetchUserDocuments = async () => {
+    const userId = user?.id;
+    if (!userId) return;
+    try {
+      const res = await getUserDocuments(userId);
+      if (res && res.documents) {
+        setServerUserDocs(res.documents);
+      }
+    } catch (err) {
+      console.error("Failed to load user documents:", err);
+    }
+  };
+
+  useEffect(() => {
+    fetchUserDocuments();
+  }, [user]);
+
   // Fetch Documents when configuration changes
   useEffect(() => {
     if (!selectedLender) {
@@ -160,8 +190,7 @@ const DocumentChecklistContent: React.FC<DocumentChecklistContentProps> = ({ onP
       try {
         const response = await getLenderDocuments(selectedLender, employmentType);
         setDocuments(response.documents);
-        
-        // Cleanup uploads
+
         const currentDocTypes = response.documents.map((d) => d.doc_type);
         const filteredUploaded = { ...uploadedFiles };
         let hasChanges = false;
@@ -177,9 +206,11 @@ const DocumentChecklistContent: React.FC<DocumentChecklistContentProps> = ({ onP
           setUploadedFiles(filteredUploaded);
         }
 
-        const uploadedCount = Object.keys(filteredUploaded).filter(
-          (key) => filteredUploaded[key].length > 0
-        ).length;
+        const uploadedCount = response.documents.filter((d) => {
+          const hasServerDoc = serverUserDocs.some((sd) => areDocTypesMatching(d.doc_type, sd.doc_type));
+          const hasLocalDoc = (uploadedFiles[d.doc_type] || []).length > 0;
+          return hasServerDoc || hasLocalDoc;
+        }).length;
 
         if (onProgressUpdate) {
           onProgressUpdate(uploadedCount, response.documents.length);
@@ -191,7 +222,38 @@ const DocumentChecklistContent: React.FC<DocumentChecklistContentProps> = ({ onP
       }
     };
     fetchDocuments();
-  }, [selectedLender, employmentType]);
+  }, [selectedLender, employmentType, serverUserDocs]);
+
+  const handleDeleteUserDoc = async (docId: string) => {
+    try {
+      await deleteDocument(docId);
+      toast.success("Document deleted successfully");
+      fetchUserDocuments();
+    } catch (err) {
+      console.error(err);
+      toast.error("Failed to delete document");
+    }
+  };
+
+  const handleUpdateUserDoc = async (docId: string, newFile: File, docType: string) => {
+    setUpdatingDocId(docId);
+    try {
+      const formData = new FormData();
+      formData.append("file", newFile);
+      formData.append("doc_type", docType);
+      if (selectedLender) formData.append("lender_code", selectedLender);
+      if (user?.id) formData.append("user_id", user.id);
+
+      await updateDocument(docId, formData);
+      toast.success("Document updated successfully");
+      fetchUserDocuments();
+    } catch (err) {
+      console.error(err);
+      toast.error("Failed to update document");
+    } finally {
+      setUpdatingDocId(null);
+    }
+  };
 
   const openModal = (item: LenderDocumentRequirement) => {
     setSelectedDoc(item);
@@ -212,7 +274,9 @@ const DocumentChecklistContent: React.FC<DocumentChecklistContentProps> = ({ onP
 
     setUploading(true);
     try {
+      const user_id = user?.id || "guest";
       const formDataPayload = new FormData();
+      formDataPayload.append("user_id", user_id);
       formDataPayload.append("lender_code", selectedLender);
       formDataPayload.append("employment_type", employmentType);
       formDataPayload.append("income_steady", "true");
@@ -275,6 +339,7 @@ const DocumentChecklistContent: React.FC<DocumentChecklistContentProps> = ({ onP
         onProgressUpdate(uploadedDocsCount, totalDocsCount);
       }
 
+      fetchUserDocuments();
       closeModal();
     } catch (error) {
       console.error(error);
@@ -332,13 +397,13 @@ const DocumentChecklistContent: React.FC<DocumentChecklistContentProps> = ({ onP
   return (
     <div className="space-y-8">
       {/* Selection Row */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6 bg-white border border-[#C4CDD5] rounded-[14px] p-6 shadow-sm">
+      <div className="gap-6 grid grid-cols-1 md:grid-cols-2 bg-white shadow-sm p-6 border border-[#C4CDD5] rounded-[14px]">
         <div>
-          <label className="block text-sm font-semibold text-color-jet-black mb-2">
+          <label className="block mb-2 font-semibold text-color-jet-black text-sm">
             Select Lender
           </label>
           {loadingLenders ? (
-            <div className="flex items-center space-x-2 text-gray-500 py-3">
+            <div className="flex items-center space-x-2 py-3 text-gray-500">
               <Loader2 className="w-5 h-5 animate-spin" />
               <span>Loading lenders...</span>
             </div>
@@ -346,7 +411,7 @@ const DocumentChecklistContent: React.FC<DocumentChecklistContentProps> = ({ onP
             <select
               value={selectedLender}
               onChange={(e) => setSelectedLender(e.target.value)}
-              className="w-full bg-[#F3F3F5] border border-gray-200 rounded-lg px-4 py-3 focus:ring-2 focus:ring-pink-500 outline-none text-gray-800 font-medium"
+              className="bg-[#F3F3F5] px-4 py-3 border border-gray-200 rounded-lg outline-none focus:ring-2 focus:ring-pink-500 w-full font-medium text-gray-800"
             >
               <option value="">-- Choose Lender --</option>
               {lenders.map((lender) => (
@@ -359,13 +424,13 @@ const DocumentChecklistContent: React.FC<DocumentChecklistContentProps> = ({ onP
         </div>
 
         <div>
-          <label className="block text-sm font-semibold text-color-jet-black mb-2">
+          <label className="block mb-2 font-semibold text-color-jet-black text-sm">
             Employment Type
           </label>
           <select
             value={employmentType}
             onChange={(e) => setEmploymentType(e.target.value)}
-            className="w-full bg-[#F3F3F5] border border-gray-200 rounded-lg px-4 py-3 focus:ring-2 focus:ring-pink-500 outline-none text-gray-800 font-medium"
+            className="bg-[#F3F3F5] px-4 py-3 border border-gray-200 rounded-lg outline-none focus:ring-2 focus:ring-pink-500 w-full font-medium text-gray-800"
           >
             <option value="employed">Employed</option>
             <option value="self_employed">Self Employed</option>
@@ -375,29 +440,32 @@ const DocumentChecklistContent: React.FC<DocumentChecklistContentProps> = ({ onP
 
       {/* Checklist Card */}
       {loadingDocs ? (
-        <div className="bg-white border border-[#C4CDD5] rounded-[14px] p-12 flex flex-col items-center justify-center text-center">
-          <Loader2 className="w-10 h-10 animate-spin text-color-main mb-4" />
+        <div className="flex flex-col justify-center items-center bg-white p-12 border border-[#C4CDD5] rounded-[14px] text-center">
+          <Loader2 className="mb-4 w-10 h-10 text-color-main animate-spin" />
           <p className="text-gray-500">Retrieving required documents list...</p>
         </div>
       ) : !selectedLender ? (
-        <div className="bg-white border border-[#C4CDD5] rounded-[14px] p-12 text-center text-gray-500">
+        <div className="bg-white p-12 border border-[#C4CDD5] rounded-[14px] text-gray-500 text-center">
           Please select a lender to view your required document checklist.
         </div>
       ) : (
-        <div className="bg-white border border-[#C4CDD5] rounded-[14px] p-4 md:p-6 shadow-sm">
-          <h2 className="text-2xl text-color-jet-black font-bold mb-4">
+        <div className="bg-white shadow-sm p-4 md:p-6 border border-[#C4CDD5] rounded-[14px]">
+          <h2 className="mb-4 font-bold text-color-jet-black text-2xl">
             {lenders.find((l) => l.code === selectedLender)?.name || "Lender"} Documents
           </h2>
           
           {documents.length === 0 ? (
-            <p className="text-gray-500 py-6 text-center">No documents required for this configuration.</p>
+            <p className="py-6 text-gray-500 text-center">No documents required for this configuration.</p>
           ) : (
-            <div className="bg-white rounded-xl border border-gray-100 overflow-hidden">
+            <div className="bg-white border border-gray-100 rounded-xl overflow-hidden">
               {documents.map((item, idx) => {
-                const docFiles = uploadedFiles[item.doc_type] || [];
-                const isUploaded = docFiles.length > 0;
+                const localDocFiles = uploadedFiles[item.doc_type] || [];
+                const matchingServerDocs = serverUserDocs.filter((sd) =>
+                  areDocTypesMatching(item.doc_type, sd.doc_type)
+                );
+                const isUploaded = localDocFiles.length > 0 || matchingServerDocs.length > 0;
                 const errors = docErrors[item.doc_type] || [];
-                
+
                 return (
                   <div
                     key={item.doc_type}
@@ -405,12 +473,12 @@ const DocumentChecklistContent: React.FC<DocumentChecklistContentProps> = ({ onP
                       idx !== documents.length - 1 ? "border-b border-gray-100" : ""
                     }`}
                   >
-                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 w-full">
-                      <div className="flex items-start space-x-4">
+                    <div className="flex sm:flex-row flex-col justify-between sm:items-start gap-4 w-full">
+                      <div className="flex flex-1 items-start space-x-4">
                         <div className="mt-1">
                           {isUploaded ? (
                             errors.length > 0 ? (
-                              <AlertCircle className="text-red-500 w-5 h-5 shrink-0" />
+                              <AlertCircle className="w-5 h-5 text-red-500 shrink-0" />
                             ) : (
                               <FaCheckCircle className="text-color-main text-xl" />
                             )
@@ -418,28 +486,95 @@ const DocumentChecklistContent: React.FC<DocumentChecklistContentProps> = ({ onP
                             <FaRegCircle className="text-gray-300 text-xl" />
                           )}
                         </div>
-                        <div>
-                          <h3 className="text-lg text-color-jet-black font-semibold mb-0.5">
-                            {formatDocTitle(item.doc_type)}
-                          </h3>
-                          <p className="text-sm text-[#4A5565] font-normal">
+                        <div className="flex-1">
+                          <div className="flex flex-wrap items-center gap-2">
+                            <h3 className="font-semibold text-color-jet-black text-lg">
+                              {formatDocTitle(item.doc_type)}
+                            </h3>
+                            {matchingServerDocs.map((sd) => (
+                              <span
+                                key={sd.id}
+                                className={`text-[11px] px-2 py-0.5 rounded-full font-medium uppercase tracking-wider ${
+                                  sd.validation_status === "valid" || sd.status === "valid"
+                                    ? "bg-green-100 text-green-700 border border-green-200"
+                                    : sd.validation_status === "failed"
+                                    ? "bg-red-100 text-red-700 border border-red-200"
+                                    : "bg-yellow-100 text-yellow-800 border border-yellow-200"
+                                }`}
+                              >
+                                {sd.validation_status || sd.status || "Uploaded"}
+                              </span>
+                            ))}
+                          </div>
+                          <p className="mt-0.5 font-normal text-[#4A5565] text-sm">
                             {formatDocDesc(item)}
                           </p>
-                          
-                          {/* Multiple Uploaded Files list */}
-                          {isUploaded && (
+
+                          {/* Server-saved Documents display with actions */}
+                          {matchingServerDocs.length > 0 && (
+                            <div className="space-y-2 mt-3">
+                              {matchingServerDocs.map((sDoc) => (
+                                <div
+                                  key={sDoc.id}
+                                  className="flex flex-wrap justify-between items-center gap-2 bg-gray-50 p-2.5 border border-gray-200 rounded-lg text-xs"
+                                >
+                                  <div className="flex items-center gap-2 min-w-0">
+                                    <FaCloudUploadAlt className="text-color-main shrink-0" />
+                                    <span className="max-w-[200px] font-medium text-gray-800 truncate" title={sDoc.name}>
+                                      {sDoc.name}
+                                    </span>
+                                  </div>
+                                  <div className="flex items-center gap-2">
+                                    {sDoc.url && (
+                                      <a
+                                        href={sDoc.url}
+                                        target="_blank"
+                                        rel="noopener noreferrer"
+                                        className="flex items-center gap-1 bg-blue-50 px-2 py-1 rounded font-medium text-blue-600 hover:text-blue-800"
+                                      >
+                                        <Eye size={13} /> View
+                                      </a>
+                                    )}
+                                    <label className="flex items-center gap-1 bg-white px-2 py-1 border border-gray-300 rounded font-medium text-gray-700 hover:text-black cursor-pointer">
+                                      <Edit size={13} />
+                                      {updatingDocId === sDoc.id ? "Updating..." : "Update"}
+                                      <input
+                                        type="file"
+                                        className="hidden"
+                                        onChange={(e) => {
+                                          if (e.target.files && e.target.files[0]) {
+                                            handleUpdateUserDoc(sDoc.id, e.target.files[0], item.doc_type);
+                                          }
+                                        }}
+                                      />
+                                    </label>
+                                    <button
+                                      type="button"
+                                      onClick={() => handleDeleteUserDoc(sDoc.id)}
+                                      className="flex items-center gap-1 bg-red-50 px-2 py-1 rounded font-medium text-red-600 hover:text-red-800 cursor-pointer"
+                                    >
+                                      <Trash2 size={13} /> Delete
+                                    </button>
+                                  </div>
+                                </div>
+                              ))}
+                            </div>
+                          )}
+
+                          {/* Local Session Uploaded Files list */}
+                          {localDocFiles.length > 0 && (
                             <div className="flex flex-wrap gap-2 mt-2">
-                              {docFiles.map((file, fileIdx) => (
-                                <div 
-                                  key={fileIdx} 
-                                  className="flex items-center space-x-2 bg-pink-50 border border-pink-100 rounded-lg px-2.5 py-1 text-xs text-color-main font-medium"
+                              {localDocFiles.map((file, fileIdx) => (
+                                <div
+                                  key={fileIdx}
+                                  className="flex items-center space-x-2 bg-pink-50 px-2.5 py-1 border border-pink-100 rounded-lg font-medium text-color-main text-xs"
                                 >
                                   <FaCloudUploadAlt />
                                   <span className="max-w-[150px] truncate">{file.name}</span>
                                   <button
                                     type="button"
                                     onClick={() => removeSingleFile(item.doc_type, fileIdx)}
-                                    className="text-gray-400 hover:text-red-500 cursor-pointer ml-1"
+                                    className="ml-1 text-gray-400 hover:text-red-500 cursor-pointer"
                                   >
                                     <FaTimes />
                                   </button>
@@ -450,10 +585,10 @@ const DocumentChecklistContent: React.FC<DocumentChecklistContentProps> = ({ onP
                         </div>
                       </div>
 
-                      <div className="flex items-center space-x-2 self-start sm:self-center">
+                      <div className="flex items-center self-start sm:self-center space-x-2">
                         <button
                           onClick={() => openModal(item)}
-                          className="bg-color-main text-white px-4 py-2 rounded-md text-sm font-medium hover:bg-[#d01958] transition-colors cursor-pointer flex items-center space-x-2"
+                          className="flex items-center space-x-2 bg-color-main hover:bg-[#d01958] px-4 py-2 rounded-md font-medium text-white text-sm transition-colors cursor-pointer"
                         >
                           <FaCloudUploadAlt />
                           <span>Upload Files</span>
@@ -463,12 +598,12 @@ const DocumentChecklistContent: React.FC<DocumentChecklistContentProps> = ({ onP
 
                     {/* Inline Document Validation Errors */}
                     {errors.length > 0 && (
-                      <div className="ml-9 p-3 bg-red-50 border border-red-200 rounded-xl space-y-1.5 animate-fadeIn">
-                        <div className="flex items-center space-x-1.5 text-red-800 font-bold text-xs">
+                      <div className="space-y-1.5 bg-red-50 ml-9 p-3 border border-red-200 rounded-xl animate-fadeIn">
+                        <div className="flex items-center space-x-1.5 font-bold text-red-800 text-xs">
                           <AlertCircle className="w-4 h-4" />
                           <span>Validation Issue(s):</span>
                         </div>
-                        <ul className="list-disc pl-5 space-y-0.5 text-xs text-red-700">
+                        <ul className="space-y-0.5 pl-5 text-red-700 text-xs list-disc">
                           {errors.map((errorMsg, errorIdx) => (
                             <li key={errorIdx}>{errorMsg}</li>
                           ))}
@@ -484,11 +619,11 @@ const DocumentChecklistContent: React.FC<DocumentChecklistContentProps> = ({ onP
       )}
 
       {/* Setup Completion Actions */}
-      {selectedLender && documents.length > 0 && (
-        <div className="bg-white border border-[#C4CDD5] rounded-[14px] p-6 shadow-sm flex flex-col md:flex-row md:items-center justify-between gap-4 mt-8">
+      {/* {selectedLender && documents.length > 0 && (
+        <div className="flex md:flex-row flex-col justify-between md:items-center gap-4 bg-white shadow-sm mt-8 p-6 border border-[#C4CDD5] rounded-[14px]">
           <div>
-            <h3 className="text-lg font-bold text-color-jet-black">Complete Your Onboarding</h3>
-            <p className="text-sm text-gray-500 mt-1">
+            <h3 className="font-bold text-color-jet-black text-lg">Complete Your Onboarding</h3>
+            <p className="mt-1 text-gray-500 text-sm">
               {!allUploaded 
                 ? "💡 To enable: Please upload at least one file for every required document category in the checklist."
                 : hasValidationErrors 
@@ -499,17 +634,17 @@ const DocumentChecklistContent: React.FC<DocumentChecklistContentProps> = ({ onP
           <button
             onClick={handleCompleteSetup}
             disabled={!allUploaded || hasValidationErrors}
-            className="bg-color-main hover:bg-[#d01958] text-white px-8 py-3.5 rounded-lg font-bold transition-all disabled:opacity-50 flex items-center justify-center space-x-2 cursor-pointer shadow-md"
+            className="flex justify-center items-center space-x-2 bg-color-main hover:bg-[#d01958] disabled:opacity-50 shadow-md px-8 py-3.5 rounded-lg font-bold text-white transition-all cursor-pointer"
           >
             <span>Complete Setup & Finish</span>
           </button>
         </div>
-      )}
+      )} */}
 
       {/* Requirements Banner */}
-      <div className="bg-[#EFF6FF] border border-[#BEDBFF] rounded-2xl p-6">
-        <h3 className="text-lg font-semibold text-[#1C398E] mb-2">Document Requirements</h3>
-        <ul className="list-disc pl-5 space-y-1 text-sm font-normal text-[#193CB8]">
+      <div className="bg-[#EFF6FF] p-6 border border-[#BEDBFF] rounded-2xl">
+        <h3 className="mb-2 font-semibold text-[#1C398E] text-lg">Document Requirements</h3>
+        <ul className="space-y-1 pl-5 font-normal text-[#193CB8] text-sm list-disc">
           <li>All documents must be clear and legible</li>
           <li>Accepted formats: PDF, JPG, PNG</li>
           <li>Maximum file size: 10MB per document</li>
@@ -525,13 +660,13 @@ const DocumentChecklistContent: React.FC<DocumentChecklistContentProps> = ({ onP
         title={`Upload ${selectedDoc ? formatDocTitle(selectedDoc.doc_type) : ""}`}
       >
         <div className="space-y-6">
-          <p className="text-sm text-gray-500">
+          <p className="text-gray-500 text-sm">
             {selectedDoc ? formatDocDesc(selectedDoc) : ""}
           </p>
-          <div className="border-2 border-dashed border-gray-300 rounded-xl p-8 flex flex-col items-center justify-center text-center">
-            <FaCloudUploadAlt className="text-4xl text-gray-400 mb-4" />
-            <p className="text-gray-600 mb-2">Drag and drop your files here, or click to browse</p>
-            <p className="text-xs text-gray-400 mb-4">You can select multiple files at once, or add them one by one</p>
+          <div className="flex flex-col justify-center items-center p-8 border-2 border-gray-300 border-dashed rounded-xl text-center">
+            <FaCloudUploadAlt className="mb-4 text-gray-400 text-4xl" />
+            <p className="mb-2 text-gray-600">Drag and drop your files here, or click to browse</p>
+            <p className="mb-4 text-gray-400 text-xs">You can select multiple files at once, or add them one by one</p>
             <input
               type="file"
               id="file-upload"
@@ -547,21 +682,21 @@ const DocumentChecklistContent: React.FC<DocumentChecklistContentProps> = ({ onP
             />
             <label
               htmlFor="file-upload"
-              className="bg-gray-100 text-gray-700 px-6 py-2 rounded-lg font-medium hover:bg-gray-200 transition-colors cursor-pointer"
+              className="bg-gray-100 hover:bg-gray-200 px-6 py-2 rounded-lg font-medium text-gray-700 transition-colors cursor-pointer"
             >
               Browse Files
             </label>
             {uploadFiles.length > 0 && (
-              <div className="mt-4 w-full text-left space-y-1">
-                <p className="text-xs font-semibold text-gray-500">Selected files ({uploadFiles.length}):</p>
-                <div className="max-h-[120px] overflow-y-auto space-y-1.5">
+              <div className="space-y-1 mt-4 w-full text-left">
+                <p className="font-semibold text-gray-500 text-xs">Selected files ({uploadFiles.length}):</p>
+                <div className="space-y-1.5 max-h-[120px] overflow-y-auto">
                   {uploadFiles.map((f, i) => (
-                    <div key={i} className="flex justify-between items-center bg-gray-50 border border-gray-100 rounded-lg p-2 text-xs text-green-600 font-medium">
-                      <span className="truncate flex-1">• {f.name}</span>
+                    <div key={i} className="flex justify-between items-center bg-gray-50 p-2 border border-gray-100 rounded-lg font-medium text-green-600 text-xs">
+                      <span className="flex-1 truncate">• {f.name}</span>
                       <button
                         type="button"
                         onClick={() => setUploadFiles((prev) => prev.filter((_, idx) => idx !== i))}
-                        className="text-gray-400 hover:text-red-500 cursor-pointer ml-2"
+                        className="ml-2 text-gray-400 hover:text-red-500 cursor-pointer"
                       >
                         <FaTimes />
                       </button>
@@ -575,14 +710,14 @@ const DocumentChecklistContent: React.FC<DocumentChecklistContentProps> = ({ onP
             <button
               onClick={closeModal}
               disabled={uploading}
-              className="px-4 py-2 text-gray-600 font-medium hover:bg-gray-100 rounded-lg transition-colors cursor-pointer"
+              className="hover:bg-gray-100 px-4 py-2 rounded-lg font-medium text-gray-600 transition-colors cursor-pointer"
             >
               Cancel
             </button>
             <button
               onClick={handleUploadSubmit}
               disabled={uploadFiles.length === 0 || uploading}
-              className="px-6 py-2 bg-[#e81c62] text-white font-medium rounded-lg hover:bg-[#d01958] transition-colors disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer flex items-center space-x-2"
+              className="flex items-center space-x-2 bg-[#e81c62] hover:bg-[#d01958] disabled:opacity-50 px-6 py-2 rounded-lg font-medium text-white transition-colors cursor-pointer disabled:cursor-not-allowed"
             >
               {uploading && <Loader2 className="w-4 h-4 animate-spin" />}
               <span>Upload & Validate</span>
