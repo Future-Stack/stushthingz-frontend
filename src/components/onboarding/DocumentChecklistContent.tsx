@@ -1,5 +1,4 @@
 import React, { useState, useEffect } from "react";
-import { useNavigate } from "react-router-dom";
 import { FaCheckCircle, FaRegCircle, FaTimes, FaCloudUploadAlt } from "react-icons/fa";
 import { Loader2, AlertCircle } from "lucide-react";
 import { toast } from "react-toastify";
@@ -11,13 +10,12 @@ import {
   getLenderDocuments, 
   validateDocuments,
   getUserDocuments,
-  updateDocument,
   deleteDocument,
   Lender, 
   LenderDocumentRequirement,
   UserDocument
 } from "@/utils/chatbotService";
-import { Eye, Edit, Trash2 } from "lucide-react";
+import { Eye, Trash2 } from "lucide-react";
 
 export interface DocFile {
   name: string;
@@ -112,7 +110,6 @@ interface DocumentChecklistContentProps {
 }
 
 const DocumentChecklistContent: React.FC<DocumentChecklistContentProps> = ({ onProgressUpdate }) => {
-  const navigate = useNavigate();
   const user = useAppSelector(selectUser);
   
   const [lenders, setLenders] = useState<Lender[]>([]);
@@ -126,39 +123,18 @@ const DocumentChecklistContent: React.FC<DocumentChecklistContentProps> = ({ onP
   // Storing inline errors per doc_type
   const [docErrors, setDocErrors] = useState<Record<string, string[]>>({});
   
-  const [loadingLenders, setLoadingLenders] = useState(false);
-  const [loadingDocs, setLoadingDocs] = useState(false);
+  const [loadingDocs, setLoadingDocs] = useState(true);
+  const [initialLoaded, setInitialLoaded] = useState(false);
   
   const [selectedDoc, setSelectedDoc] = useState<LenderDocumentRequirement | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [uploadFiles, setUploadFiles] = useState<File[]>([]);
   const [uploading, setUploading] = useState(false);
 
-  // Fetch Lenders
-  useEffect(() => {
-    const fetchLenders = async () => {
-      setLoadingLenders(true);
-      try {
-        const response = await getLendersList();
-        setLenders(response.lenders);
-        
-        if (response.lenders.length > 0) {
-          setSelectedLender(response.lenders[0].code);
-        }
-      } catch (error) {
-        console.error("Failed to load lenders:", error);
-      } finally {
-        setLoadingLenders(false);
-      }
-    };
-    fetchLenders();
-  }, []);
-
   // Storing server-saved user documents per doc_type
   const [serverUserDocs, setServerUserDocs] = useState<UserDocument[]>([]);
-  const [updatingDocId, setUpdatingDocId] = useState<string | null>(null);
 
-  // Fetch user uploaded documents from API
+  // Fetch user uploaded documents helper
   const fetchUserDocuments = async () => {
     const userId = user?.id;
     if (!userId) return;
@@ -172,12 +148,58 @@ const DocumentChecklistContent: React.FC<DocumentChecklistContentProps> = ({ onP
     }
   };
 
+  // Initial single-pass loading for lenders, user docs, and default lender requirements
   useEffect(() => {
-    fetchUserDocuments();
-  }, [user]);
+    let isMounted = true;
+    const initData = async () => {
+      setLoadingDocs(true);
+      try {
+        const [lendersRes, userDocsRes] = await Promise.all([
+          getLendersList().catch(() => ({ lenders: [] })),
+          user?.id ? getUserDocuments(user.id).catch(() => null) : Promise.resolve(null),
+        ]);
 
-  // Fetch Documents when configuration changes
+        if (!isMounted) return;
+
+        let currentLenders = lendersRes.lenders || [];
+        setLenders(currentLenders);
+
+        let userDocs = userDocsRes?.documents || [];
+        setServerUserDocs(userDocs);
+
+        const defaultLenderCode = currentLenders.length > 0 ? currentLenders[0].code : "";
+        if (defaultLenderCode) {
+          setSelectedLender(defaultLenderCode);
+          const docsRes = await getLenderDocuments(defaultLenderCode, employmentType).catch(() => ({ documents: [] }));
+          if (isMounted) {
+            setDocuments(docsRes.documents || []);
+            const uploadedCount = (docsRes.documents || []).filter((d) =>
+              userDocs.some((sd) => areDocTypesMatching(d.doc_type, sd.doc_type))
+            ).length;
+            if (onProgressUpdate) {
+              onProgressUpdate(uploadedCount, (docsRes.documents || []).length);
+            }
+          }
+        }
+      } catch (err) {
+        console.error("Failed to initialize document component data:", err);
+      } finally {
+        if (isMounted) {
+          setLoadingDocs(false);
+          setInitialLoaded(true);
+        }
+      }
+    };
+
+    initData();
+    return () => {
+      isMounted = false;
+    };
+  }, [user?.id]);
+
+  // Fetch Documents when lender or employmentType changes after initial load
   useEffect(() => {
+    if (!initialLoaded) return;
     if (!selectedLender) {
       setDocuments([]);
       if (onProgressUpdate) onProgressUpdate(0, 0);
@@ -222,36 +244,16 @@ const DocumentChecklistContent: React.FC<DocumentChecklistContentProps> = ({ onP
       }
     };
     fetchDocuments();
-  }, [selectedLender, employmentType, serverUserDocs]);
+  }, [selectedLender, employmentType]);
 
   const handleDeleteUserDoc = async (docId: string) => {
     try {
-      await deleteDocument(docId);
+      await deleteDocument(docId, user?.id);
       toast.success("Document deleted successfully");
       fetchUserDocuments();
     } catch (err) {
       console.error(err);
       toast.error("Failed to delete document");
-    }
-  };
-
-  const handleUpdateUserDoc = async (docId: string, newFile: File, docType: string) => {
-    setUpdatingDocId(docId);
-    try {
-      const formData = new FormData();
-      formData.append("file", newFile);
-      formData.append("doc_type", docType);
-      if (selectedLender) formData.append("lender_code", selectedLender);
-      if (user?.id) formData.append("user_id", user.id);
-
-      await updateDocument(docId, formData);
-      toast.success("Document updated successfully");
-      fetchUserDocuments();
-    } catch (err) {
-      console.error(err);
-      toast.error("Failed to update document");
-    } finally {
-      setUpdatingDocId(null);
     }
   };
 
@@ -380,20 +382,6 @@ const DocumentChecklistContent: React.FC<DocumentChecklistContentProps> = ({ onP
     }
   };
 
-  const handleCompleteSetup = () => {
-    // Check if there are any remaining validation issues across uploaded docs
-    const hasErrors = Object.keys(docErrors).some((key) => docErrors[key].length > 0);
-    if (hasErrors) {
-      toast.error("Please resolve the document validation errors before completing setup.");
-      return;
-    }
-    navigate("/investor/dashboard");
-  };
-
-  const allUploaded = documents.length > 0 && 
-    documents.every((doc) => uploadedFiles[doc.doc_type] && uploadedFiles[doc.doc_type].length > 0);
-  const hasValidationErrors = Object.keys(docErrors).some((key) => docErrors[key].length > 0);
-
   return (
     <div className="space-y-8">
       {/* Selection Row */}
@@ -402,25 +390,18 @@ const DocumentChecklistContent: React.FC<DocumentChecklistContentProps> = ({ onP
           <label className="block mb-2 font-semibold text-color-jet-black text-sm">
             Select Lender
           </label>
-          {loadingLenders ? (
-            <div className="flex items-center space-x-2 py-3 text-gray-500">
-              <Loader2 className="w-5 h-5 animate-spin" />
-              <span>Loading lenders...</span>
-            </div>
-          ) : (
-            <select
-              value={selectedLender}
-              onChange={(e) => setSelectedLender(e.target.value)}
-              className="bg-[#F3F3F5] px-4 py-3 border border-gray-200 rounded-lg outline-none focus:ring-2 focus:ring-pink-500 w-full font-medium text-gray-800"
-            >
-              <option value="">-- Choose Lender --</option>
-              {lenders.map((lender) => (
-                <option key={lender.code} value={lender.code}>
-                  {lender.name}
-                </option>
-              ))}
-            </select>
-          )}
+          <select
+            value={selectedLender}
+            onChange={(e) => setSelectedLender(e.target.value)}
+            className="bg-[#F3F3F5] px-4 py-3 border border-gray-200 rounded-lg outline-none focus:ring-2 focus:ring-pink-500 w-full font-medium text-gray-800"
+          >
+            <option value="">-- Choose Lender --</option>
+            {lenders.map((lender) => (
+              <option key={lender.code} value={lender.code}>
+                {lender.name}
+              </option>
+            ))}
+          </select>
         </div>
 
         <div>
@@ -491,73 +472,78 @@ const DocumentChecklistContent: React.FC<DocumentChecklistContentProps> = ({ onP
                             <h3 className="font-semibold text-color-jet-black text-lg">
                               {formatDocTitle(item.doc_type)}
                             </h3>
-                            {matchingServerDocs.map((sd) => (
-                              <span
-                                key={sd.id}
-                                className={`text-[11px] px-2 py-0.5 rounded-full font-medium uppercase tracking-wider ${
-                                  sd.validation_status === "valid" || sd.status === "valid"
-                                    ? "bg-green-100 text-green-700 border border-green-200"
-                                    : sd.validation_status === "failed"
-                                    ? "bg-red-100 text-red-700 border border-red-200"
-                                    : "bg-yellow-100 text-yellow-800 border border-yellow-200"
-                                }`}
-                              >
-                                {sd.validation_status || sd.status || "Uploaded"}
-                              </span>
-                            ))}
                           </div>
                           <p className="mt-0.5 font-normal text-[#4A5565] text-sm">
                             {formatDocDesc(item)}
                           </p>
 
-                          {/* Server-saved Documents display with actions */}
+                          {/* Server-saved Documents display with actions & notes */}
                           {matchingServerDocs.length > 0 && (
                             <div className="space-y-2 mt-3">
-                              {matchingServerDocs.map((sDoc) => (
-                                <div
-                                  key={sDoc.id}
-                                  className="flex flex-wrap justify-between items-center gap-2 bg-gray-50 p-2.5 border border-gray-200 rounded-lg text-xs"
-                                >
-                                  <div className="flex items-center gap-2 min-w-0">
-                                    <FaCloudUploadAlt className="text-color-main shrink-0" />
-                                    <span className="max-w-[200px] font-medium text-gray-800 truncate" title={sDoc.name}>
-                                      {sDoc.name}
-                                    </span>
-                                  </div>
-                                  <div className="flex items-center gap-2">
-                                    {sDoc.url && (
-                                      <a
-                                        href={sDoc.url}
-                                        target="_blank"
-                                        rel="noopener noreferrer"
-                                        className="flex items-center gap-1 bg-blue-50 px-2 py-1 rounded font-medium text-blue-600 hover:text-blue-800"
-                                      >
-                                        <Eye size={13} /> View
-                                      </a>
+                              {matchingServerDocs.map((sDoc) => {
+                                const rawStatus = (sDoc.status || sDoc.validation_status || "pending").toLowerCase();
+                                let badgeColor = "bg-amber-100 text-amber-800 border-amber-200";
+                                if (["valid", "approved", "passed", "verified"].includes(rawStatus)) {
+                                  badgeColor = "bg-green-100 text-green-700 border-green-200";
+                                } else if (["failed", "rejected", "invalid"].includes(rawStatus)) {
+                                  badgeColor = "bg-red-100 text-red-700 border-red-200";
+                                } else if (["pending", "review", "processing"].includes(rawStatus)) {
+                                  badgeColor = "bg-yellow-100 text-yellow-800 border-yellow-200";
+                                }
+
+                                const statusLabel = rawStatus.replace(/_/g, " ");
+
+                                return (
+                                  <div
+                                    key={sDoc.id}
+                                    className="flex flex-col gap-2 bg-gray-50 p-3 border border-gray-200 rounded-lg text-xs"
+                                  >
+                                    <div className="flex flex-wrap justify-between items-center gap-2">
+                                      <div className="flex items-center gap-2 min-w-0">
+                                        <FaCloudUploadAlt className="text-color-main shrink-0" />
+                                        <span className="max-w-[200px] font-medium text-gray-800 truncate" title={sDoc.name}>
+                                          {sDoc.name}
+                                        </span>
+                                        <span
+                                          className={`text-[10px] px-2 py-0.5 rounded-full font-semibold uppercase tracking-wider border ${badgeColor}`}
+                                        >
+                                          {statusLabel}
+                                        </span>
+                                      </div>
+                                      <div className="flex items-center gap-2">
+                                        {sDoc.url && (
+                                          <a
+                                            href={sDoc.url}
+                                            target="_blank"
+                                            rel="noopener noreferrer"
+                                            className="flex items-center gap-1 bg-blue-50 hover:bg-blue-100 px-2.5 py-1 rounded font-medium text-blue-600 transition-colors"
+                                          >
+                                            <Eye size={13} /> View
+                                          </a>
+                                        )}
+                                        <button
+                                          type="button"
+                                          onClick={() => handleDeleteUserDoc(sDoc.id)}
+                                          className="flex items-center gap-1 bg-red-50 hover:bg-red-100 px-2.5 py-1 rounded font-medium text-red-600 transition-colors cursor-pointer"
+                                        >
+                                          <Trash2 size={13} /> Delete
+                                        </button>
+                                      </div>
+                                    </div>
+
+                                    {/* Display Note if present */}
+                                    {sDoc.note && (
+                                      <div className="flex items-start gap-1.5 bg-amber-50/80 mt-1 p-2.5 border border-amber-200/80 rounded-md text-amber-900 text-xs">
+                                        <AlertCircle size={14} className="text-amber-600 shrink-0 mt-0.5" />
+                                        <div>
+                                          <span className="font-semibold text-amber-950">Note: </span>
+                                          <span>{sDoc.note}</span>
+                                        </div>
+                                      </div>
                                     )}
-                                    <label className="flex items-center gap-1 bg-white px-2 py-1 border border-gray-300 rounded font-medium text-gray-700 hover:text-black cursor-pointer">
-                                      <Edit size={13} />
-                                      {updatingDocId === sDoc.id ? "Updating..." : "Update"}
-                                      <input
-                                        type="file"
-                                        className="hidden"
-                                        onChange={(e) => {
-                                          if (e.target.files && e.target.files[0]) {
-                                            handleUpdateUserDoc(sDoc.id, e.target.files[0], item.doc_type);
-                                          }
-                                        }}
-                                      />
-                                    </label>
-                                    <button
-                                      type="button"
-                                      onClick={() => handleDeleteUserDoc(sDoc.id)}
-                                      className="flex items-center gap-1 bg-red-50 px-2 py-1 rounded font-medium text-red-600 hover:text-red-800 cursor-pointer"
-                                    >
-                                      <Trash2 size={13} /> Delete
-                                    </button>
                                   </div>
-                                </div>
-                              ))}
+                                );
+                              })}
                             </div>
                           )}
 

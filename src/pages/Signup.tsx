@@ -37,6 +37,12 @@ const Signup: React.FC = () => {
   const navigate = useNavigate();
   const [registerUser, { isLoading }] = useRegisterMutation();
 
+  const handleGoogleLogin = () => {
+    const rawApiUrl = import.meta.env.VITE_API_URL || "http://localhost:3000";
+    const baseUrl = rawApiUrl.replace(/\/+$/, "").replace(/\/api$/, "");
+    window.location.href = `${baseUrl}/auth/google`;
+  };
+
   const onSubmit = async (data: SignupFormInputs) => {
     setServerError(null);
     try {
@@ -184,6 +190,7 @@ const Signup: React.FC = () => {
 
       <button
         type="button"
+        onClick={handleGoogleLogin}
         className="w-full flex items-center justify-center gap-3 px-4 py-3 border border-[#D0D5DD] rounded-lg bg-white text-[#344054] font-semibold text-sm hover:bg-gray-50 transition-colors cursor-pointer mb-3"
       >
         <img src={googleIcon} alt="Google" className="w-5 h-5" />

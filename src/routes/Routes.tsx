@@ -26,6 +26,7 @@ import Signup from "@/pages/Signup";
 import ForgotPassword from "@/pages/ForgotPassword";
 import VerifyOTP from "@/pages/VerifyOTP";
 import ResetPassword from "@/pages/ResetPassword";
+import AuthSuccess from "@/pages/AuthSuccess";
 
 const routes = createBrowserRouter([
   {
@@ -47,6 +48,7 @@ const routes = createBrowserRouter([
       { path: "/forgot-password", element: <ForgotPassword /> },
       { path: "/verify-otp", element: <VerifyOTP /> },
       { path: "/reset-password", element: <ResetPassword /> },
+      { path: "/auth/success", element: <AuthSuccess /> },
     ],
   },
 

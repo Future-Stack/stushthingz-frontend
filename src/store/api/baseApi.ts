@@ -3,8 +3,7 @@ import type { RootState } from "../store";
 import { toast } from "react-toastify";
 
 const baseQueryAPI = fetchBaseQuery({
-  baseUrl: import.meta.env.VITE_API_URL, // Vite env variable — set in .env as VITE_API_URL=https://your-api.com
-  // For Next.js use: process.env.NEXT_PUBLIC_SERVER_URL
+  baseUrl: import.meta.env.VITE_API_URL,
   credentials: "include",
   prepareHeaders(headers, { getState }) {
     const token = (getState() as RootState).auth.accessToken;

@@ -64,7 +64,7 @@ export interface DocumentValidationResponse {
 }
 
 const getBaseUrl = () => {
-  return import.meta.env.VITE_AI_API_URL || "https://stusthingz-ai.duckdns.org";
+  return import.meta.env.VITE_AI_API_URL;
 };
 
 export const sendChatMessage = async (data: ChatRequest): Promise<ChatResponse> => {
@@ -204,24 +204,11 @@ export const getUserDocuments = async (userId: string): Promise<UserDocumentsRes
   return response.json();
 };
 
-export const updateDocument = async (documentId: string, formData: FormData): Promise<UserDocument> => {
-  const response = await fetch(`${getBaseUrl()}/api/v1/document/${documentId}`, {
-    method: "PATCH",
-    headers: {
-      "accept": "application/json",
-    },
-    body: formData,
-  });
-
-  if (!response.ok) {
-    throw new Error(`Update Document API error: ${response.statusText}`);
-  }
-
-  return response.json();
-};
-
-export const deleteDocument = async (documentId: string): Promise<{ success: boolean; message?: string }> => {
-  const response = await fetch(`${getBaseUrl()}/api/v1/document/${documentId}`, {
+export const deleteDocument = async (documentId: string, userId?: string): Promise<{ success: boolean; message?: string }> => {
+  const url = userId 
+    ? `${getBaseUrl()}/api/v1/document/${documentId}?user_id=${encodeURIComponent(userId)}`
+    : `${getBaseUrl()}/api/v1/document/${documentId}`;
+  const response = await fetch(url, {
     method: "DELETE",
     headers: {
       "accept": "application/json",

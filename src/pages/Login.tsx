@@ -43,6 +43,12 @@ const Login: React.FC = () => {
     return navigate("/dashboard");
   };
 
+  const handleGoogleLogin = () => {
+    const rawApiUrl = import.meta.env.VITE_API_URL || "http://localhost:3000";
+    const baseUrl = rawApiUrl.replace(/\/+$/, "").replace(/\/api$/, "");
+    window.location.href = `${baseUrl}/auth/google`;
+  };
+
   const onSubmit = async (data: LoginFormInputs) => {
     setServerError(null);
     try {
@@ -146,6 +152,7 @@ const Login: React.FC = () => {
 
       <button
         type="button"
+        onClick={handleGoogleLogin}
         className="flex justify-center items-center gap-3 bg-white hover:bg-gray-50 mb-3 px-4 py-3 border border-[#D0D5DD] rounded-lg w-full font-semibold text-[#344054] text-sm transition-colors cursor-pointer"
       >
         <img src={googleIcon} alt="Google" className="w-5 h-5" />

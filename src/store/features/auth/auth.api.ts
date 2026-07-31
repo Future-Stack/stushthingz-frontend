@@ -237,6 +237,43 @@ export const authAPI = baseAPI.injectEndpoints({
       invalidatesTags: ["Auth", "Overview"],
     }),
 
+    // POST /auth/logout
+    logoutUser: build.mutation<{ success: boolean; message: string }, void>({
+      query: () => ({
+        url: "/auth/logout",
+        method: "POST",
+      }),
+      invalidatesTags: ["Auth"],
+    }),
+
+    // PATCH /auth/profile
+    updateProfile: build.mutation<{ success: boolean; message: string; data: TUser }, { name?: string; countryOfResidence?: string; investmentBudget?: string; investmentGoal?: string; investmentTimeline?: string }>({
+      query: (data) => ({
+        url: "/auth/profile",
+        method: "PATCH",
+        body: data,
+      }),
+      invalidatesTags: ["Auth", "userProfile"],
+    }),
+
+    // GET /auth/progress-tracker
+    getProgressTracker: build.query<{
+      success: boolean;
+      data: {
+        overallReadiness: number;
+        onboarding: { percentage: number; status: string };
+        financialReadiness: { percentage: number; status: string };
+        investmentGuide: { percentage: number; completedSections: number; totalSections: number; status: string };
+        documents: { uploadedCount: number; status: string };
+      };
+    }, void>({
+      query: () => ({
+        url: "/auth/progress-tracker",
+        method: "GET",
+      }),
+      providesTags: ["Auth", "InvestmentGuide", "userProfile"],
+    }),
+
     // ──────────────────────────────Ends──────────────────────────────
   }),
 });
@@ -255,4 +292,7 @@ export const {
   useGetAdminDashboardStatsQuery,
   useGetAllUsersQuery,
   useUpdateUserStatusMutation,
+  useLogoutUserMutation,
+  useUpdateProfileMutation,
+  useGetProgressTrackerQuery,
 } = authAPI;

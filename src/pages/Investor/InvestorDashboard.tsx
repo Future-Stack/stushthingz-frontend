@@ -1,10 +1,16 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { ShieldCheck, ArrowRight, Home, Upload, House, TrendingUp } from "lucide-react";
+import { ShieldCheck, ArrowRight, Home, Upload, House, TrendingUp, LogOut, Loader2 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import watermark from "@/assets/home/watermark.png";
 import GuideContent from "@/components/onboarding/GuideContent";
 import DocumentChecklistContent from "@/components/onboarding/DocumentChecklistContent";
+import { useAppDispatch, useAppSelector } from "@/store/hook";
+import { logout, selectUser, setUser } from "@/store/features/auth/auth.slice";
+import { useLogoutUserMutation, useUpdateProfileMutation, useGetProgressTrackerQuery } from "@/store/features/auth/auth.api";
+import { useGetInvestmentGuideQuery } from "@/store/features/investmentGuide/investmentGuide.api";
+import { getUserDocuments, getLenderDocuments, getLendersList, LenderDocumentRequirement } from "@/utils/chatbotService";
+import { toast } from "react-toastify";
 
 type TabType = "Dashboard" | "Documents" | "Guide" | "Profile";
 
@@ -12,29 +18,159 @@ const InvestorDashboard: React.FC = () => {
   const [activeTab, setActiveTab] = useState<TabType>("Dashboard");
   const [isEditProfileOpen, setIsEditProfileOpen] = useState(false);
   const navigate = useNavigate();
+  const dispatch = useAppDispatch();
+  const currentUser = useAppSelector(selectUser);
 
-  // Mock Profile State
+  const [logoutUser] = useLogoutUserMutation();
+  const [updateProfileMutation, { isLoading: isUpdatingProfile }] = useUpdateProfileMutation();
+  const { data: guideData } = useGetInvestmentGuideQuery();
+  const { data: trackerResponse } = useGetProgressTrackerQuery();
+
+  const trackerData = trackerResponse?.data;
+
+  // Profile State
   const [profile, setProfile] = useState({
-    fullName: "Sarah Johnson",
-    email: "sarah.johnson@email.com",
-    country: "United States",
-    budget: "$200,000 - $350,000 USD",
-    goal: "Vacation Home & Rental Income",
-    timeline: "6-12 months",
+    fullName: currentUser?.name || "N/A",
+    email: currentUser?.email || "N/A",
+    country: currentUser?.countryOfResidence || "",
+    budget: currentUser?.investmentBudget || "",
+    goal: currentUser?.investmentGoal || "",
+    timeline: currentUser?.investmentTimeline || "",
   });
 
-  const handleProfileSave = (e: React.FormEvent<HTMLFormElement>) => {
+  // Dynamic Document Progress State
+  const [docProgress, setDocProgress] = useState({
+    uploaded: 0,
+    total: 0,
+    missing: 0,
+    percentage: 0,
+    pendingDocNames: [] as string[],
+  });
+
+  useEffect(() => {
+    if (currentUser) {
+      setProfile({
+        fullName: currentUser.name || "N/A",
+        email: currentUser.email || "N/A",
+        country: currentUser.countryOfResidence || "",
+        budget: currentUser.investmentBudget ? `$${currentUser.investmentBudget}` : "",
+        goal: currentUser.investmentGoal || "",
+        timeline: currentUser.investmentTimeline || "",
+      });
+    }
+  }, [currentUser]);
+
+  // Guide progress calculation from backend API
+  const totalGuideSections = guideData?.data?.length || 0;
+  const completedGuideSections = guideData?.data?.filter((s) => s.isCompleted)?.length || 0;
+  const guidePercentage = trackerData?.investmentGuide?.percentage ?? (totalGuideSections > 0 ? Math.round((completedGuideSections / totalGuideSections) * 100) : 100);
+
+  // Dynamic progress tracker values from backend
+  const onboardingPercentage = trackerData?.onboarding?.percentage ?? (currentUser?.isVerified ? 100 : 50);
+  const onboardingStatus = trackerData?.onboarding?.status ?? (onboardingPercentage === 100 ? "Complete" : "In Progress");
+
+  const financialPercentage = trackerData?.financialReadiness?.percentage ?? 80;
+  const financialStatus = trackerData?.financialReadiness?.status ?? `${financialPercentage}%`;
+
+  const readinessPercentage = trackerData?.overallReadiness ?? Math.round((onboardingPercentage + financialPercentage + guidePercentage + docProgress.percentage) / 4);
+
+  // Fetch document status for dashboard
+  const loadDocumentProgress = async () => {
+    try {
+      const [lendersRes, userDocsRes] = await Promise.all([
+        getLendersList().catch(() => ({ lenders: [] })),
+        currentUser?.id ? getUserDocuments(currentUser.id).catch(() => null) : Promise.resolve(null),
+      ]);
+
+      const userDocs = userDocsRes?.documents || [];
+      const lenders = lendersRes?.lenders || [];
+      const defaultLenderCode = lenders.length > 0 ? lenders[0].code : "";
+
+      if (defaultLenderCode) {
+        const reqRes = await getLenderDocuments(defaultLenderCode, "employed").catch(() => ({ documents: [] }));
+        const requiredDocs: LenderDocumentRequirement[] = reqRes.documents || [];
+        const total = requiredDocs.length;
+        
+        const uploadedDocs = requiredDocs.filter((reqDoc) =>
+          userDocs.some((uDoc) =>
+            uDoc.doc_type.toLowerCase() === reqDoc.doc_type.toLowerCase() ||
+            reqDoc.doc_type.toLowerCase().includes(uDoc.doc_type.toLowerCase()) ||
+            uDoc.doc_type.toLowerCase().includes(reqDoc.doc_type.toLowerCase())
+          )
+        );
+        const uploaded = uploadedDocs.length;
+        const missing = Math.max(0, total - uploaded);
+        const percentage = total > 0 ? Math.round((uploaded / total) * 100) : 0;
+
+        const pending = requiredDocs
+          .filter((reqDoc) => !userDocs.some((uDoc) =>
+            uDoc.doc_type.toLowerCase() === reqDoc.doc_type.toLowerCase() ||
+            reqDoc.doc_type.toLowerCase().includes(uDoc.doc_type.toLowerCase()) ||
+            uDoc.doc_type.toLowerCase().includes(reqDoc.doc_type.toLowerCase())
+          ))
+          .map((d) => d.doc_type.replace(/_/g, " "));
+
+        setDocProgress({
+          uploaded,
+          total,
+          missing,
+          percentage,
+          pendingDocNames: pending,
+        });
+      }
+    } catch (err) {
+      console.error("Failed to load dashboard document status:", err);
+    }
+  };
+
+  useEffect(() => {
+    loadDocumentProgress();
+  }, [currentUser]);
+
+  const handleDocumentProgressUpdate = (uploadedCount: number, totalCount: number) => {
+    const missing = Math.max(0, totalCount - uploadedCount);
+    const percentage = totalCount > 0 ? Math.round((uploadedCount / totalCount) * 100) : 0;
+    setDocProgress((prev) => ({
+      ...prev,
+      uploaded: uploadedCount,
+      total: totalCount,
+      missing,
+      percentage,
+    }));
+  };
+
+  const handleLogout = async () => {
+    try {
+      await logoutUser().unwrap();
+    } catch (e) {
+      console.error("Backend logout error", e);
+    } finally {
+      dispatch(logout());
+      navigate("/login");
+    }
+  };
+
+  const handleProfileSave = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     const formData = new FormData(e.currentTarget);
-    setProfile({
-      fullName: formData.get("fullName") as string,
-      email: formData.get("email") as string,
-      country: formData.get("country") as string,
-      budget: formData.get("budget") as string,
-      goal: formData.get("goal") as string,
-      timeline: formData.get("timeline") as string,
-    });
-    setIsEditProfileOpen(false);
+    const updatedData = {
+      name: formData.get("fullName") as string,
+      countryOfResidence: formData.get("country") as string,
+      investmentBudget: formData.get("budget") as string,
+      investmentGoal: formData.get("goal") as string,
+      investmentTimeline: formData.get("timeline") as string,
+    };
+
+    try {
+      const res = await updateProfileMutation(updatedData).unwrap();
+      if (res.data) {
+        dispatch(setUser({ user: res.data }));
+      }
+      setIsEditProfileOpen(false);
+    } catch (err: any) {
+      console.error("Profile update error:", err);
+      toast.error(err?.data?.message || "Failed to update profile");
+    }
   };
 
   const tabs: TabType[] = ["Dashboard", "Documents", "Guide", "Profile"];
@@ -63,14 +199,14 @@ const InvestorDashboard: React.FC = () => {
       initial="hidden"
       animate="visible"
       variants={containerVariants}
-      className="w-full max-w-7xl mx-auto space-y-6"
+      className="space-y-6 mx-auto w-full max-w-7xl"
     >
       <motion.div variants={itemVariants} className="mb-8">
-        <h1 className="text-4xl font-bold text-color-jet-black mb-3">Investment Dashboard</h1>
-        <p className="text-xl font-normal text-[#4A5565]">Track your Jamaica real estate investment journey</p>
+        <h1 className="mb-3 font-bold text-color-jet-black text-4xl">Investment Dashboard</h1>
+        <p className="font-normal text-[#4A5565] text-xl">Track your Jamaica real estate investment journey</p>
 
         {/* Tabs */}
-        <div className="max-w-md w-fit rounded-2xl flex flex-wrap gap-2 mt-6 bg-[#ECECF0] p-1.5">
+        <div className="flex flex-wrap gap-2 bg-[#ECECF0] mt-6 p-1.5 rounded-2xl w-fit max-w-md">
           {tabs.map((tab) => (
             <button
               key={tab}
@@ -98,21 +234,23 @@ const InvestorDashboard: React.FC = () => {
           {activeTab === "Dashboard" && (
             <motion.div variants={containerVariants} initial="hidden" animate="visible" className="space-y-6">
               {/* Pink Banner */}
-              <motion.div variants={itemVariants} className="bg-color-main rounded-2xl md:p-12 p-6 text-white relative overflow-hidden shadow-md">
-                <div className="relative z-10">
-                  <h2 className="md:text-4xl text-2xl text-white font-bold mb-4">You're 73% Ready !</h2>
-                  <p className="md:text-xl text-lg font-normal text-[#FFFFFFE5] mb-8">
-                    You've completed all preparation steps. Browse Investment Opportunities to start viewing properties.
+              <motion.div variants={itemVariants} className="relative bg-color-main shadow-md p-6 md:p-12 rounded-2xl overflow-hidden text-white">
+                <div className="z-10 relative">
+                  <h2 className="mb-4 font-bold text-white text-2xl md:text-4xl">You're {readinessPercentage}% Ready !</h2>
+                  <p className="mb-8 font-normal text-[#FFFFFFE5] text-lg md:text-xl">
+                    {docProgress.missing === 0
+                      ? "You've completed all preparation steps. Browse Investment Opportunities to start viewing properties."
+                      : `You have ${docProgress.missing} required document(s) pending. Complete your document setup or browse opportunities.`}
                   </p>
                   <button
                     onClick={() => navigate("/investor/opportunities")}
-                    className="bg-white text-color-main md:text-sm text-xs font-medium cursor-pointer hover:bg-gray-100 px-5 py-2.5 rounded-lg transition-colors inline-flex items-center gap-2"
+                    className="inline-flex items-center gap-2 bg-white hover:bg-gray-100 px-5 py-2.5 rounded-lg font-medium text-color-main text-xs md:text-sm transition-colors cursor-pointer"
                   >
-                    <Home size={16} className="shrink-0 " /> Browse Investment Opportunities
+                    <Home size={16} className="shrink-0" /> Browse Investment Opportunities
                   </button>
                 </div>
                 {/* Abstract Shape/Icon */}
-                <div className="absolute right-0 top-0 bottom-0 w-1/3 opacity-20 pointer-events-none flex items-center justify-end pr-8">
+                <div className="top-0 right-0 bottom-0 absolute flex justify-end items-center opacity-20 pr-8 w-1/3 pointer-events-none">
                   <motion.img
                     animate={{ y: [10, -10, 10] }}
                     transition={{ duration: 5, repeat: Infinity, ease: "easeInOut" }}
@@ -125,125 +263,135 @@ const InvestorDashboard: React.FC = () => {
 
               {/* Progress Tracker */}
               <motion.div variants={itemVariants}>
-                <h3 className="text-xl font-bold text-color-jet-black mb-4">Progress Tracker</h3>
-                <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4">
+                <h3 className="mb-4 font-bold text-color-jet-black text-xl">Progress Tracker</h3>
+                <div className="gap-4 grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4">
                   {/* Onboarding */}
-                  <motion.div whileHover={{ y: -5 }} transition={{ type: "spring", stiffness: 300 }} className="bg-white border border-gray-200 rounded-xl p-5 shadow-sm">
+                  <motion.div whileHover={{ y: -5 }} transition={{ type: "spring", stiffness: 300 }} className="bg-white shadow-sm p-5 border border-gray-200 rounded-xl">
                     <div className="flex justify-between items-start mb-4">
-                      <span className="font-semibold text-base  text-color-jet-black">Onboarding</span>
-                      <ShieldCheck size={18} className="text-green-500" />
+                      <span className="font-semibold text-color-jet-black text-base">Onboarding</span>
+                      {onboardingPercentage === 100 && <ShieldCheck size={18} className="text-green-500" />}
                     </div>
-                    <div className="h-1.5 w-full bg-gray-100 rounded-full overflow-hidden mb-3">
-                      <div className="h-full bg-[#d81b60] rounded-full w-full"></div>
+                    <div className="bg-gray-100 mb-3 rounded-full w-full h-1.5 overflow-hidden">
+                      <div className="bg-[#d81b60] rounded-full h-full transition-all duration-300" style={{ width: `${onboardingPercentage}%` }}></div>
                     </div>
-                    <span className="text-sm font-normal text-[#4A5565]">Complete</span>
+                    <span className="font-normal text-[#4A5565] text-sm">{onboardingStatus}</span>
                   </motion.div>
 
                   {/* Financial Readiness */}
-                  <motion.div whileHover={{ y: -5 }} transition={{ type: "spring", stiffness: 300 }} className="bg-white border border-gray-200 rounded-xl p-5 shadow-sm">
+                  <motion.div whileHover={{ y: -5 }} transition={{ type: "spring", stiffness: 300 }} className="bg-white shadow-sm p-5 border border-gray-200 rounded-xl">
                     <div className="flex justify-between items-start mb-4">
-                      <span className="font-semibold text-base  text-color-jet-black">Financial Readiness</span>
-                      <ShieldCheck size={18} className="text-green-500" />
+                      <span className="font-semibold text-color-jet-black text-base">Financial Readiness</span>
+                      {financialPercentage === 100 && <ShieldCheck size={18} className="text-green-500" />}
                     </div>
-                    <div className="h-1.5 w-full bg-gray-100 rounded-full overflow-hidden mb-3">
-                      <div className="h-full bg-[#d81b60] rounded-full w-[80%]"></div>
+                    <div className="bg-gray-100 mb-3 rounded-full w-full h-1.5 overflow-hidden">
+                      <div className="bg-[#d81b60] rounded-full h-full transition-all duration-300" style={{ width: `${financialPercentage}%` }}></div>
                     </div>
-                    <span className="text-sm font-normal text-[#4A5565]">80%</span>
+                    <span className="font-normal text-[#4A5565] text-sm">{financialStatus}</span>
                   </motion.div>
 
                   {/* Investment Guide */}
-                  <motion.div whileHover={{ y: -5 }} transition={{ type: "spring", stiffness: 300 }} className="bg-white border border-gray-200 rounded-xl p-5 shadow-sm">
+                  <motion.div whileHover={{ y: -5 }} transition={{ type: "spring", stiffness: 300 }} className="bg-white shadow-sm p-5 border border-gray-200 rounded-xl">
                     <div className="flex justify-between items-start mb-4">
-                      <span className="font-semibold text-base  text-color-jet-black">Investment Guide</span>
-                      <ShieldCheck size={18} className="text-green-500" />
+                      <span className="font-semibold text-color-jet-black text-base">Investment Guide</span>
+                      {guidePercentage === 100 && <ShieldCheck size={18} className="text-green-500" />}
                     </div>
-                    <div className="h-1.5 w-full bg-gray-100 rounded-full overflow-hidden mb-3">
-                      <div className="h-full bg-[#d81b60] rounded-full w-full"></div>
+                    <div className="bg-gray-100 mb-3 rounded-full w-full h-1.5 overflow-hidden">
+                      <div className="bg-[#d81b60] rounded-full h-full transition-all duration-300" style={{ width: `${guidePercentage}%` }}></div>
                     </div>
-                    <span className="text-sm font-normal text-[#4A5565]">Complete</span>
+                    <span className="font-normal text-[#4A5565] text-sm">
+                      {guidePercentage === 100 ? "Complete" : `${guidePercentage}% (${completedGuideSections}/${totalGuideSections})`}
+                    </span>
                   </motion.div>
 
                   {/* Documents */}
-                  <motion.div whileHover={{ y: -5 }} transition={{ type: "spring", stiffness: 300 }} className="bg-white border border-gray-200 rounded-xl p-5 shadow-sm">
+                  <motion.div whileHover={{ y: -5 }} transition={{ type: "spring", stiffness: 300 }} className="bg-white shadow-sm p-5 border border-gray-200 rounded-xl">
                     <div className="flex justify-between items-start mb-4">
-                      <span className="font-semibold text-base  text-color-jet-black">Documents</span>
+                      <span className="font-semibold text-color-jet-black text-base">Documents</span>
+                      {docProgress.missing === 0 && docProgress.total > 0 && <ShieldCheck size={18} className="text-green-500" />}
                     </div>
-                    <div className="h-1.5 w-full bg-gray-100 rounded-full overflow-hidden mb-3">
-                      <div className="h-full bg-[#d81b60] rounded-full w-[85%]"></div>
+                    <div className="bg-gray-100 mb-3 rounded-full w-full h-1.5 overflow-hidden">
+                      <div className="bg-[#d81b60] rounded-full h-full transition-all duration-300" style={{ width: `${docProgress.percentage}%` }}></div>
                     </div>
-                    <span className="text-sm font-normal text-[#4A5565]">In Progress</span>
+                    <span className="font-normal text-[#4A5565] text-sm">
+                      {docProgress.missing === 0 && docProgress.total > 0 ? "Complete" : `${docProgress.percentage}% (${docProgress.uploaded}/${docProgress.total})`}
+                    </span>
                   </motion.div>
                 </div>
               </motion.div>
 
               {/* Document Status */}
-              <motion.div variants={itemVariants} className="bg-white border border-gray-100 rounded-xl p-6">
+              <motion.div variants={itemVariants} className="bg-white p-6 border border-gray-100 rounded-xl">
                 <div className="flex justify-between items-center mb-6">
-                  <h3 className="font-bold text-xl text-color-jet-black">Document Status</h3>
+                  <h3 className="font-bold text-color-jet-black text-xl">Document Status</h3>
                   <button
                     onClick={() => setActiveTab("Documents")}
-                    className="text-xs font-medium text-gray-600 hover:text-[#212a31] flex items-center gap-1 bg-gray-50 px-3 py-1.5 border border-[#0000001A] rounded-lg cursor-pointer"
+                    className="flex items-center gap-1 bg-gray-50 px-3 py-1.5 border border-[#0000001A] rounded-lg font-medium text-gray-600 hover:text-[#212a31] text-xs cursor-pointer"
                   >
                     Manage All <ArrowRight size={14} />
                   </button>
                 </div>
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                  <div className="bg-[#F0FDF4] rounded-[10px] p-4 flex flex-col items-center justify-center text-center">
-                    <span className="text-3xl font-bold text-[#00A63E] mb-1">17</span>
-                    <span className="text-sm font-normal text-[#4A5565]">Uploaded</span>
+                <div className="gap-4 grid grid-cols-1 md:grid-cols-3">
+                  <div className="flex flex-col justify-center items-center bg-[#F0FDF4] p-4 rounded-[10px] text-center">
+                    <span className="mb-1 font-bold text-[#00A63E] text-3xl">{docProgress.uploaded}</span>
+                    <span className="font-normal text-[#4A5565] text-sm">Uploaded</span>
                   </div>
-                  <div className="bg-[#FEFCE8] rounded-[10px] p-4 flex flex-col items-center justify-center text-center">
-                    <span className="text-3xl font-bold text-[#D08700] mb-1">3</span>
-                    <span className="text-sm font-normal text-[#4A5565]">Missing</span>
+                  <div className="flex flex-col justify-center items-center bg-[#FEFCE8] p-4 rounded-[10px] text-center">
+                    <span className="mb-1 font-bold text-[#D08700] text-3xl">{docProgress.missing}</span>
+                    <span className="font-normal text-[#4A5565] text-sm">Missing</span>
                   </div>
-                  <div className="bg-[#EFF6FF] rounded-[10px] p-4 flex flex-col items-center justify-center text-center">
-                    <span className="text-3xl font-bold text-[#155DFC] mb-1">20</span>
-                    <span className="text-sm font-normal text-[#4A5565]">Total Required</span>
+                  <div className="flex flex-col justify-center items-center bg-[#EFF6FF] p-4 rounded-[10px] text-center">
+                    <span className="mb-1 font-bold text-[#155DFC] text-3xl">{docProgress.total}</span>
+                    <span className="font-normal text-[#4A5565] text-sm">Total Required</span>
                   </div>
                 </div>
               </motion.div>
 
               {/* Recommended Next Steps */}
               <motion.div variants={itemVariants}>
-                <h3 className="text-xl font-bold text-color-jet-black mb-4">Recommended Next Steps</h3>
+                <h3 className="mb-4 font-bold text-color-jet-black text-xl">Recommended Next Steps</h3>
                 <div className="space-y-3">
-                  <motion.div whileHover={{ scale: 1.01 }} className="bg-white border border-gray-100 rounded-xl p-5 shadow-sm flex flex-col sm:flex-row items-start sm:items-center gap-4">
-                    <div className="w-10 h-10 rounded-full bg-pink-50 flex items-center justify-center text-[#d81b60] shrink-0">
+                  <motion.div whileHover={{ scale: 1.01 }} className="flex sm:flex-row flex-col items-start sm:items-center gap-4 bg-white shadow-sm p-5 border border-gray-100 rounded-xl">
+                    <div className="flex justify-center items-center bg-pink-50 rounded-full w-10 h-10 text-[#d81b60] shrink-0">
                       <Upload size={18} />
                     </div>
                     <div className="flex-1">
-                      <h4 className="text-base font-semibold text-color-jet-black mb-1.5">Upload remaining documents</h4>
-                      <p className="text-sm font-normal text-[#4A5565]">3 documents pending: Proof of Address, Bank statement (recent), Tax returns</p>
+                      <h4 className="mb-1.5 font-semibold text-color-jet-black text-base">Upload remaining documents</h4>
+                      <p className="font-normal text-[#4A5565] text-sm">
+                        {docProgress.missing > 0
+                          ? `${docProgress.missing} documents pending${docProgress.pendingDocNames.length > 0 ? `: ${docProgress.pendingDocNames.slice(0, 3).join(", ")}` : ""}`
+                          : "All required documents uploaded"}
+                      </p>
                     </div>
-                    <Link to="/onboarding/documents" 
-                      className="mt-3 sm:mt-0 bg-color-main hover:bg-[#c2185b] text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors inline-flex items-center gap-1.5 cursor-pointer"
+                    <button 
+                      onClick={() => setActiveTab("Documents")}
+                      className="inline-flex items-center gap-1.5 bg-color-main hover:bg-[#c2185b] mt-3 sm:mt-0 px-4 py-2 rounded-lg font-medium text-white text-sm transition-colors cursor-pointer"
                     >
                       Upload Now <ArrowRight size={14} />
-                    </Link>
+                    </button>
                   </motion.div>
 
-                  <motion.div whileHover={{ scale: 1.01 }} className="bg-white border border-gray-100 rounded-xl p-5 shadow-sm flex flex-col sm:flex-row items-start sm:items-center gap-4">
-                    <div className="w-10 h-10 rounded-full bg-pink-50 flex items-center justify-center text-[#d81b60] shrink-0">
+                  <motion.div whileHover={{ scale: 1.01 }} className="flex sm:flex-row flex-col items-start sm:items-center gap-4 bg-white shadow-sm p-5 border border-gray-100 rounded-xl">
+                    <div className="flex justify-center items-center bg-pink-50 rounded-full w-10 h-10 text-[#d81b60] shrink-0">
                       <TrendingUp size={18} />
                     </div>
                     <div className="flex-1">
-                      <h4 className="text-base font-semibold text-color-jet-black mb-1.5">Review financing options</h4>
-                      <p className="text-sm font-normal text-[#4A5565]">Based on your profile, you qualify for pre-approval with recommended institutions</p>
+                      <h4 className="mb-1.5 font-semibold text-color-jet-black text-base">Review financing options</h4>
+                      <p className="font-normal text-[#4A5565] text-sm">Based on your profile, you qualify for pre-approval with recommended institutions</p>
                     </div>
-                    <Link to="/onboarding/assessment" className="mt-3 sm:mt-0 bg-color-main hover:bg-[#c2185b] text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors inline-flex items-center gap-1.5 cursor-pointer">
+                    <Link to="/onboarding/assessment" className="inline-flex items-center gap-1.5 bg-color-main hover:bg-[#c2185b] mt-3 sm:mt-0 px-4 py-2 rounded-lg font-medium text-white text-sm transition-colors cursor-pointer">
                       Learn More <ArrowRight size={14} />
                     </Link>
                   </motion.div>
 
-                  <motion.div whileHover={{ scale: 1.01 }} className="bg-white border border-gray-100 rounded-xl p-5 shadow-sm flex flex-col sm:flex-row items-start sm:items-center gap-4">
-                    <div className="w-10 h-10 rounded-full bg-pink-50 flex items-center justify-center text-[#d81b60] shrink-0">
+                  <motion.div whileHover={{ scale: 1.01 }} className="flex sm:flex-row flex-col items-start sm:items-center gap-4 bg-white shadow-sm p-5 border border-gray-100 rounded-xl">
+                    <div className="flex justify-center items-center bg-pink-50 rounded-full w-10 h-10 text-[#d81b60] shrink-0">
                       <House size={18} />
                     </div>
                     <div className="flex-1">
-                      <h4 className="text-base font-semibold text-color-jet-black mb-1.5">Browse Investment Opportunities</h4>
-                      <p className="text-sm font-normal text-[#4A5565]">Start exploring properties matching your budget and preferences</p>
+                      <h4 className="mb-1.5 font-semibold text-color-jet-black text-base">Browse Investment Opportunities</h4>
+                      <p className="font-normal text-[#4A5565] text-sm">Start exploring properties matching your budget and preferences</p>
                     </div>
-                    <Link to="/investor/opportunities" className="mt-3 sm:mt-0 bg-color-main hover:bg-[#c2185b] text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors inline-flex items-center gap-1.5 cursor-pointer">
+                    <Link to="/investor/opportunities" className="inline-flex items-center gap-1.5 bg-color-main hover:bg-[#c2185b] mt-3 sm:mt-0 px-4 py-2 rounded-lg font-medium text-white text-sm transition-colors cursor-pointer">
                       View Properties <ArrowRight size={14} />
                     </Link>
                   </motion.div>
@@ -254,70 +402,66 @@ const InvestorDashboard: React.FC = () => {
 
           {activeTab === "Documents" && (
             <div>
-              {/* <div className="flex justify-between items-center mb-6">
-                <h2 className="text-2xl font-bold text-color-jet-black">Document Management</h2>
-                <button
-                  onClick={() => navigate("/onboarding/documents")}
-                  className="text-sm font-medium text-color-main hover:underline flex items-center gap-1"
-                >
-                  Full Checklist <ArrowRight size={16} />
-                </button>
-              </div> */}
-              <DocumentChecklistContent />
+              <DocumentChecklistContent onProgressUpdate={handleDocumentProgressUpdate} />
             </div>
           )}
 
           {activeTab === "Guide" && (
             <div>
-              {/* <div className="flex justify-between items-center mb-6">
-                <h2 className="text-2xl font-bold text-color-jet-black">Investment Guide</h2>
-                <button
-                  onClick={() => navigate("/onboarding/guide")}
-                  className="text-sm font-medium text-color-main hover:underline flex items-center gap-1"
-                >
-                  View Full Guide <ArrowRight size={16} />
-                </button>
-              </div> */}
               <GuideContent />
             </div>
           )}
 
           {activeTab === "Profile" && (
-            <div className="bg-white border border-[#919EAB] rounded-[14px] p-4 md:p-8">
-              <h2 className="text-xl font-bold text-color-jet-black mb-6 md:mb-8">Investor Profile</h2>
+            <div className="bg-white p-4 md:p-8 border border-[#919EAB] rounded-[14px]">
+              <div className="flex justify-between items-center mb-6 md:mb-8">
+                <h2 className="font-bold text-color-jet-black text-xl">Investor Profile</h2>
+                <button
+                  onClick={handleLogout}
+                  className="flex items-center gap-2 bg-red-50 hover:bg-red-100 px-4 py-2 border border-red-200 rounded-lg font-medium text-red-600 text-sm transition-colors cursor-pointer"
+                >
+                  <LogOut size={16} /> Logout
+                </button>
+              </div>
 
               <div className="space-y-6 max-w-2xl">
                 <div>
-                  <p className="text-xs font-semibold text-gray-500 mb-1">Full Name</p>
-                  <p className="text-sm text-[#212a31]">{profile.fullName}</p>
+                  <p className="mb-1 font-semibold text-gray-500 text-xs">Full Name</p>
+                  <p className="text-[#212a31] text-sm">{profile.fullName || "Not provided"}</p>
                 </div>
                 <div>
-                  <p className="text-xs font-semibold text-gray-500 mb-1">Email</p>
-                  <p className="text-sm text-[#212a31]">{profile.email}</p>
+                  <p className="mb-1 font-semibold text-gray-500 text-xs">Email</p>
+                  <p className="text-[#212a31] text-sm">{profile.email || "Not provided"}</p>
                 </div>
                 <div>
-                  <p className="text-xs font-semibold text-gray-500 mb-1">Country of Residence</p>
-                  <p className="text-sm text-[#212a31]">{profile.country}</p>
+                  <p className="mb-1 font-semibold text-gray-500 text-xs">Country of Residence</p>
+                  <p className="text-[#212a31] text-sm">{profile.country || "Not provided"}</p>
                 </div>
                 <div>
-                  <p className="text-xs font-semibold text-gray-500 mb-1">Investment Budget</p>
-                  <p className="text-sm text-[#212a31]">{profile.budget}</p>
+                  <p className="mb-1 font-semibold text-gray-500 text-xs">Investment Budget</p>
+                  <p className="text-[#212a31] text-sm">{profile.budget || "Not provided"}</p>
                 </div>
                 <div>
-                  <p className="text-xs font-semibold text-gray-500 mb-1">Investment Goal</p>
-                  <p className="text-sm text-[#212a31]">{profile.goal}</p>
+                  <p className="mb-1 font-semibold text-gray-500 text-xs">Investment Goal</p>
+                  <p className="text-[#212a31] text-sm">{profile.goal || "Not provided"}</p>
                 </div>
                 <div>
-                  <p className="text-xs font-semibold text-gray-500 mb-1">Timeline</p>
-                  <p className="text-sm text-[#212a31]">{profile.timeline}</p>
+                  <p className="mb-1 font-semibold text-gray-500 text-xs">Timeline</p>
+                  <p className="text-[#212a31] text-sm">{profile.timeline || "Not provided"}</p>
                 </div>
 
-                <div className="pt-4">
+                <div className="flex flex-wrap items-center gap-3 pt-4">
                   <button
                     onClick={() => setIsEditProfileOpen(true)}
-                    className="border border-gray-300 text-gray-700 hover:bg-gray-50 px-6 py-2.5 rounded-lg text-sm font-medium transition-colors"
+                    className="hover:bg-gray-50 px-6 py-2.5 border border-gray-300 rounded-lg font-medium text-gray-700 text-sm transition-colors cursor-pointer"
                   >
                     Edit Profile
+                  </button>
+                  <button
+                    onClick={handleLogout}
+                    className="sm:hidden flex items-center gap-2 bg-red-50 hover:bg-red-100 px-4 py-2.5 border border-red-200 rounded-lg font-medium text-red-600 text-sm transition-colors cursor-pointer"
+                  >
+                    <LogOut size={16} /> Logout
                   </button>
                 </div>
               </div>
@@ -329,7 +473,7 @@ const InvestorDashboard: React.FC = () => {
       {/* Edit Profile Modal */}
       <AnimatePresence>
         {isEditProfileOpen && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+          <div className="z-50 fixed inset-0 flex justify-center items-center p-4">
             <motion.div
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
@@ -341,56 +485,59 @@ const InvestorDashboard: React.FC = () => {
               initial={{ scale: 0.95, opacity: 0 }}
               animate={{ scale: 1, opacity: 1 }}
               exit={{ scale: 0.95, opacity: 0 }}
-              className="relative bg-white rounded-2xl shadow-xl w-full max-w-lg overflow-hidden"
+              className="relative bg-white shadow-xl rounded-2xl w-full max-w-lg overflow-hidden"
             >
-              <div className="flex justify-between items-center p-6 border-b border-gray-100">
-                <h3 className="text-lg font-bold text-[#212a31]">Edit Profile</h3>
+              <div className="flex justify-between items-center p-6 border-gray-100 border-b">
+                <h3 className="font-bold text-[#212a31] text-lg">Edit Profile</h3>
                 <button
                   onClick={() => setIsEditProfileOpen(false)}
-                  className="text-gray-400 hover:text-gray-600"
+                  className="text-gray-400 hover:text-gray-600 cursor-pointer"
                 >
                   <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M18 6L6 18M6 6l12 12" /></svg>
                 </button>
               </div>
-              <form onSubmit={handleProfileSave} className="p-6 space-y-4">
+              <form onSubmit={handleProfileSave} className="space-y-4 p-6">
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Full Name</label>
-                  <input name="fullName" defaultValue={profile.fullName} required className="w-full border border-gray-300 rounded-lg px-4 py-2 text-sm focus:ring-2 focus:ring-[#d81b60] focus:border-transparent outline-none" />
+                  <label className="block mb-1 font-medium text-gray-700 text-sm">Full Name</label>
+                  <input name="fullName" defaultValue={profile.fullName} placeholder="Enter full name" required className="px-4 py-2 border border-gray-300 focus:border-transparent rounded-lg outline-none focus:ring-[#d81b60] focus:ring-2 w-full text-sm" />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Email</label>
-                  <input name="email" type="email" defaultValue={profile.email} required className="w-full border border-gray-300 rounded-lg px-4 py-2 text-sm focus:ring-2 focus:ring-[#d81b60] focus:border-transparent outline-none" />
+                  <label className="block mb-1 font-medium text-gray-700 text-sm">Email</label>
+                  <input name="email" type="email" defaultValue={profile.email} disabled className="bg-gray-50 px-4 py-2 border border-gray-200 rounded-lg outline-none w-full text-gray-500 text-sm cursor-not-allowed" />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Country of Residence</label>
-                  <input name="country" defaultValue={profile.country} required className="w-full border border-gray-300 rounded-lg px-4 py-2 text-sm focus:ring-2 focus:ring-[#d81b60] focus:border-transparent outline-none" />
+                  <label className="block mb-1 font-medium text-gray-700 text-sm">Country of Residence</label>
+                  <input name="country" defaultValue={profile.country} placeholder="Not provided" className="px-4 py-2 border border-gray-300 focus:border-transparent rounded-lg outline-none focus:ring-[#d81b60] focus:ring-2 w-full text-sm" />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Investment Budget</label>
-                  <input name="budget" defaultValue={profile.budget} required className="w-full border border-gray-300 rounded-lg px-4 py-2 text-sm focus:ring-2 focus:ring-[#d81b60] focus:border-transparent outline-none" />
+                  <label className="block mb-1 font-medium text-gray-700 text-sm">Investment Budget</label>
+                  <input name="budget" defaultValue={profile.budget} placeholder="Not provided" className="px-4 py-2 border border-gray-300 focus:border-transparent rounded-lg outline-none focus:ring-[#d81b60] focus:ring-2 w-full text-sm" />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Investment Goal</label>
-                  <input name="goal" defaultValue={profile.goal} required className="w-full border border-gray-300 rounded-lg px-4 py-2 text-sm focus:ring-2 focus:ring-[#d81b60] focus:border-transparent outline-none" />
+                  <label className="block mb-1 font-medium text-gray-700 text-sm">Investment Goal</label>
+                  <input name="goal" defaultValue={profile.goal} placeholder="Not provided" className="px-4 py-2 border border-gray-300 focus:border-transparent rounded-lg outline-none focus:ring-[#d81b60] focus:ring-2 w-full text-sm" />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Timeline</label>
-                  <input name="timeline" defaultValue={profile.timeline} required className="w-full border border-gray-300 rounded-lg px-4 py-2 text-sm focus:ring-2 focus:ring-[#d81b60] focus:border-transparent outline-none" />
+                  <label className="block mb-1 font-medium text-gray-700 text-sm">Timeline</label>
+                  <input name="timeline" defaultValue={profile.timeline} placeholder="Not provided" className="px-4 py-2 border border-gray-300 focus:border-transparent rounded-lg outline-none focus:ring-[#d81b60] focus:ring-2 w-full text-sm" />
                 </div>
 
-                <div className="pt-4 flex justify-end gap-3">
+                <div className="flex justify-end gap-3 pt-4">
                   <button
                     type="button"
                     onClick={() => setIsEditProfileOpen(false)}
-                    className="px-5 py-2.5 rounded-lg text-sm font-medium text-gray-600 hover:bg-gray-100 transition-colors"
+                    disabled={isUpdatingProfile}
+                    className="hover:bg-gray-100 px-5 py-2.5 rounded-lg font-medium text-gray-600 text-sm transition-colors cursor-pointer"
                   >
                     Cancel
                   </button>
                   <button
                     type="submit"
-                    className="px-5 py-2.5 rounded-lg text-sm font-medium bg-[#d81b60] text-white hover:bg-[#c2185b] transition-colors"
+                    disabled={isUpdatingProfile}
+                    className="flex items-center gap-2 bg-[#d81b60] hover:bg-[#c2185b] disabled:opacity-50 px-5 py-2.5 rounded-lg font-medium text-white text-sm transition-colors cursor-pointer"
                   >
-                    Save Changes
+                    {isUpdatingProfile && <Loader2 className="w-4 h-4 animate-spin" />}
+                    <span>Save Changes</span>
                   </button>
                 </div>
               </form>
