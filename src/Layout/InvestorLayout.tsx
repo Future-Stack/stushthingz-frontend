@@ -1,14 +1,17 @@
-import React from "react";
+import React, { useState } from "react";
 import { Outlet, useNavigate, useLocation } from "react-router-dom";
 import logo from "@/assets/nav/logo.png";
 import chatLogo from "@/assets/home/aiChatLogo.png";
 import wishlistIcon from "@/assets/home/wishlistIcon.png";
 import ScrollToTop from "@/common/ScrollToTop";
 import { useGetWishlistPropertiesQuery } from "@/store/api/propertyApi";
+import { Lock } from "lucide-react";
+import ChangePasswordModal from "@/components/common/ChangePasswordModal";
 
 const InvestorLayout: React.FC = () => {
   const navigate = useNavigate();
   const location = useLocation();
+  const [isChangePasswordOpen, setIsChangePasswordOpen] = useState(false);
   const { data: wishlistData } = useGetWishlistPropertiesQuery();
   const wishlistCount = wishlistData?.data?.length || 0;
 
@@ -22,20 +25,36 @@ const InvestorLayout: React.FC = () => {
         <div className="flex justify-between items-center mx-auto px-4 py-2.5 max-w-7xl">
           <img src={logo} alt="logo" className="w-40 cursor-pointer" onClick={() => navigate("/investor/dashboard")} />
 
-          <button
-            onClick={() => navigate("/investor/interest")}
-            className="relative flex justify-center items-center bg-[#D91A7C33] hover:bg-pink-100 p-2 border border-pink-100/40 rounded-full w-10 h-10 text-[#364153] hover:text-color-main transition-colors cursor-pointer"
-            title="Express Interest List"
-          >
-            <img src={wishlistIcon} className="w-6 h-6" />
-            {wishlistCount > 0 && (
-              <span className="-top-1.5 -right-1.5 absolute flex justify-center items-center bg-color-main shadow-md border-2 border-white rounded-full w-5 h-5 font-bold text-[10px] text-white">
-                {wishlistCount}
-              </span>
-            )}
-          </button>
+          <div className="flex items-center gap-3">
+            <button
+              onClick={() => setIsChangePasswordOpen(true)}
+              className="flex justify-center items-center bg-gray-100 hover:bg-pink-100/60 p-2 border border-gray-200 rounded-full w-10 h-10 text-[#364153] hover:text-color-main transition-colors cursor-pointer"
+              title="Change Password"
+            >
+              <Lock size={18} />
+            </button>
+
+            <button
+              onClick={() => navigate("/investor/interest")}
+              className="relative flex justify-center items-center bg-[#D91A7C33] hover:bg-pink-100 p-2 border border-pink-100/40 rounded-full w-10 h-10 text-[#364153] hover:text-color-main transition-colors cursor-pointer"
+              title="Express Interest List"
+            >
+              <img src={wishlistIcon} className="w-6 h-6" />
+              {wishlistCount > 0 && (
+                <span className="-top-1.5 -right-1.5 absolute flex justify-center items-center bg-color-main shadow-md border-2 border-white rounded-full w-5 h-5 font-bold text-[10px] text-white">
+                  {wishlistCount}
+                </span>
+              )}
+            </button>
+          </div>
         </div>
       </header>
+
+      {/* Change Password Modal */}
+      <ChangePasswordModal
+        isOpen={isChangePasswordOpen}
+        onClose={() => setIsChangePasswordOpen(false)}
+      />
       {/* Main Content Area */}
       <main className="mx-auto p-4 max-w-7xl animate-fadeIn">
         <Outlet />

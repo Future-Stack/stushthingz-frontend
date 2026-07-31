@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from "react";
-import { X, ChevronRight, ChevronLeft, Check, Upload } from "lucide-react";
+import { X, ChevronRight, ChevronLeft, Check, Upload, Loader2 } from "lucide-react";
 import Step1BasicInfo from "./property-steps/Step1BasicInfo";
 import Step2Features from "./property-steps/Step2Features";
 import Step3Financial from "./property-steps/Step3Financial";
@@ -47,6 +47,8 @@ const INITIAL_FORM_STATE = {
     { title: "Community Info", description: "" },
     { title: "Infrastructure", description: "" },
   ],
+  existingImages: [] as { id?: string; url: string }[],
+  imagesToDelete: [] as string[],
   images: [] as File[],
 };
 
@@ -55,8 +57,9 @@ const AddPropertyModal: React.FC<AddPropertyModalProps> = ({ isOpen, onClose, in
   const [currentStep, setCurrentStep] = useState(1);
   const [formData, setFormData] = useState(INITIAL_FORM_STATE);
 
-  const [createProperty] = useCreatePropertyMutation();
-  const [updateProperty] = useUpdatePropertyMutation();
+  const [createProperty, { isLoading: isCreating }] = useCreatePropertyMutation();
+  const [updateProperty, { isLoading: isUpdating }] = useUpdatePropertyMutation();
+  const isSubmitting = isCreating || isUpdating;
 
   useEffect(() => {
     if (isOpen) {
@@ -84,6 +87,8 @@ const AddPropertyModal: React.FC<AddPropertyModalProps> = ({ isOpen, onClose, in
           developmentStatus: initialData.developmentStatus || "",
           legalConsiderations: initialData.legalConsiderations?.map(l => l.content) || [""],
           localContexts: initialData.localContext?.length ? initialData.localContext.map(lc => ({ title: lc.title, description: lc.description })) : INITIAL_FORM_STATE.localContexts,
+          existingImages: initialData.propertyImages || [],
+          imagesToDelete: [],
           images: [],
         });
       } else {
@@ -168,6 +173,18 @@ const AddPropertyModal: React.FC<AddPropertyModalProps> = ({ isOpen, onClose, in
     }));
   };
 
+  const removeExistingImage = (index: number) => {
+    setFormData((prev) => {
+      const imgToDelete = prev.existingImages[index];
+      const identifier = imgToDelete.id || imgToDelete.url;
+      return {
+        ...prev,
+        existingImages: prev.existingImages.filter((_, i) => i !== index),
+        imagesToDelete: identifier ? [...prev.imagesToDelete, identifier] : prev.imagesToDelete,
+      };
+    });
+  };
+
   const handleSubmit = async () => {
     const data = new FormData();
     data.append("title", formData.title);
@@ -193,6 +210,10 @@ const AddPropertyModal: React.FC<AddPropertyModalProps> = ({ isOpen, onClose, in
     data.append("ongoingCost", JSON.stringify(formData.ongoingCosts.filter(o => o).map(o => ({ content: o }))));
     data.append("legalConsiderations", JSON.stringify(formData.legalConsiderations.filter(l => l).map(l => ({ content: l }))));
     data.append("localContext", JSON.stringify(formData.localContexts.filter(lc => lc.title || lc.description)));
+
+    if (formData.imagesToDelete && formData.imagesToDelete.length > 0) {
+      data.append("imagesToDelete", JSON.stringify(formData.imagesToDelete));
+    }
 
     formData.images.forEach((file) => {
       data.append("images", file);
@@ -277,6 +298,7 @@ const AddPropertyModal: React.FC<AddPropertyModalProps> = ({ isOpen, onClose, in
               removeField={removeField}
               handleImageUpload={handleImageUpload}
               removeImage={removeImage}
+              removeExistingImage={removeExistingImage}
               fileInputRef={fileInputRef}
             />
           )}
@@ -329,17 +351,25 @@ const AddPropertyModal: React.FC<AddPropertyModalProps> = ({ isOpen, onClose, in
 
           <button
             onClick={currentStep === 4 ? handleSubmit : nextStep}
-            className={`py-3 rounded-lg font-bold flex items-center justify-center gap-2 transition-all cursor-pointer shadow-lg active:scale-95 ${
+            disabled={isSubmitting}
+            className={`py-3 rounded-lg font-bold flex items-center justify-center gap-2 transition-all cursor-pointer shadow-lg active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed ${
               currentStep === 1
                 ? "flex-1 bg-color-main hover:bg-[#b5156a] text-white shadow-pink-100"
                 : "flex-2 bg-color-main hover:bg-[#b5156a] text-white shadow-pink-100"
             }`}
           >
             {currentStep === 4 ? (
-              <>
-                <Upload size={20} />
-                <span>{initialData ? "Save Changes" : "Publish Property"}</span>
-              </>
+              isSubmitting ? (
+                <>
+                  <Loader2 size={20} className="animate-spin" />
+                  <span>{initialData ? "Updating..." : "Publishing..."}</span>
+                </>
+              ) : (
+                <>
+                  <Upload size={20} />
+                  <span>{initialData ? "Save Changes" : "Publish Property"}</span>
+                </>
+              )
             ) : (
               <>
                 <span>Next Step</span>

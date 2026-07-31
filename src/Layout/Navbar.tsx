@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { Menu, X, ChevronDown, LayoutDashboard, User, LogOut } from "lucide-react";
+import { Menu, X, ChevronDown, LayoutDashboard, User, LogOut, Lock } from "lucide-react";
 import {
   Popover,
   PopoverContent,
@@ -11,6 +11,7 @@ import { useAppDispatch, useAppSelector } from "@/store/hook";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import logo from "@/assets/nav/logo.png"
 import CommonWrapper from "@/common/CommonWrapper";
+import ChangePasswordModal from "@/components/common/ChangePasswordModal";
 
 // const navLinks = [
 //   { to: "/", label: "Home", end: true },
@@ -22,6 +23,7 @@ import CommonWrapper from "@/common/CommonWrapper";
 const Navbar: React.FC = () => {
   const navigate = useNavigate();
   const [isOpen, setIsOpen] = useState(false);
+  const [isChangePasswordOpen, setIsChangePasswordOpen] = useState(false);
   const user = useAppSelector(selectUser);
   const dispatch = useAppDispatch();
 
@@ -109,6 +111,12 @@ const Navbar: React.FC = () => {
                   >
                     <User size={15} /> Profile
                   </Link>
+                  <button
+                    onClick={() => setIsChangePasswordOpen(true)}
+                    className="flex items-center gap-2 px-2 py-2 w-full text-sm text-gray-300 hover:text-white hover:bg-white/10 rounded-lg transition-colors cursor-pointer"
+                  >
+                    <Lock size={15} /> Change Password
+                  </button>
                   <div className="h-px bg-white/10 my-1" />
                   <button
                     onClick={handleLogout}
@@ -184,6 +192,15 @@ const Navbar: React.FC = () => {
                   <LayoutDashboard size={15} /> Dashboard
                 </Link>
                 <button
+                  onClick={() => {
+                    setIsOpen(false);
+                    setIsChangePasswordOpen(true);
+                  }}
+                  className="flex items-center gap-2 px-4 py-2.5 w-full text-sm text-gray-300 hover:text-white hover:bg-white/5 rounded-lg transition-colors cursor-pointer"
+                >
+                  <Lock size={15} /> Change Password
+                </button>
+                <button
                   onClick={handleLogout}
                   className="flex items-center gap-2 px-4 py-2.5 w-full text-sm text-red-400 hover:text-red-300 hover:bg-red-500/10 rounded-lg transition-colors"
                 >
@@ -211,6 +228,11 @@ const Navbar: React.FC = () => {
           </div>
         </div>
       )}
+
+      <ChangePasswordModal
+        isOpen={isChangePasswordOpen}
+        onClose={() => setIsChangePasswordOpen(false)}
+      />
     </nav>
   );
 };

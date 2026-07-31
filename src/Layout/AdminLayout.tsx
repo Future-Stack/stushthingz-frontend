@@ -1,14 +1,16 @@
-import React from "react";
+import React, { useState } from "react";
 import { Link, Outlet, useNavigate } from "react-router-dom";
-import { LogOut } from "lucide-react";
+import { LogOut, Lock } from "lucide-react";
 import { useAppDispatch, useAppSelector } from "@/store/hook";
 import { logout, selectUser } from "@/store/features/auth/auth.slice";
 import logo from "@/assets/nav/logo.png";
+import ChangePasswordModal from "@/components/common/ChangePasswordModal";
 
 const AdminLayout: React.FC = () => {
   const user = useAppSelector(selectUser);
   const dispatch = useAppDispatch();
   const navigate = useNavigate();
+  const [isChangePasswordOpen, setIsChangePasswordOpen] = useState(false);
 
   const handleLogout = () => {
     dispatch(logout());
@@ -25,7 +27,7 @@ const AdminLayout: React.FC = () => {
             <img src={logo} alt="Vanessa" className="w-40" />
           </Link>
 
-          {/* Right: user + logout */}
+          {/* Right: user + change password + logout */}
           <div className="flex items-center gap-3">
             <div className="hidden sm:flex flex-col items-end">
               <span className="text-sm font-semibold text-gray-900 leading-none">
@@ -39,6 +41,13 @@ const AdminLayout: React.FC = () => {
               {user?.name?.[0] ?? "A"}
             </div>
             <button
+              onClick={() => setIsChangePasswordOpen(true)}
+              title="Change Password"
+              className="p-2 rounded-xl text-gray-400 hover:text-color-main hover:bg-pink-50 transition-colors cursor-pointer"
+            >
+              <Lock size={18} />
+            </button>
+            <button
               onClick={handleLogout}
               title="Logout"
               className="p-2 rounded-xl text-gray-400 hover:text-red-500 hover:bg-red-50 transition-colors cursor-pointer"
@@ -48,6 +57,12 @@ const AdminLayout: React.FC = () => {
           </div>
         </div>
       </header>
+
+      {/* Change Password Modal */}
+      <ChangePasswordModal
+        isOpen={isChangePasswordOpen}
+        onClose={() => setIsChangePasswordOpen(false)}
+      />
 
       {/* ── Page Content ─────────────────────────────────────────────────── */}
       <main className="max-w-7xl mx-auto px-4 md:px-6 py-8">

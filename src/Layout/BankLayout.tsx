@@ -1,13 +1,16 @@
-import React from "react";
+import React, { useState } from "react";
 import logo from "@/assets/nav/logo.png";
-import { LogOut } from "lucide-react";
+import { LogOut, Lock } from "lucide-react";
 import { Link, Outlet, useNavigate } from "react-router-dom";
-import { useAppDispatch } from "@/store/hook";
-import { logout } from "@/store/features/auth/auth.slice";
+import { useAppDispatch, useAppSelector } from "@/store/hook";
+import { logout, selectUser } from "@/store/features/auth/auth.slice";
+import ChangePasswordModal from "@/components/common/ChangePasswordModal";
 
 const BankLayout: React.FC = () => {
+  const user = useAppSelector(selectUser);
   const dispatch = useAppDispatch();
   const navigate = useNavigate();
+  const [isChangePasswordOpen, setIsChangePasswordOpen] = useState(false);
 
   const handleLogout = () => {
     dispatch(logout());
@@ -23,19 +26,26 @@ const BankLayout: React.FC = () => {
             <img src={logo} alt="Vanessa" className="w-40" />
           </Link>
 
-          {/* Right: user + logout */}
+          {/* Right: user + change password + logout */}
           <div className="flex items-center gap-3">
-            {/* <div className="hidden sm:flex flex-col items-end">
+            <div className="hidden sm:flex flex-col items-end">
               <span className="text-sm font-semibold text-gray-900 leading-none">
-                {user?.fullName ?? "Admin User"}
+                {user?.name ?? "Bank User"}
               </span>
               <span className="text-xs text-gray-400 mt-0.5">
-                {user?.email ?? "admin@vanessa.com"}
+                {user?.email ?? "bank@vanessa.com"}
               </span>
             </div>
             <div className="w-9 h-9 rounded-full bg-color-main flex items-center justify-center text-sm font-bold text-white shrink-0">
-              {user?.fullName?.[0] ?? "A"}
-            </div> */}
+              {user?.name?.[0] ?? "B"}
+            </div>
+            <button
+              onClick={() => setIsChangePasswordOpen(true)}
+              title="Change Password"
+              className="p-2 rounded-xl text-gray-400 hover:text-color-main hover:bg-pink-50 transition-colors cursor-pointer"
+            >
+              <Lock size={18} />
+            </button>
             <button
               onClick={handleLogout}
               title="Logout"
@@ -46,6 +56,12 @@ const BankLayout: React.FC = () => {
           </div>
         </div>
       </header>
+
+      {/* Change Password Modal */}
+      <ChangePasswordModal
+        isOpen={isChangePasswordOpen}
+        onClose={() => setIsChangePasswordOpen(false)}
+      />
 
       {/* ── Page Content ─────────────────────────────────────────────────── */}
       <main className="max-w-7xl mx-auto px-4 md:px-8 py-8">

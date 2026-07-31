@@ -10,6 +10,7 @@ interface Step1Props {
   removeField: (field: string, index: number) => void;
   handleImageUpload: (e: React.ChangeEvent<HTMLInputElement>) => void;
   removeImage: (index: number) => void;
+  removeExistingImage: (index: number) => void;
   fileInputRef: React.RefObject<HTMLInputElement | null>;
 }
 
@@ -22,6 +23,7 @@ const Step1BasicInfo: React.FC<Step1Props> = ({
   removeField,
   handleImageUpload,
   removeImage,
+  removeExistingImage,
   fileInputRef,
 }) => {
   return (
@@ -161,27 +163,62 @@ const Step1BasicInfo: React.FC<Step1Props> = ({
           </div>
 
           <div>
-            <label className="block mb-3 font-bold text-[13px] text-gray-700 uppercase tracking-wide">Property Image</label>
+            <label className="block mb-3 font-bold text-[13px] text-gray-700 uppercase tracking-wide">Property Images</label>
+
+            {/* Existing Uploaded Images (During Edit) */}
+            {formData.existingImages && formData.existingImages.length > 0 && (
+              <div className="mb-4">
+                <p className="block mb-2 font-semibold text-gray-600 text-xs uppercase">Existing Images</p>
+                <div className="gap-4 grid grid-cols-4">
+                  {formData.existingImages.map((img: { id?: string; url: string }, index: number) => (
+                    <div key={img.id || index} className="group relative aspect-square">
+                      <img
+                        src={img.url}
+                        alt={`Existing ${index}`}
+                        className="border border-gray-200 rounded-2xl w-full h-full object-cover"
+                      />
+                      <button
+                        type="button"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          removeExistingImage(index);
+                        }}
+                        title="Delete image"
+                        className="-top-2 -right-2 absolute flex justify-center items-center bg-red-500 opacity-0 group-hover:opacity-100 shadow-lg rounded-full w-7 h-7 text-white transition-opacity cursor-pointer"
+                      >
+                        <X size={14} strokeWidth={3} />
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* New Image Upload Previews */}
             {formData.images && formData.images.length > 0 && (
-              <div className="gap-4 grid grid-cols-4 mt-6 mb-6">
-                {formData.images.map((file: File, index: number) => (
-                  <div key={index} className="group relative aspect-square">
-                    <img
-                      src={URL.createObjectURL(file)}
-                      alt="preview"
-                      className="border border-gray-100 rounded-2xl w-full h-full object-cover"
-                    />
-                    <button
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        removeImage(index);
-                      }}
-                      className="-top-2 -right-2 absolute flex justify-center items-center bg-red-500 opacity-0 group-hover:opacity-100 shadow-lg rounded-full w-7 h-7 text-white transition-opacity cursor-pointer"
-                    >
-                      <X size={14} strokeWidth={3} />
-                    </button>
-                  </div>
-                ))}
+              <div className="mb-4">
+                <p className="block mb-2 font-semibold text-gray-600 text-xs uppercase">New Images to Upload</p>
+                <div className="gap-4 grid grid-cols-4">
+                  {formData.images.map((file: File, index: number) => (
+                    <div key={index} className="group relative aspect-square">
+                      <img
+                        src={URL.createObjectURL(file)}
+                        alt="preview"
+                        className="border border-gray-200 rounded-2xl w-full h-full object-cover"
+                      />
+                      <button
+                        type="button"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          removeImage(index);
+                        }}
+                        className="-top-2 -right-2 absolute flex justify-center items-center bg-red-500 opacity-0 group-hover:opacity-100 shadow-lg rounded-full w-7 h-7 text-white transition-opacity cursor-pointer"
+                      >
+                        <X size={14} strokeWidth={3} />
+                      </button>
+                    </div>
+                  ))}
+                </div>
               </div>
             )}
 
