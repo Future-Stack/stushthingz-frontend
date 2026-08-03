@@ -1,6 +1,6 @@
-import React, { useState, useEffect } from "react";
-import { Link, useNavigate } from "react-router-dom";
-import { ShieldCheck, ArrowRight, Home, Upload, House, TrendingUp, LogOut, Loader2 } from "lucide-react";
+import React, { useState, useEffect, useRef } from "react";
+import { Link, useNavigate, useSearchParams } from "react-router-dom";
+import { ShieldCheck, ArrowRight, Home, Upload, House, TrendingUp, LogOut, Loader2, Camera, User } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import watermark from "@/assets/home/watermark.png";
 import GuideContent from "@/components/onboarding/GuideContent";
@@ -15,10 +15,30 @@ import { toast } from "react-toastify";
 type TabType = "Dashboard" | "Documents" | "Guide" | "Profile";
 
 const InvestorDashboard: React.FC = () => {
+  const [searchParams] = useSearchParams();
   const [activeTab, setActiveTab] = useState<TabType>("Dashboard");
   const [isEditProfileOpen, setIsEditProfileOpen] = useState(false);
+  const [profileImagePreview, setProfileImagePreview] = useState<string | null>(null);
+  const [imageFile, setImageFile] = useState<File | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const [editForm, setEditForm] = useState({
+    fullName: "",
+    country: "",
+    budget: "",
+    goal: "",
+    timeline: "",
+  });
   const navigate = useNavigate();
   const dispatch = useAppDispatch();
+
+  // Handle ?tab=profile query param from nav dropdown
+  useEffect(() => {
+    const tab = searchParams.get("tab");
+    if (tab === "profile") {
+      setActiveTab("Profile");
+    }
+  }, [searchParams]);
   const currentUser = useAppSelector(selectUser);
 
   const [logoutUser] = useLogoutUserMutation();
@@ -150,19 +170,42 @@ const InvestorDashboard: React.FC = () => {
     }
   };
 
+  const [isUploadingImage, setIsUploadingImage] = useState(false);
+
+  const handleOpenEditModal = () => {
+    setEditForm({
+      fullName: profile.fullName || "",
+      country: profile.country || "",
+      budget: profile.budget || "",
+      goal: profile.goal || "",
+      timeline: profile.timeline || "",
+    });
+    setProfileImagePreview(null);
+    setImageFile(null);
+    setIsEditProfileOpen(true);
+  };
+
+  const isTextFieldsChanged =
+    editForm.fullName.trim() !== (profile.fullName || "").trim() ||
+    editForm.country.trim() !== (profile.country || "").trim() ||
+    editForm.budget.trim() !== (profile.budget || "").trim() ||
+    editForm.goal.trim() !== (profile.goal || "").trim() ||
+    editForm.timeline.trim() !== (profile.timeline || "").trim();
+
+  // Save text profile details only
   const handleProfileSave = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    const formData = new FormData(e.currentTarget);
-    const updatedData = {
-      name: formData.get("fullName") as string,
-      countryOfResidence: formData.get("country") as string,
-      investmentBudget: formData.get("budget") as string,
-      investmentGoal: formData.get("goal") as string,
-      investmentTimeline: formData.get("timeline") as string,
-    };
+    if (!isTextFieldsChanged) return;
+
+    const payload = new FormData();
+    if (editForm.fullName) payload.append("name", editForm.fullName);
+    if (editForm.country) payload.append("countryOfResidence", editForm.country);
+    if (editForm.budget) payload.append("investmentBudget", editForm.budget);
+    if (editForm.goal) payload.append("investmentGoal", editForm.goal);
+    if (editForm.timeline) payload.append("investmentTimeline", editForm.timeline);
 
     try {
-      const res = await updateProfileMutation(updatedData).unwrap();
+      const res = await updateProfileMutation(payload).unwrap();
       if (res.data) {
         dispatch(setUser({ user: res.data }));
       }
@@ -171,6 +214,38 @@ const InvestorDashboard: React.FC = () => {
       console.error("Profile update error:", err);
       toast.error(err?.data?.message || "Failed to update profile");
     }
+  };
+
+  // Upload image separately
+  const handleImageUpload = async () => {
+    if (!imageFile) return;
+
+    const payload = new FormData();
+    payload.append("image", imageFile);
+
+    setIsUploadingImage(true);
+    try {
+      const res = await updateProfileMutation(payload).unwrap();
+      if (res.data) {
+        dispatch(setUser({ user: res.data }));
+      }
+      setProfileImagePreview(null);
+      setImageFile(null);
+    } catch (err: any) {
+      console.error("Image upload error:", err);
+      toast.error(err?.data?.message || "Failed to upload profile image");
+    } finally {
+      setIsUploadingImage(false);
+    }
+  };
+
+  const handleImageSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setImageFile(file);
+    const reader = new FileReader();
+    reader.onload = () => setProfileImagePreview(reader.result as string);
+    reader.readAsDataURL(file);
   };
 
   const tabs: TabType[] = ["Dashboard", "Documents", "Guide", "Profile"];
@@ -452,7 +527,7 @@ const InvestorDashboard: React.FC = () => {
 
                 <div className="flex flex-wrap items-center gap-3 pt-4">
                   <button
-                    onClick={() => setIsEditProfileOpen(true)}
+                    onClick={handleOpenEditModal}
                     className="hover:bg-gray-50 px-6 py-2.5 border border-gray-300 rounded-lg font-medium text-gray-700 text-sm transition-colors cursor-pointer"
                   >
                     Edit Profile
@@ -478,7 +553,7 @@ const InvestorDashboard: React.FC = () => {
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
-              onClick={() => setIsEditProfileOpen(false)}
+              onClick={() => { setIsEditProfileOpen(false); setProfileImagePreview(null); setImageFile(null); }}
               className="absolute inset-0 bg-black/40 backdrop-blur-sm"
             />
             <motion.div
@@ -490,51 +565,142 @@ const InvestorDashboard: React.FC = () => {
               <div className="flex justify-between items-center p-6 border-gray-100 border-b">
                 <h3 className="font-bold text-[#212a31] text-lg">Edit Profile</h3>
                 <button
-                  onClick={() => setIsEditProfileOpen(false)}
+                  onClick={() => { setIsEditProfileOpen(false); setProfileImagePreview(null); setImageFile(null); }}
                   className="text-gray-400 hover:text-gray-600 cursor-pointer"
                 >
                   <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M18 6L6 18M6 6l12 12" /></svg>
                 </button>
               </div>
-              <form onSubmit={handleProfileSave} className="space-y-4 p-6">
+              <form onSubmit={handleProfileSave} className="space-y-4 p-6 max-h-[80vh] overflow-y-auto">
+                {/* Profile Image Upload Section */}
+                <div className="flex flex-col items-center gap-3 pb-3 border-b border-gray-100">
+                  <div className="relative group">
+                    <div className="flex justify-center items-center bg-gradient-to-br from-[#D91A7C] to-[#9c1654] rounded-full w-24 h-24 overflow-hidden ring-4 ring-pink-100">
+                      {profileImagePreview ? (
+                        <img src={profileImagePreview} alt="Preview" className="w-full h-full object-cover" />
+                      ) : currentUser?.profileImage || currentUser?.image ? (
+                        <img src={currentUser.profileImage || currentUser.image || ""} alt={currentUser.name} className="w-full h-full object-cover" />
+                      ) : (
+                        <User size={36} className="text-white opacity-80" />
+                      )}
+                    </div>
+                  </div>
+                  <input
+                    ref={fileInputRef}
+                    type="file"
+                    accept="image/*"
+                    className="hidden"
+                    onChange={handleImageSelect}
+                  />
+
+                  {/* Buttons for Image Selection & Upload */}
+                  <div className="flex items-center gap-2">
+                    <button
+                      type="button"
+                      onClick={() => fileInputRef.current?.click()}
+                      className="flex items-center gap-1.5 bg-gray-100 hover:bg-gray-200 border border-gray-300 px-3.5 py-1.5 rounded-xl text-xs font-semibold text-gray-700 transition-colors cursor-pointer"
+                    >
+                      <Camera size={15} className="text-color-main" />
+                      <span>{profileImagePreview ? "Change Photo" : "Select Photo"}</span>
+                    </button>
+
+                    {/* Dedicated Separate Upload Image Button - Shows ONLY when an image is selected */}
+                    {imageFile && (
+                      <button
+                        type="button"
+                        onClick={handleImageUpload}
+                        disabled={isUploadingImage}
+                        className="flex items-center gap-1.5 bg-color-main hover:bg-pink-700 disabled:opacity-50 text-white px-3.5 py-1.5 rounded-xl text-xs font-semibold shadow-sm transition-all cursor-pointer"
+                      >
+                        {isUploadingImage ? (
+                          <Loader2 size={14} className="animate-spin" />
+                        ) : (
+                          <Upload size={14} />
+                        )}
+                        <span>{isUploadingImage ? "Uploading..." : "Upload Image"}</span>
+                      </button>
+                    )}
+                  </div>
+                  {profileImagePreview && (
+                    <p className="text-xs text-green-600 font-medium">✓ Photo selected. Click "Upload Image" to save photo separately.</p>
+                  )}
+                </div>
+
                 <div>
                   <label className="block mb-1 font-medium text-gray-700 text-sm">Full Name</label>
-                  <input name="fullName" defaultValue={profile.fullName} placeholder="Enter full name" required className="px-4 py-2 border border-gray-300 focus:border-transparent rounded-lg outline-none focus:ring-[#d81b60] focus:ring-2 w-full text-sm" />
+                  <input
+                    name="fullName"
+                    value={editForm.fullName}
+                    onChange={(e) => setEditForm((prev) => ({ ...prev, fullName: e.target.value }))}
+                    placeholder="Enter full name"
+                    required
+                    className="px-4 py-2 border border-gray-300 focus:border-transparent rounded-lg outline-none focus:ring-[#d81b60] focus:ring-2 w-full text-sm"
+                  />
                 </div>
                 <div>
                   <label className="block mb-1 font-medium text-gray-700 text-sm">Email</label>
-                  <input name="email" type="email" defaultValue={profile.email} disabled className="bg-gray-50 px-4 py-2 border border-gray-200 rounded-lg outline-none w-full text-gray-500 text-sm cursor-not-allowed" />
+                  <input
+                    name="email"
+                    type="email"
+                    defaultValue={profile.email}
+                    disabled
+                    className="bg-gray-50 px-4 py-2 border border-gray-200 rounded-lg outline-none w-full text-gray-500 text-sm cursor-not-allowed"
+                  />
                 </div>
                 <div>
                   <label className="block mb-1 font-medium text-gray-700 text-sm">Country of Residence</label>
-                  <input name="country" defaultValue={profile.country} placeholder="Not provided" className="px-4 py-2 border border-gray-300 focus:border-transparent rounded-lg outline-none focus:ring-[#d81b60] focus:ring-2 w-full text-sm" />
+                  <input
+                    name="country"
+                    value={editForm.country}
+                    onChange={(e) => setEditForm((prev) => ({ ...prev, country: e.target.value }))}
+                    placeholder="Not provided"
+                    className="px-4 py-2 border border-gray-300 focus:border-transparent rounded-lg outline-none focus:ring-[#d81b60] focus:ring-2 w-full text-sm"
+                  />
                 </div>
                 <div>
                   <label className="block mb-1 font-medium text-gray-700 text-sm">Investment Budget</label>
-                  <input name="budget" defaultValue={profile.budget} placeholder="Not provided" className="px-4 py-2 border border-gray-300 focus:border-transparent rounded-lg outline-none focus:ring-[#d81b60] focus:ring-2 w-full text-sm" />
+                  <input
+                    name="budget"
+                    value={editForm.budget}
+                    onChange={(e) => setEditForm((prev) => ({ ...prev, budget: e.target.value }))}
+                    placeholder="Not provided"
+                    className="px-4 py-2 border border-gray-300 focus:border-transparent rounded-lg outline-none focus:ring-[#d81b60] focus:ring-2 w-full text-sm"
+                  />
                 </div>
                 <div>
                   <label className="block mb-1 font-medium text-gray-700 text-sm">Investment Goal</label>
-                  <input name="goal" defaultValue={profile.goal} placeholder="Not provided" className="px-4 py-2 border border-gray-300 focus:border-transparent rounded-lg outline-none focus:ring-[#d81b60] focus:ring-2 w-full text-sm" />
+                  <input
+                    name="goal"
+                    value={editForm.goal}
+                    onChange={(e) => setEditForm((prev) => ({ ...prev, goal: e.target.value }))}
+                    placeholder="Not provided"
+                    className="px-4 py-2 border border-gray-300 focus:border-transparent rounded-lg outline-none focus:ring-[#d81b60] focus:ring-2 w-full text-sm"
+                  />
                 </div>
                 <div>
                   <label className="block mb-1 font-medium text-gray-700 text-sm">Timeline</label>
-                  <input name="timeline" defaultValue={profile.timeline} placeholder="Not provided" className="px-4 py-2 border border-gray-300 focus:border-transparent rounded-lg outline-none focus:ring-[#d81b60] focus:ring-2 w-full text-sm" />
+                  <input
+                    name="timeline"
+                    value={editForm.timeline}
+                    onChange={(e) => setEditForm((prev) => ({ ...prev, timeline: e.target.value }))}
+                    placeholder="Not provided"
+                    className="px-4 py-2 border border-gray-300 focus:border-transparent rounded-lg outline-none focus:ring-[#d81b60] focus:ring-2 w-full text-sm"
+                  />
                 </div>
 
                 <div className="flex justify-end gap-3 pt-4">
                   <button
                     type="button"
-                    onClick={() => setIsEditProfileOpen(false)}
+                    onClick={() => { setIsEditProfileOpen(false); setProfileImagePreview(null); setImageFile(null); }}
                     disabled={isUpdatingProfile}
-                    className="hover:bg-gray-100 px-5 py-2.5 rounded-lg font-medium text-gray-600 text-sm transition-colors cursor-pointer"
+                    className="hover:bg-gray-50 px-5 py-2.5 border border-gray-200 rounded-lg font-medium text-gray-600 text-sm transition-colors cursor-pointer"
                   >
                     Cancel
                   </button>
                   <button
                     type="submit"
-                    disabled={isUpdatingProfile}
-                    className="flex items-center gap-2 bg-[#d81b60] hover:bg-[#c2185b] disabled:opacity-50 px-5 py-2.5 rounded-lg font-medium text-white text-sm transition-colors cursor-pointer"
+                    disabled={isUpdatingProfile || !isTextFieldsChanged}
+                    className="flex items-center gap-2 bg-[#d81b60] hover:bg-[#c2185b] disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:bg-[#d81b60] px-5 py-2.5 rounded-lg font-medium text-white text-sm transition-all cursor-pointer"
                   >
                     {isUpdatingProfile && <Loader2 className="w-4 h-4 animate-spin" />}
                     <span>Save Changes</span>

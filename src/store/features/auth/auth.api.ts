@@ -246,12 +246,12 @@ export const authAPI = baseAPI.injectEndpoints({
       invalidatesTags: ["Auth"],
     }),
 
-    // PATCH /auth/profile
-    updateProfile: build.mutation<{ success: boolean; message: string; data: TUser }, { name?: string; countryOfResidence?: string; investmentBudget?: string; investmentGoal?: string; investmentTimeline?: string }>({
-      query: (data) => ({
+    // PATCH /auth/profile (multipart/form-data — text fields + optional image for S3)
+    updateProfile: build.mutation<{ success: boolean; message: string; data: TUser }, FormData>({
+      query: (formData) => ({
         url: "/auth/profile",
         method: "PATCH",
-        body: data,
+        body: formData,
       }),
       invalidatesTags: ["Auth", "userProfile"],
     }),

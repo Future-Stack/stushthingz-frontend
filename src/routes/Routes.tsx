@@ -4,6 +4,7 @@ import NotFound from "../pages/NotFound";
 import Home from "../pages/Home";
 import AdminRoute from "./AdminRoutes";
 import PrivateRoute from "./PrivateRoute";
+import BankRoute from "./BankRoutes";
 import AdminDashboard from "@/pages/Admin/AdminDashboard";
 import AdminUsers from "@/pages/Admin/AdminUsers";
 import AdminSettings from "@/pages/Admin/AdminSettings";
@@ -53,26 +54,19 @@ const routes = createBrowserRouter([
   },
 
   {
-    // ─── Standalone Onboarding (No Navbar/Footer) ──────────────────────────────
-    path: "/onboarding",
-    element: <Onboarding />,
-  },
-  {
-    path: "/onboarding/assessment",
-    element: <FinancialAssessment />,
-  },
-  {
-    path: "/onboarding/guide",
-    element: <InvestmentGuide />,
-  },
-  {
-    path: "/onboarding/documents",
-    element: <DocumentChecklist />,
+    // ─── Standalone Onboarding (Protected - requires login) ───────────────────
+    path: "/",
+    element: <PrivateRoute />,
+    children: [
+      { path: "onboarding", element: <Onboarding /> },
+      { path: "onboarding/assessment", element: <FinancialAssessment /> },
+      { path: "onboarding/guide", element: <InvestmentGuide /> },
+      { path: "onboarding/documents", element: <DocumentChecklist /> },
+    ],
   },
 
-
   {
-    // ─── Investor Dashboard (requires login — see PrivateRoute for BYPASS_AUTH) ───
+    // ─── Investor Dashboard (requires login & investor role) ──────────────────
     path: "/investor",
     element: <PrivateRoute />,
     children: [
@@ -84,14 +78,13 @@ const routes = createBrowserRouter([
           { path: "opportunities/:id", element: <PropertyDetails /> },
           { path: "interest", element: <ExpressInterest /> },
           { path: "chat", element: <InvestorChat /> },
-          // 🛠️ Add more investor pages here
         ],
       },
     ],
   },
 
   {
-    // ─── Admin Dashboard (requires admin role — see AdminRoutes for BYPASS_AUTH)
+    // ─── Admin Dashboard (requires admin role) ─────────────────────────────────
     path: "/admin",
     element: <AdminRoute />,
     children: [
@@ -101,17 +94,22 @@ const routes = createBrowserRouter([
           { path: "", element: <AdminDashboard /> },
           { path: "users", element: <AdminUsers /> },
           { path: "settings", element: <AdminSettings /> },
-          // 🛠️ Add more admin pages here
         ],
       },
     ],
   },
+
   {
-    // ─── Bank Portal Dashboard
+    // ─── Bank Portal Dashboard (requires bank_operator or admin role) ─────────
     path: "/bank",
-    element: <BankLayout />,
+    element: <BankRoute />,
     children: [
-      { path: "", element: <BankDashboard /> },
+      {
+        element: <BankLayout />,
+        children: [
+          { path: "", element: <BankDashboard /> },
+        ],
+      },
     ],
   },
 

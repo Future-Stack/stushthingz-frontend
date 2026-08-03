@@ -4,22 +4,17 @@ import { selectUser } from "@/store/features/auth/auth.slice";
 
 const BYPASS_AUTH = false;
 
-const PrivateRoute = () => {
+const BankRoute = () => {
   const user = useAppSelector(selectUser);
 
   if (BYPASS_AUTH) return <Outlet />;
 
-  // Check if user is logged in
-  if (!user) {
+  // Check if the user is logged in and has a bank_operator or admin role
+  if (!user || (user.role !== "bank_operator" && user.role !== "bank" && user.role !== "admin")) {
     return <Navigate to="/login" replace />;
-  }
-
-  // If a bank operator tries to access investor routes, redirect them to bank dashboard
-  if (user.role === "bank_operator" || user.role === "bank") {
-    return <Navigate to="/bank" replace />;
   }
 
   return <Outlet />;
 };
 
-export default PrivateRoute;
+export default BankRoute;
