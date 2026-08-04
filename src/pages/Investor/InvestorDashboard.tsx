@@ -89,10 +89,10 @@ const InvestorDashboard: React.FC = () => {
   const onboardingPercentage = trackerData?.onboarding?.percentage ?? (currentUser?.isVerified ? 100 : 50);
   const onboardingStatus = trackerData?.onboarding?.status ?? (onboardingPercentage === 100 ? "Complete" : "In Progress");
 
-  const financialPercentage = trackerData?.financialReadiness?.percentage ?? 80;
+  const financialPercentage = trackerData?.financialReadiness?.percentage ?? 0;
   const financialStatus = trackerData?.financialReadiness?.status ?? `${financialPercentage}%`;
 
-  const readinessPercentage = trackerData?.overallReadiness ?? Math.round((onboardingPercentage + financialPercentage + guidePercentage + docProgress.percentage) / 4);
+  const readinessPercentage = trackerData?.financialReadiness?.percentage ?? 0;
 
   // Fetch document status for dashboard
   const loadDocumentProgress = async () => {
