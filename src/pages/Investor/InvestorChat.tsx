@@ -1,10 +1,10 @@
-import { useState, useRef, useEffect } from "react";
+import { useState, useRef, useEffect, useCallback } from "react";
 import { IoSend } from "react-icons/io5";
 import { motion, AnimatePresence } from "framer-motion";
 import { useAppSelector } from "@/store/hook";
 import { selectUser } from "@/store/features/auth/auth.slice";
 import chatLogo from "@/assets/nav/chatLogo.png";
-import { sendChatMessage } from "@/utils/chatbotService";
+import { sendChatMessage, getChatHistory } from "@/utils/chatbotService";
 
 interface Message {
   id: string;
@@ -75,7 +75,12 @@ const InvestorChat = () => {
   const [messages, setMessages] = useState<Message[]>([]);
   const [inputValue, setInputValue] = useState("");
   const [isTyping, setIsTyping] = useState(false);
+  const [sessionId, setSessionId] = useState<string | null>(null);
+  const [limit, setLimit] = useState(20);
+  const [totalSessions, setTotalSessions] = useState(0);
+  const [isLoadingHistory, setIsLoadingHistory] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const messagesContainerRef = useRef<HTMLDivElement>(null);
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -85,60 +90,57 @@ const InvestorChat = () => {
     scrollToBottom();
   }, [messages, isTyping]);
 
-  // Load chat history from localStorage or trigger initial analysis
-  useEffect(() => {
-    const savedHistory = localStorage.getItem("investor_chat_history");
-    if (savedHistory) {
-      setMessages(JSON.parse(savedHistory));
-    } else {
-      // Trigger initial analysis using onboarding answers
-      const triggerInitialAnalysis = async () => {
-        setIsTyping(true);
-        try {
-          const onboardingAnswersRaw = localStorage.getItem("onboarding_answers");
-          const localAnswers = onboardingAnswersRaw ? JSON.parse(onboardingAnswersRaw) : null;
+  // Convert API history sessions into flat messages
+  const loadHistory = useCallback(async (fetchLimit: number, scrollToEnd = true) => {
+    if (!user?.id) return;
+    setIsLoadingHistory(true);
+    try {
+      const data = await getChatHistory(user.id, fetchLimit);
+      setTotalSessions(data.total);
 
-          const user_id = user?.id || "guest";
-          const property_intent = localAnswers?.propertyIntent || "buy_existing";
-          const lender_code = localAnswers?.selectedLender && localAnswers.selectedLender !== "null" 
-            ? localAnswers.selectedLender 
-            : "general";
+      const flat: Message[] = [];
+      // Latest session drives session_id for new messages
+      if (data.sessions.length > 0) {
+        const latestSession = data.sessions[data.sessions.length - 1];
+        setSessionId(latestSession.id);
+      }
 
-          // If we have onboarding answers, send them stringified
-          const initialQuestion = localAnswers 
-            ? JSON.stringify(localAnswers) 
-            : "Hello! Let's get started with my investment journey.";
-
-          const response = await sendChatMessage({
-            question: initialQuestion,
-            user_id,
-            property_intent,
-            lender_code,
+      // Flatten all sessions oldest-first
+      [...data.sessions].reverse().forEach((session) => {
+        session.messages.forEach((msg, idx) => {
+          flat.push({
+            id: `${session.id}-${idx}`,
+            sender: msg.role === "user" ? "user" : "ai",
+            text: msg.content,
           });
+        });
+      });
 
-          const initialMessage: Message = {
-            id: `ai-init-${Date.now()}`,
-            sender: "ai",
-            text: response.answer,
-          };
-          setMessages([initialMessage]);
-          localStorage.setItem("investor_chat_history", JSON.stringify([initialMessage]));
-        } catch (error) {
-          console.error("Failed to fetch initial AI response:", error);
-          const errorMessage: Message = {
-            id: `ai-error-${Date.now()}`,
-            sender: "ai",
-            text: "Hello! I had trouble reading your onboarding information, but I'm ready to assist you. What can I help you with regarding your Jamaica real estate goals?",
-          };
-          setMessages([errorMessage]);
-        } finally {
-          setIsTyping(false);
-        }
-      };
-
-      triggerInitialAnalysis();
+      setMessages(flat);
+      if (scrollToEnd) {
+        setTimeout(scrollToBottom, 100);
+      }
+    } catch (err) {
+      console.error("Failed to load chat history:", err);
+    } finally {
+      setIsLoadingHistory(false);
     }
-  }, [user]); // Removed "answers" dependency to fix infinite loop
+  }, [user?.id]);
+
+  useEffect(() => {
+    loadHistory(limit);
+  }, [user?.id]);
+
+  // Infinite scroll — load more when user scrolls to top
+  const handleScroll = () => {
+    const container = messagesContainerRef.current;
+    if (!container || isLoadingHistory) return;
+    if (container.scrollTop === 0 && messages.length < totalSessions * 1) {
+      const newLimit = limit + 20;
+      setLimit(newLimit);
+      loadHistory(newLimit, false);
+    }
+  };
 
   const handleSend = async () => {
     if (!inputValue.trim() || isTyping) return;
@@ -152,10 +154,7 @@ const InvestorChat = () => {
       text: userQuery,
     };
 
-    const updatedHistory = [...messages, userMessage];
-    setMessages(updatedHistory);
-    localStorage.setItem("investor_chat_history", JSON.stringify(updatedHistory));
-
+    setMessages((prev) => [...prev, userMessage]);
     setIsTyping(true);
 
     try {
@@ -164,8 +163,8 @@ const InvestorChat = () => {
 
       const user_id = user?.id || "guest";
       const property_intent = localAnswers?.propertyIntent || "buy_existing";
-      const lender_code = localAnswers?.selectedLender && localAnswers.selectedLender !== "null" 
-        ? localAnswers.selectedLender 
+      const lender_code = localAnswers?.selectedLender && localAnswers.selectedLender !== "null"
+        ? localAnswers.selectedLender
         : "general";
 
       const response = await sendChatMessage({
@@ -173,7 +172,13 @@ const InvestorChat = () => {
         user_id,
         property_intent,
         lender_code,
+        session_id: sessionId || undefined,
       });
+
+      // Track session_id from first response if not already set
+      if (response.session_id) {
+        setSessionId(response.session_id);
+      }
 
       const aiMessage: Message = {
         id: `ai-${Date.now()}`,
@@ -181,9 +186,7 @@ const InvestorChat = () => {
         text: response.answer,
       };
 
-      const finalHistory = [...updatedHistory, aiMessage];
-      setMessages(finalHistory);
-      localStorage.setItem("investor_chat_history", JSON.stringify(finalHistory));
+      setMessages((prev) => [...prev, aiMessage]);
     } catch (error) {
       console.error("Error communicating with chatbot API:", error);
       const errorMessage: Message = {
@@ -204,12 +207,6 @@ const InvestorChat = () => {
     }
   };
 
-  const clearChat = () => {
-    localStorage.removeItem("investor_chat_history");
-    setMessages([]);
-    window.location.reload();
-  };
-
   return (
     <div className="flex flex-col h-[calc(100vh-100px)] bg-white rounded-2xl border border-gray-200 overflow-hidden shadow-sm">
       {/* Chat Header */}
@@ -226,16 +223,20 @@ const InvestorChat = () => {
             </p>
           </div>
         </div>
-        <button 
-          onClick={clearChat}
-          className="text-xs font-medium text-gray-500 hover:text-color-main transition-colors cursor-pointer border border-gray-200 hover:border-pink-200 px-3 py-1.5 rounded-lg"
-        >
-          Reset Conversation
-        </button>
       </div>
 
       {/* Messages */}
-      <div className="flex-1 overflow-y-auto p-6 bg-[#f8fafc] space-y-6">
+      <div
+        ref={messagesContainerRef}
+        onScroll={handleScroll}
+        className="flex-1 overflow-y-auto p-6 bg-[#f8fafc] space-y-6"
+      >
+        {/* Load more indicator at top */}
+        {isLoadingHistory && (
+          <div className="flex justify-center py-2">
+            <span className="text-xs text-gray-400 animate-pulse">Loading more messages…</span>
+          </div>
+        )}
         <AnimatePresence initial={false}>
           {messages.map((msg) => (
             <motion.div

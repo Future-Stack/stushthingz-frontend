@@ -3,10 +3,51 @@ export interface ChatRequest {
   lender_code?: string;
   user_id?: string;
   property_intent?: "buy_existing" | "build_develop";
+  session_id?: string;
 }
 
 export interface ChatResponse {
   answer: string;
+  session_id?: string;
+}
+
+export interface OnboardingChatRequest {
+  user_id: string;
+  investment_goal: string;
+  investment_budget: number;
+  investment_timeline: string;
+  country_of_residence: string;
+  is_first_time_investor: boolean;
+  property_type: string;
+  financing_type: string;
+  property_intent: string;
+  selected_lender: string;
+  employment_type: string;
+}
+
+export interface OnboardingChatResponse {
+  answer: string;
+  session_id: string;
+}
+
+export interface ChatMessage {
+  role: "user" | "assistant";
+  content: string;
+}
+
+export interface ChatSession {
+  id: string;
+  lender_code: string | null;
+  property_intent: string;
+  messages: ChatMessage[];
+  created_at: string;
+  updated_at: string;
+}
+
+export interface ChatHistoryResponse {
+  user_id: string;
+  total: number;
+  sessions: ChatSession[];
 }
 
 export interface FinancialAssessmentRequest {
@@ -68,22 +109,66 @@ const getBaseUrl = () => {
 };
 
 export const sendChatMessage = async (data: ChatRequest): Promise<ChatResponse> => {
+  const body: Record<string, any> = {
+    question: data.question,
+    lender_code: data.lender_code || "general",
+    user_id: data.user_id || "guest",
+    property_intent: data.property_intent || "buy_existing",
+  };
+  if (data.session_id) {
+    body.session_id = data.session_id;
+  }
   const response = await fetch(`${getBaseUrl()}/api/v1/chatbot/chat`, {
     method: "POST",
     headers: {
       "accept": "application/json",
       "Content-Type": "application/json",
     },
-    body: JSON.stringify({
-      question: data.question,
-      lender_code: data.lender_code || "general",
-      user_id: data.user_id || "guest",
-      property_intent: data.property_intent || "buy_existing",
-    }),
+    body: JSON.stringify(body),
   });
 
   if (!response.ok) {
     throw new Error(`Chat API error: ${response.statusText}`);
+  }
+
+  return response.json();
+};
+
+export const sendOnboardingMessage = async (
+  data: OnboardingChatRequest
+): Promise<OnboardingChatResponse> => {
+  const response = await fetch(`${getBaseUrl()}/api/v1/chatbot/onboarding`, {
+    method: "POST",
+    headers: {
+      "accept": "application/json",
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify(data),
+  });
+
+  if (!response.ok) {
+    throw new Error(`Onboarding Chat API error: ${response.statusText}`);
+  }
+
+  return response.json();
+};
+
+export const getChatHistory = async (
+  userId: string,
+  limit = 20
+): Promise<ChatHistoryResponse> => {
+  const response = await fetch(
+    `${getBaseUrl()}/api/v1/chatbot/user/${encodeURIComponent(userId)}/chat-history?limit=${limit}`,
+    {
+      method: "GET",
+      headers: {
+        "accept": "application/json",
+      },
+    }
+  );
+
+  if (!response.ok) {
+    throw new Error(`Chat History API error: ${response.statusText}`);
   }
 
   return response.json();

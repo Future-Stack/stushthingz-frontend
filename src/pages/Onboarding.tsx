@@ -4,7 +4,7 @@ import { IoSend } from "react-icons/io5";
 import { motion, AnimatePresence } from "framer-motion";
 import logo from "@/assets/nav/logo.png";
 import chatLogo from "@/assets/nav/chatLogo.png";
-import { sendChatMessage } from "@/utils/chatbotService";
+import { sendChatMessage, sendOnboardingMessage } from "@/utils/chatbotService";
 import { useAppSelector } from "@/store/hook";
 import { selectUser } from "@/store/features/auth/auth.slice";
 
@@ -25,10 +25,10 @@ const QUESTIONS: QuestionConfig[] = [
     key: "investmentGoal",
     text: "Welcome to Vanessa. I'll guide you through your Jamaica investment journey.\nLet's start by understanding your goals.\n\nWhat is your primary investment goal?",
     options: [
-      { label: "Rental Income", value: "Rental Income" },
-      { label: "Vacation Home", value: "Vacation Home" },
-      { label: "Retirement Property", value: "Retirement Property" },
-      { label: "Capital Appreciation", value: "Capital Appreciation" },
+      { label: "Rental Income", value: "rental_income" },
+      { label: "Vacation Home", value: "vacation_home" },
+      { label: "Retirement Property", value: "retirement_property" },
+      { label: "Capital Appreciation", value: "capital_appreciation" },
     ],
   },
   {
@@ -47,25 +47,28 @@ const QUESTIONS: QuestionConfig[] = [
     key: "firstTime",
     text: "Is this your first time investing in real estate?",
     options: [
-      { label: "Yes", value: "Yes" },
-      { label: "No", value: "No" },
+      { label: "Yes", value: "yes" },
+      { label: "No", value: "no" },
     ],
   },
   {
     key: "propertyType",
     text: "What type of property are you interested in?",
     options: [
-      { label: "Residential", value: "Residential" },
-      { label: "Rental", value: "Rental" },
-      { label: "Vacation", value: "Vacation" },
+      { label: "Residential", value: "residential" },
+      { label: "Rental", value: "rental" },
+      { label: "Vacation", value: "vacation" },
+      { label: "Commercial", value: "commercial" },
+      { label: "Mixed Use", value: "mixed_use" },
     ],
   },
   {
     key: "financing",
     text: "How do you plan to finance this investment?",
     options: [
-      { label: "Cash", value: "Cash" },
-      { label: "Mortgage", value: "Mortgage" },
+      { label: "Cash", value: "cash" },
+      { label: "Loan", value: "loan" },
+      { label: "Financing", value: "financing" },
     ],
   },
   {
@@ -171,6 +174,7 @@ const Onboarding = () => {
   const [answers, setAnswers] = useState<Record<string, string>>({});
   const [surveyCompleted, setSurveyCompleted] = useState(false);
   const [isTyping, setIsTyping] = useState(false);
+  const [sessionId, setSessionId] = useState<string | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   const scrollToBottom = () => {
@@ -205,7 +209,12 @@ const Onboarding = () => {
           user_id,
           property_intent,
           lender_code,
+          session_id: sessionId || undefined,
         });
+
+        if (response.session_id && !sessionId) {
+          setSessionId(response.session_id);
+        }
 
         const aiMessage: Message = {
           id: `ai-${Date.now()}`,
@@ -213,10 +222,6 @@ const Onboarding = () => {
           text: response.answer,
         };
         setMessages((prev) => [...prev, aiMessage]);
-
-        // Keep local chat history in sync
-        const currentHistory = [...messages, userMessage, aiMessage];
-        localStorage.setItem("investor_chat_history", JSON.stringify(currentHistory));
       } catch (error) {
         console.error("Chat error:", error);
         setMessages((prev) => [
@@ -265,24 +270,33 @@ const Onboarding = () => {
         setCurrentQuestionIndex(nextIndex);
       }, 600);
     } else {
-      // Finished all 10 questions! Save answers and call the AI API immediately
+      // Finished all questions — call onboarding API
       setIsTyping(true);
       localStorage.setItem("onboarding_answers", JSON.stringify(newAnswers));
       localStorage.setItem("onboarding_completed", "true");
 
       try {
         const user_id = user?.id || "guest";
-        const property_intent = (newAnswers.propertyIntent as "buy_existing" | "build_develop") || "buy_existing";
-        const lender_code = newAnswers.selectedLender && newAnswers.selectedLender !== "null"
-          ? newAnswers.selectedLender
-          : "general";
 
-        const response = await sendChatMessage({
-          question: JSON.stringify(newAnswers),
+        const payload = {
           user_id,
-          property_intent,
-          lender_code,
-        });
+          investment_goal: newAnswers.investmentGoal || "",
+          investment_budget: parseFloat(String(newAnswers.budgetRange).replace(/[^0-9.]/g, "")) || 0,
+          investment_timeline: newAnswers.timeline || "",
+          country_of_residence: newAnswers.country || "",
+          is_first_time_investor: newAnswers.firstTime === "yes",
+          property_type: newAnswers.propertyType || "residential",
+          financing_type: newAnswers.financing || "cash",
+          property_intent: newAnswers.propertyIntent || "buy_existing",
+          selected_lender: newAnswers.selectedLender && newAnswers.selectedLender !== "null"
+            ? newAnswers.selectedLender
+            : "NCB",
+          employment_type: newAnswers.employmentType || "employed",
+        };
+
+        const response = await sendOnboardingMessage(payload);
+
+        setSessionId(response.session_id);
 
         const initialAnalysisMessage: Message = {
           id: `ai-analysis-${Date.now()}`,
@@ -292,9 +306,6 @@ const Onboarding = () => {
 
         setMessages((prev) => [...prev, initialAnalysisMessage]);
         setSurveyCompleted(true);
-
-        // Save this initial analysis message to the chat history too!
-        localStorage.setItem("investor_chat_history", JSON.stringify([initialAnalysisMessage]));
       } catch (error) {
         console.error("Failed to fetch initial AI analysis:", error);
         const fallbackMessage: Message = {
