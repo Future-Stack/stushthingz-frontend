@@ -16,29 +16,29 @@ const DocumentChecklist = () => {
   };
 
   return (
-    <div className="min-h-screen bg-[#f8f9fa] font-sans pb-12">
+    <div className="bg-[#f8f9fa] pb-12 min-h-screen font-sans">
       {/* Header */}
-      <div className="bg-white border-b border-gray-200 sticky top-0 z-10">
-        <div className="max-w-6xl mx-auto px-4 sm:px-8 py-4">
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+      <div className="top-0 z-10 sticky bg-white border-gray-200 border-b">
+        <div className="mx-auto px-4 sm:px-8 py-4 max-w-6xl">
+          <div className="flex sm:flex-row flex-col justify-between sm:items-center gap-4">
             <div>
-              <h1 className="text-3xl text-color-jet-black font-bold mb-1">Document Checklist</h1>
-              <p className="text-base font-normal text-[#4A5565] mt-1">
+              <h1 className="mb-1 font-bold text-color-jet-black text-3xl">Document Checklist</h1>
+              <p className="mt-1 font-normal text-[#4A5565] text-base">
                 {progress.uploadedDocs} of {progress.totalDocs} documents uploaded
               </p>
             </div>
             <button
               onClick={handleCompleteSetup}
-              className="bg-color-main hover:bg-[#c2185b] text-white px-6 py-2.5 rounded-xl font-semibold shadow-md flex items-center justify-center gap-2 transition-all cursor-pointer"
+              className="flex justify-center items-center gap-2 bg-color-main hover:bg-[#c2185b] shadow-md px-6 py-2.5 rounded-xl font-semibold text-white transition-all cursor-pointer"
             >
               <CheckCircle size={18} />
               Complete Setup & Finish
             </button>
           </div>
           {/* Progress Bar */}
-          <div className="h-2 w-full bg-gray-200 rounded-full overflow-hidden mt-4">
+          <div className="bg-gray-200 mt-4 rounded-full w-full h-2 overflow-hidden">
             <div
-              className="h-full bg-color-main transition-all duration-500"
+              className="bg-color-main h-full transition-all duration-500"
               style={{ width: `${progress.totalDocs > 0 ? (progress.uploadedDocs / progress.totalDocs) * 100 : 0}%` }}
             />
           </div>
@@ -46,17 +46,17 @@ const DocumentChecklist = () => {
       </div>
 
       {/* Main Content */}
-      <main className="max-w-6xl mx-auto px-4 sm:px-8 mt-8">
+      <main className="mx-auto mt-8 px-4 sm:px-8 max-w-6xl">
         <DocumentChecklistContent onProgressUpdate={handleProgressUpdate} />
 
-        <div className="mt-8 flex justify-end">
+        {/* <div className="flex justify-end mt-8">
           <button
             onClick={handleCompleteSetup}
-            className="bg-color-main hover:bg-[#c2185b] text-white px-8 py-3 rounded-xl font-semibold text-lg shadow-lg flex items-center gap-2 transition-all cursor-pointer"
+            className="flex items-center gap-2 bg-color-main hover:bg-[#c2185b] shadow-lg px-8 py-3 rounded-xl font-semibold text-white text-lg transition-all cursor-pointer"
           >
             Complete Setup & Finish <ArrowRight size={20} />
           </button>
-        </div>
+        </div> */}
       </main>
     </div>
   );

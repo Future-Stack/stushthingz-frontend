@@ -270,7 +270,7 @@ const Onboarding = () => {
         setCurrentQuestionIndex(nextIndex);
       }, 600);
     } else {
-      // Finished all questions — call onboarding API
+      // Finished all questions — save answers, call onboarding API (background) and chat API (shown to user)
       setIsTyping(true);
       localStorage.setItem("onboarding_answers", JSON.stringify(newAnswers));
       localStorage.setItem("onboarding_completed", "true");
@@ -278,7 +278,7 @@ const Onboarding = () => {
       try {
         const user_id = user?.id || "guest";
 
-        const payload = {
+        const onboardingPayload = {
           user_id,
           investment_goal: newAnswers.investmentGoal || "",
           investment_budget: parseFloat(String(newAnswers.budgetRange).replace(/[^0-9.]/g, "")) || 0,
@@ -294,14 +294,33 @@ const Onboarding = () => {
           employment_type: newAnswers.employmentType || "employed",
         };
 
-        const response = await sendOnboardingMessage(payload);
+        // Call onboarding API silently in background (just to save data), and chat API for the user-facing response
+        const [onboardingRes, chatRes] = await Promise.allSettled([
+          sendOnboardingMessage(onboardingPayload),
+          sendChatMessage({
+            question: JSON.stringify(newAnswers),
+            user_id,
+            property_intent: (newAnswers.propertyIntent as "buy_existing" | "build_develop") || "buy_existing",
+            lender_code: newAnswers.selectedLender && newAnswers.selectedLender !== "null"
+              ? newAnswers.selectedLender
+              : "general",
+          }),
+        ]);
 
-        setSessionId(response.session_id);
+        // Show the chat API response to the user
+        const chatAnswer = chatRes.status === "fulfilled"
+          ? chatRes.value.answer
+          : "Perfect! I've saved your goals and budget details. You can now chat with me about your real estate plans here, or proceed to the next step when you are ready.";
+
+        // Store session_id from the chat API response
+        if (chatRes.status === "fulfilled" && chatRes.value.session_id) {
+          setSessionId(chatRes.value.session_id);
+        }
 
         const initialAnalysisMessage: Message = {
           id: `ai-analysis-${Date.now()}`,
           sender: "ai",
-          text: response.answer,
+          text: chatAnswer,
         };
 
         setMessages((prev) => [...prev, initialAnalysisMessage]);
@@ -399,9 +418,9 @@ const Onboarding = () => {
                 )}
 
                 <div
-                  className={`px-5 py-3.5 rounded-2xl max-w-[85%] text-[#212B36] font-poppins font-normal text-sm shadow-sm leading-relaxed ${
+                  className={`px-5 py-3.5 rounded-2xl max-w-[85%] min-w-0 text-[#212B36] font-poppins font-normal text-sm shadow-sm leading-relaxed break-words overflow-hidden ${
                     msg.sender === "user"
-                      ? "bg-color-main text-white rounded-br-sm whitespace-pre-wrap"
+                      ? "bg-color-main text-white rounded-br-sm"
                       : "bg-white text-gray-800 border border-gray-100 rounded-bl-sm"
                   }`}
                 >

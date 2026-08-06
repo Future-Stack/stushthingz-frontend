@@ -26,8 +26,7 @@ export interface OnboardingChatRequest {
 }
 
 export interface OnboardingChatResponse {
-  answer: string;
-  session_id: string;
+  saved: boolean;
 }
 
 export interface ChatMessage {

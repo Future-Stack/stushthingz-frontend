@@ -70,6 +70,47 @@ const renderMarkdown = (text: string) => {
   });
 };
 
+const LABEL_MAP: Record<string, string> = {
+  investmentGoal: "Investment Goal",
+  budgetRange: "Budget",
+  timeline: "Timeline",
+  country: "Country",
+  firstTime: "First Time Investor",
+  propertyType: "Property Type",
+  financing: "Financing",
+  propertyIntent: "Property Intent",
+  selectedLender: "Lender",
+  employmentType: "Employment Type",
+};
+
+const formatValue = (_key: string, value: string) =>
+  value.replace(/_/g, " ").replace(/\b\w/g, (c) => c.toUpperCase());
+
+const tryParseOnboardingJson = (text: string): Record<string, string> | null => {
+  const trimmed = text.trim();
+  if (!trimmed.startsWith("{") || !trimmed.endsWith("}")) return null;
+  try {
+    const parsed = JSON.parse(trimmed);
+    if (typeof parsed === "object" && parsed !== null && !Array.isArray(parsed)) return parsed as Record<string, string>;
+  } catch { /* not JSON */ }
+  return null;
+};
+
+const renderOnboardingProfile = (data: Record<string, string>) => (
+  <div className="space-y-1.5">
+    <p className="text-xs font-semibold uppercase tracking-wide text-pink-100 mb-2">📋 My Investment Profile</p>
+    {Object.entries(data)
+      .filter(([key]) => LABEL_MAP[key])
+      .map(([key, value]) => (
+        <div key={key} className="flex justify-between gap-3 text-xs">
+          <span className="text-pink-100 shrink-0">{LABEL_MAP[key]}</span>
+          <span className="font-semibold text-white text-right">{formatValue(key, String(value))}</span>
+        </div>
+      ))
+    }
+  </div>
+);
+
 const InvestorChat = () => {
   const user = useAppSelector(selectUser);
   const [messages, setMessages] = useState<Message[]>([]);
@@ -253,13 +294,19 @@ const InvestorChat = () => {
               )}
 
               <div
-                className={`px-5 py-3.5 rounded-2xl max-w-[80%] text-[#212B36] font-poppins font-normal text-sm shadow-sm leading-relaxed ${
+                className={`px-5 py-3.5 rounded-2xl max-w-[80%] min-w-0 text-[#212B36] font-poppins font-normal text-sm shadow-sm leading-relaxed break-words overflow-hidden ${
                   msg.sender === "user"
-                    ? "bg-color-main text-white rounded-br-sm whitespace-pre-wrap"
+                    ? "bg-color-main text-white rounded-br-sm"
                     : "bg-white text-gray-800 border border-gray-100 rounded-bl-sm"
                 }`}
               >
-                {msg.sender === "user" ? msg.text : renderMarkdown(msg.text)}
+                {msg.sender === "user"
+                  ? (() => {
+                      const parsed = tryParseOnboardingJson(msg.text);
+                      return parsed ? renderOnboardingProfile(parsed) : msg.text;
+                    })()
+                  : renderMarkdown(msg.text)
+                }
               </div>
 
               {msg.sender === "user" && (
