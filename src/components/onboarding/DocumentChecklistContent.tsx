@@ -5,19 +5,21 @@ import { toast } from "react-toastify";
 import Modal from "@/components/ui/Modal";
 import { useAppSelector } from "@/store/hook";
 import { selectUser } from "@/store/features/auth/auth.slice";
-import { 
-  getLendersList, 
-  getLenderDocuments, 
+import {
+  getLendersList,
+  getLenderDocuments,
   validateDocuments,
   getUserDocuments,
   deleteDocument,
-  Lender, 
+  Lender,
   LenderDocumentRequirement,
-  UserDocument
+  UserDocument,
 } from "@/utils/chatbotService";
-import { Eye, Trash2 } from "lucide-react";
+import { Eye, Trash2, Download, FileCheck, CheckCircle2 } from "lucide-react";
+import { generateLendingPackagePDF, LendingPackageData } from "@/utils/lendingPackageGenerator";
 
 export interface DocFile {
+
   name: string;
   url: string;
   rawFile: File;
@@ -68,7 +70,7 @@ const formatDocTitle = (docType: string) => {
 
 const formatDocDesc = (req: LenderDocumentRequirement) => {
   let baseDesc = DOC_TYPE_META[req.doc_type]?.desc || "Required document for verification.";
-  
+
   const rules: string[] = [];
   if (req.months_required) {
     rules.push(`${req.months_required} months required`);
@@ -95,13 +97,13 @@ const formatDocDesc = (req: LenderDocumentRequirement) => {
 const areDocTypesMatching = (uiType: string, apiType: string): boolean => {
   const ui = uiType.toLowerCase().replace(/_/g, "");
   const api = apiType.toLowerCase().replace(/_/g, "");
-  
+
   if (ui === "payadvice" && api === "paystub") return true;
   if (ui === "paystub" && api === "payadvice") return true;
   if (ui === "proofaddress" && api === "proofofaddress") return true;
   if (ui === "proofofaddress" && api === "proofaddress") return true;
   if (ui === "idproof" && api === "identityproof") return true;
-  
+
   return ui.includes(api) || api.includes(ui);
 };
 
@@ -111,21 +113,21 @@ interface DocumentChecklistContentProps {
 
 const DocumentChecklistContent: React.FC<DocumentChecklistContentProps> = ({ onProgressUpdate }) => {
   const user = useAppSelector(selectUser);
-  
+
   const [lenders, setLenders] = useState<Lender[]>([]);
   const [selectedLender, setSelectedLender] = useState<string>("");
   const [employmentType, setEmploymentType] = useState<string>("employed");
   const [documents, setDocuments] = useState<LenderDocumentRequirement[]>([]);
-  
+
   // Storing files per doc_type
   const [uploadedFiles, setUploadedFiles] = useState<Record<string, DocFile[]>>({});
-  
+
   // Storing inline errors per doc_type
   const [docErrors, setDocErrors] = useState<Record<string, string[]>>({});
-  
+
   const [loadingDocs, setLoadingDocs] = useState(true);
   const [initialLoaded, setInitialLoaded] = useState(false);
-  
+
   const [selectedDoc, setSelectedDoc] = useState<LenderDocumentRequirement | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [uploadFiles, setUploadFiles] = useState<File[]>([]);
@@ -216,7 +218,7 @@ const DocumentChecklistContent: React.FC<DocumentChecklistContentProps> = ({ onP
         const currentDocTypes = response.documents.map((d) => d.doc_type);
         const filteredUploaded = { ...uploadedFiles };
         let hasChanges = false;
-        
+
         Object.keys(filteredUploaded).forEach((key) => {
           if (!currentDocTypes.includes(key)) {
             delete filteredUploaded[key];
@@ -299,10 +301,10 @@ const DocumentChecklistContent: React.FC<DocumentChecklistContentProps> = ({ onP
       const response = await validateDocuments(formDataPayload);
 
       // Extract results specifically for this doc_type using fuzzy matcher
-      const docResult = response.results?.find((r) => 
+      const docResult = response.results?.find((r) =>
         areDocTypesMatching(selectedDoc.doc_type, r.doc_type)
       );
-      
+
       // Update inline errors state
       if (docResult && !docResult.valid) {
         setDocErrors((prev) => ({
@@ -382,8 +384,114 @@ const DocumentChecklistContent: React.FC<DocumentChecklistContentProps> = ({ onP
     }
   };
 
+  const [isGeneratingPackage, setIsGeneratingPackage] = useState(false);
+
+  const uploadedDocsCount = documents.filter((d) => {
+    const hasServerDoc = serverUserDocs.some((sd) => areDocTypesMatching(d.doc_type, sd.doc_type));
+    const hasLocalDoc = (uploadedFiles[d.doc_type] || []).length > 0;
+    return hasServerDoc || hasLocalDoc;
+  }).length;
+  const totalDocsCount = documents.length;
+  const isFullyValidated = totalDocsCount > 0 && uploadedDocsCount >= totalDocsCount;
+
+  const handleGeneratePackage = async () => {
+    if (!isFullyValidated) {
+      toast.warning("Please upload and validate all required documents before generating your package.");
+      return;
+    }
+
+    setIsGeneratingPackage(true);
+    try {
+      const activeLender = lenders.find((l) => l.code === selectedLender);
+      const packageData: LendingPackageData = {
+        user: {
+          name: user?.name || "Investor Applicant",
+          email: user?.email || "",
+          countryOfResidence: user?.countryOfResidence || "Jamaica / Diaspora",
+          investmentBudget: user?.investmentBudget ? `$${user.investmentBudget}` : "Standard Investment",
+          investmentGoal: user?.investmentGoal || "Real Estate Purchase",
+          investmentTimeline: user?.investmentTimeline || "3-6 Months",
+        },
+        lender: activeLender ? { name: activeLender.name, id: activeLender.code } : null,
+        readinessScore: 100,
+        documents: documents.map((d) => {
+          const hasServerDoc = serverUserDocs.some((sd) => areDocTypesMatching(d.doc_type, sd.doc_type));
+          const hasLocalDoc = (uploadedFiles[d.doc_type] || []).length > 0;
+          const isUploaded = hasServerDoc || hasLocalDoc;
+          return {
+            docType: d.doc_type,
+            title: DOC_TYPE_META[d.doc_type]?.title || formatDocTitle(d.doc_type),
+            status: isUploaded ? "validated" : "pending",
+          };
+        }),
+      };
+
+      await generateLendingPackagePDF(packageData);
+      toast.success("Lending Package generated & downloaded successfully!");
+    } catch (err) {
+      console.error("Failed to generate package:", err);
+      toast.error("Failed to generate lending package PDF.");
+    } finally {
+      setIsGeneratingPackage(false);
+    }
+  };
+
   return (
     <div className="space-y-8">
+      {/* Lending Package Banner */}
+      <div className={`p-6 rounded-[14px] border shadow-sm transition-all flex flex-col md:flex-row items-start md:items-center justify-between gap-4 ${isFullyValidated
+          ? "bg-gradient-to-r from-emerald-900 to-[#0D7A5F] text-white border-emerald-700"
+          : "bg-white border-[#C4CDD5]"
+        }`}>
+        <div className="flex items-start gap-4">
+          <div className={`p-3 rounded-xl ${isFullyValidated ? "bg-white/10 text-white" : "bg-emerald-50 text-[#0D7A5F]"}`}>
+            <FileCheck size={28} />
+          </div>
+          <div>
+            <div className="flex items-center gap-2">
+              <h3 className={`font-bold text-lg ${isFullyValidated ? "text-white" : "text-color-jet-black"}`}>
+                Lending Package Summary
+              </h3>
+              {isFullyValidated ? (
+                <span className="flex items-center gap-1 bg-emerald-400/20 px-2.5 py-0.5 border border-emerald-400/30 rounded-full font-semibold text-emerald-200 text-xs">
+                  <CheckCircle2 size={12} /> Ready to Generate
+                </span>
+              ) : (
+                <span className="bg-gray-100 px-2.5 py-0.5 border border-gray-200 rounded-full font-medium text-gray-600 text-xs">
+                  {uploadedDocsCount}/{totalDocsCount} Validated
+                </span>
+              )}
+            </div>
+            <p className={`text-sm mt-1 max-w-xl ${isFullyValidated ? "text-emerald-100" : "text-gray-600"}`}>
+              {isFullyValidated
+                ? "All required documents are validated! You can now generate your official 1-page summary cover and validated lending package PDF."
+                : "Upload and validate all required documents to unlock your downloadable Lending Package to send to your loan officer."}
+            </p>
+          </div>
+        </div>
+
+        <button
+          onClick={handleGeneratePackage}
+          disabled={!isFullyValidated || isGeneratingPackage}
+          className={`px-6 py-3 rounded-xl font-semibold flex items-center gap-2.5 transition-all shadow-md whitespace-nowrap ${isFullyValidated
+              ? "bg-white text-[#0D7A5F] hover:bg-emerald-50 active:scale-[0.98] cursor-pointer"
+              : "bg-gray-100 text-gray-400 border border-gray-200 cursor-not-allowed shadow-none"
+            }`}
+        >
+          {isGeneratingPackage ? (
+            <>
+              <Loader2 size={18} className="text-[#0D7A5F] animate-spin" />
+              Generating PDF...
+            </>
+          ) : (
+            <>
+              <Download size={18} />
+              Generate My Package
+            </>
+          )}
+        </button>
+      </div>
+
       {/* Selection Row */}
       <div className="gap-6 grid grid-cols-1 md:grid-cols-2 bg-white shadow-sm p-6 border border-[#C4CDD5] rounded-[14px]">
         <div>
@@ -434,7 +542,7 @@ const DocumentChecklistContent: React.FC<DocumentChecklistContentProps> = ({ onP
           <h2 className="mb-4 font-bold text-color-jet-black text-2xl">
             {lenders.find((l) => l.code === selectedLender)?.name || "Lender"} Documents
           </h2>
-          
+
           {documents.length === 0 ? (
             <p className="py-6 text-gray-500 text-center">No documents required for this configuration.</p>
           ) : (
@@ -450,9 +558,8 @@ const DocumentChecklistContent: React.FC<DocumentChecklistContentProps> = ({ onP
                 return (
                   <div
                     key={item.doc_type}
-                    className={`p-4 sm:p-6 flex flex-col justify-between gap-4 ${
-                      idx !== documents.length - 1 ? "border-b border-gray-100" : ""
-                    }`}
+                    className={`p-4 sm:p-6 flex flex-col justify-between gap-4 ${idx !== documents.length - 1 ? "border-b border-gray-100" : ""
+                      }`}
                   >
                     <div className="flex sm:flex-row flex-col justify-between sm:items-start gap-4 w-full">
                       <div className="flex flex-1 items-start space-x-4">
@@ -534,7 +641,7 @@ const DocumentChecklistContent: React.FC<DocumentChecklistContentProps> = ({ onP
                                     {/* Display Note if present */}
                                     {sDoc.note && (
                                       <div className="flex items-start gap-1.5 bg-amber-50/80 mt-1 p-2.5 border border-amber-200/80 rounded-md text-amber-900 text-xs">
-                                        <AlertCircle size={14} className="text-amber-600 shrink-0 mt-0.5" />
+                                        <AlertCircle size={14} className="mt-0.5 text-amber-600 shrink-0" />
                                         <div>
                                           <span className="font-semibold text-amber-950">Note: </span>
                                           <span>{sDoc.note}</span>

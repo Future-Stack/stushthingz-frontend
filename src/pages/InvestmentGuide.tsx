@@ -27,7 +27,7 @@ const InvestmentGuide = () => {
               </p>
             </div>
             <button
-              onClick={() => navigate("/onboarding/documents")}
+              onClick={() => navigate("/onboarding")}
               disabled={!progress.isAllCompleted}
               className={`text-sm px-2 py-2 rounded-lg font-medium transition-colors ${
                 progress.isAllCompleted
@@ -35,7 +35,7 @@ const InvestmentGuide = () => {
                   : "bg-pink-200 text-white cursor-not-allowed"
               }`}
             >
-              Continue to Documents →
+              Continue to Onboarding →
             </button>
           </div>
           {/* Progress Bar */}

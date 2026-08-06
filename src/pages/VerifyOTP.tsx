@@ -128,7 +128,7 @@ const VerifyOTP: React.FC = () => {
       // Redirect based on role
       if (result.role === "admin") navigate("/admin");
       else if (result.role === "bank") navigate("/bank");
-      else if (result.role === "user") navigate("/onboarding");
+      else if (result.role === "user") navigate("/onboarding/guide");
       else navigate("/investor/dashboard");
     } catch (err: unknown) {
       const error = err as { data?: { message?: string } };

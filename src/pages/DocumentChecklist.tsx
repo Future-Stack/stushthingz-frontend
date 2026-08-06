@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import DocumentChecklistContent from "@/components/onboarding/DocumentChecklistContent";
-import { ArrowRight, CheckCircle } from "lucide-react";
+import { CheckCircle } from "lucide-react";
 
 const DocumentChecklist = () => {
   const navigate = useNavigate();

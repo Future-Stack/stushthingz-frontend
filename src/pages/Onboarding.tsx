@@ -295,7 +295,7 @@ const Onboarding = () => {
         };
 
         // Call onboarding API silently in background (just to save data), and chat API for the user-facing response
-        const [onboardingRes, chatRes] = await Promise.allSettled([
+        const [, chatRes] = await Promise.allSettled([
           sendOnboardingMessage(onboardingPayload),
           sendChatMessage({
             question: JSON.stringify(newAnswers),
