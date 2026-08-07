@@ -393,14 +393,29 @@ const InvestorChat = () => {
 
   // Handle Edit click on any Onboarding Answer message
   const handleStartOnboardingAnswerEdit = (questionIndex: number) => {
+    let currentAnswers: Record<string, string> = {};
+    
+    // 1. Try reading from localStorage
     const onboardingAnswersRaw = localStorage.getItem("onboarding_answers");
-    const currentAnswers = onboardingAnswersRaw ? JSON.parse(onboardingAnswersRaw) : {};
+    if (onboardingAnswersRaw) {
+      try {
+        currentAnswers = JSON.parse(onboardingAnswersRaw);
+      } catch { /* ignore */ }
+    }
+
+    // 2. Fallback: Parse from loaded server initial JSON message if local storage is missing/empty
+    if (Object.keys(currentAnswers).length === 0 && initialJsonMsg?.text) {
+      const parsed = tryParseOnboardingJson(initialJsonMsg.text);
+      if (parsed) {
+        currentAnswers = parsed;
+      }
+    }
     
     setTempAnswers(currentAnswers);
     setIsEditingOnboarding(true);
     setEditingOnboardingIndex(questionIndex);
 
-    // Keep messages only up to the question being edited, removing subsequent Q&As & general chat
+    // Keep messages only up to the question being edited, rendering previous questions and answers
     const keepMessages: Message[] = [];
     for (let i = 0; i <= questionIndex; i++) {
       const q = QUESTIONS[i];
