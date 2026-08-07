@@ -32,6 +32,7 @@ export interface OnboardingChatResponse {
 export interface ChatMessage {
   role: "user" | "assistant";
   content: string;
+  index?: number;
 }
 
 export interface ChatSession {
@@ -50,6 +51,7 @@ export interface ChatHistoryResponse {
 }
 
 export interface FinancialAssessmentRequest {
+  user_id?: string;
   monthly_income: number;
   available_savings: number;
   monthly_debt_obligations: number;
@@ -168,6 +170,27 @@ export const getChatHistory = async (
 
   if (!response.ok) {
     throw new Error(`Chat History API error: ${response.statusText}`);
+  }
+
+  return response.json();
+};
+
+export const truncateChatSession = async (
+  sessionId: string,
+  fromIndex: number
+): Promise<{ message?: string; truncated_count?: number }> => {
+  const response = await fetch(
+    `${getBaseUrl()}/api/v1/chatbot/session/${encodeURIComponent(sessionId)}/truncate?from_index=${fromIndex}`,
+    {
+      method: "PATCH",
+      headers: {
+        "accept": "application/json",
+      },
+    }
+  );
+
+  if (!response.ok) {
+    throw new Error(`Truncate Session API error: ${response.statusText}`);
   }
 
   return response.json();

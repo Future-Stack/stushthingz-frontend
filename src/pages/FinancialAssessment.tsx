@@ -4,9 +4,12 @@ import { motion, AnimatePresence } from "framer-motion";
 import logo from "@/assets/nav/logo.png";
 import { CircleCheck, Loader2 } from "lucide-react";
 import { getFinancialAssessment, FinancialAssessmentResponse } from "@/utils/chatbotService";
+import { useAppSelector } from "@/store/hook";
+import { selectUser } from "@/store/features/auth/auth.slice";
 
 const FinancialAssessment = () => {
   const navigate = useNavigate();
+  const user = useAppSelector(selectUser);
   const [isCalculated, setIsCalculated] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [resultData, setResultData] = useState<FinancialAssessmentResponse | null>(null);
@@ -29,6 +32,7 @@ const FinancialAssessment = () => {
     setIsLoading(true);
     try {
       const response = await getFinancialAssessment({
+        user_id: user?.id,
         monthly_income: Number(formData.monthlyIncome),
         available_savings: Number(formData.availableSavings),
         monthly_debt_obligations: Number(formData.monthlyDebt),
