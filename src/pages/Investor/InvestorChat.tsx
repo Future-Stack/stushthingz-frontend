@@ -280,6 +280,12 @@ const InvestorChat = () => {
                 sessionId: session.id,
               };
               setInitialJsonMsg(profileMsgObj);
+
+              // Always sync valid server JSON into localStorage to prevent stale/corrupt local storage issues
+              try {
+                localStorage.setItem("onboarding_answers", JSON.stringify(parsedJson));
+              } catch { /* ignore */ }
+
               // Expand into individual AI question + User answer pairs
               const expanded = expandOnboardingMessages(profileMsgObj, parsedJson);
               flat.push(...expanded);
@@ -394,23 +400,27 @@ const InvestorChat = () => {
   // Handle Edit click on any Onboarding Answer message
   const handleStartOnboardingAnswerEdit = (questionIndex: number) => {
     let currentAnswers: Record<string, string> = {};
-    
-    // 1. Try reading from localStorage
-    const onboardingAnswersRaw = localStorage.getItem("onboarding_answers");
-    if (onboardingAnswersRaw) {
-      try {
-        currentAnswers = JSON.parse(onboardingAnswersRaw);
-      } catch { /* ignore */ }
-    }
 
-    // 2. Fallback: Parse from loaded server initial JSON message if local storage is missing/empty
-    if (Object.keys(currentAnswers).length === 0 && initialJsonMsg?.text) {
+    // 1. First priority: Parse real server-stored JSON message
+    if (initialJsonMsg?.text) {
       const parsed = tryParseOnboardingJson(initialJsonMsg.text);
       if (parsed) {
         currentAnswers = parsed;
       }
     }
-    
+
+    // 2. Fallback to localStorage if initialJsonMsg was not loaded yet
+    if (Object.keys(currentAnswers).length === 0) {
+      const onboardingAnswersRaw = localStorage.getItem("onboarding_answers");
+      if (onboardingAnswersRaw) {
+        try {
+          currentAnswers = JSON.parse(onboardingAnswersRaw);
+        } catch {
+          /* ignore */
+        }
+      }
+    }
+
     setTempAnswers(currentAnswers);
     setIsEditingOnboarding(true);
     setEditingOnboardingIndex(questionIndex);
