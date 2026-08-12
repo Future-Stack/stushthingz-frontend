@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import logo from "@/assets/nav/logo.png";
 import { CircleCheck, Loader2 } from "lucide-react";
@@ -9,6 +9,8 @@ import { selectUser } from "@/store/features/auth/auth.slice";
 
 const FinancialAssessment = () => {
   const navigate = useNavigate();
+  const location = useLocation();
+  const fromDashboard = location.state?.fromDashboard;
   const user = useAppSelector(selectUser);
   const [isCalculated, setIsCalculated] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
@@ -53,17 +55,25 @@ const FinancialAssessment = () => {
     setResultData(null);
   };
 
+  const handleContinue = () => {
+    if (fromDashboard) {
+      navigate("/investor/dashboard");
+    } else {
+      navigate("/onboarding/documents");
+    }
+  };
+
   return (
-    <div className="min-h-screen bg-[#f8f9fa] font-sans">
+    <div className="bg-[#f8f9fa] min-h-screen font-sans">
       {/* Header */}
-      <header className="w-full px-8 bg-white border-b border-[#919EAB] sticky top-0 z-10 py-2">
-        <div className="max-w-6xl mx-auto flex items-center space-x-2">
+      <header className="top-0 z-10 sticky bg-white px-8 py-2 border-[#919EAB] border-b w-full">
+        <div className="flex items-center space-x-2 mx-auto max-w-6xl">
           <div>
             <img src={logo} alt="logo" className="w-50" />
           </div>
         </div>
       </header>
-      <main className="max-w-6xl mx-auto mt-10">
+      <main className="mx-auto mt-10 max-w-6xl">
         <AnimatePresence mode="wait">
           {!isCalculated ? (
             <motion.div
@@ -73,7 +83,7 @@ const FinancialAssessment = () => {
               exit={{ opacity: 0, y: -20 }}
               transition={{ duration: 0.3 }}
             >
-              <h2 className="text-2xl md:text-4xl font-bold text-color-jet-black mt-3 mb-1">
+              <h2 className="mt-3 mb-1 font-bold text-color-jet-black text-2xl md:text-4xl">
                 Financial Assessment
               </h2>
               <p className="text-gray-500">
@@ -82,10 +92,10 @@ const FinancialAssessment = () => {
 
               <form
                 onSubmit={handleCalculate}
-                className="bg-white p-3 sm:px-6 sm:py-5 rounded-xl border border-[#DFE3E8] space-y-4 mt-7"
+                className="space-y-4 bg-white mt-7 p-3 sm:px-6 sm:py-5 border border-[#DFE3E8] rounded-xl"
               >
                 <div>
-                  <label className="block text-color-jet-black mb-2">
+                  <label className="block mb-2 text-color-jet-black">
                     Monthly Income (USD)
                   </label>
                   <input
@@ -94,14 +104,14 @@ const FinancialAssessment = () => {
                     value={formData.monthlyIncome}
                     onChange={handleChange}
                     placeholder="e.g. 5000"
-                    className="w-full bg-[#F3F3F5] border-none rounded-lg px-4 py-3 focus:ring-2 focus:ring-pink-500 outline-none text-gray-800"
+                    className="bg-[#F3F3F5] px-4 py-3 border-none rounded-lg outline-none focus:ring-2 focus:ring-pink-500 w-full text-gray-800"
                     required
                     disabled={isLoading}
                   />
                 </div>
 
                 <div>
-                  <label className="block text-color-jet-black mb-2">
+                  <label className="block mb-2 text-color-jet-black">
                     Available Savings (USD)
                   </label>
                   <input
@@ -110,17 +120,17 @@ const FinancialAssessment = () => {
                     value={formData.availableSavings}
                     onChange={handleChange}
                     placeholder="e.g. 50000"
-                    className="w-full bg-[#F3F3F5] border-none rounded-lg px-4 py-3 focus:ring-2 focus:ring-pink-500 outline-none text-gray-800"
+                    className="bg-[#F3F3F5] px-4 py-3 border-none rounded-lg outline-none focus:ring-2 focus:ring-pink-500 w-full text-gray-800"
                     required
                     disabled={isLoading}
                   />
                 </div>
 
                 <div>
-                  <label className="block text-color-jet-black mb-2">
+                  <label className="block mb-2 text-color-jet-black">
                     Monthly Debt Obligations (USD)
                   </label>
-                  <p className="text-xs text-gray-400 mb-2">
+                  <p className="mb-2 text-gray-400 text-xs">
                     Include mortgage, car loans, student loans, credit cards, etc.
                   </p>
                   <input
@@ -129,14 +139,14 @@ const FinancialAssessment = () => {
                     value={formData.monthlyDebt}
                     onChange={handleChange}
                     placeholder="e.g. 1500"
-                    className="w-full bg-[#F3F3F5] border-none rounded-lg px-4 py-3 focus:ring-2 focus:ring-pink-500 outline-none text-gray-800"
+                    className="bg-[#F3F3F5] px-4 py-3 border-none rounded-lg outline-none focus:ring-2 focus:ring-pink-500 w-full text-gray-800"
                     required
                     disabled={isLoading}
                   />
                 </div>
 
                 <div>
-                  <label className="block text-color-jet-black mb-2">
+                  <label className="block mb-2 text-color-jet-black">
                     Credit Score (Optional)
                   </label>
                   <input
@@ -145,13 +155,13 @@ const FinancialAssessment = () => {
                     value={formData.creditScore}
                     onChange={handleChange}
                     placeholder="e.g. 700"
-                    className="w-full bg-[#F3F3F5] border-none rounded-lg px-4 py-3 focus:ring-2 focus:ring-pink-500 outline-none text-gray-800"
+                    className="bg-[#F3F3F5] px-4 py-3 border-none rounded-lg outline-none focus:ring-2 focus:ring-pink-500 w-full text-gray-800"
                     disabled={isLoading}
                   />
                 </div>
 
                 <div>
-                  <label className="block text-color-jet-black mb-2">
+                  <label className="block mb-2 text-color-jet-black">
                     Estimated Investment Amount (USD)
                   </label>
                   <input
@@ -160,7 +170,7 @@ const FinancialAssessment = () => {
                     value={formData.estimatedInvestment}
                     onChange={handleChange}
                     placeholder="e.g. 150000"
-                    className="w-full bg-[#F3F3F5] border-none rounded-lg px-4 py-3 focus:ring-2 focus:ring-pink-500 outline-none text-gray-800"
+                    className="bg-[#F3F3F5] px-4 py-3 border-none rounded-lg outline-none focus:ring-2 focus:ring-pink-500 w-full text-gray-800"
                     required
                     disabled={isLoading}
                   />
@@ -169,7 +179,7 @@ const FinancialAssessment = () => {
                 <button
                   type="submit"
                   disabled={isLoading}
-                  className="w-full bg-color-main hover:bg-[#d01958] text-white py-4 text-lg rounded-lg font-bold transition-colors cursor-pointer mt-4 flex items-center justify-center space-x-2 disabled:opacity-50"
+                  className="flex justify-center items-center space-x-2 bg-color-main hover:bg-[#d01958] disabled:opacity-50 mt-4 py-4 rounded-lg w-full font-bold text-white text-lg transition-colors cursor-pointer"
                 >
                   {isLoading && <Loader2 className="w-5 h-5 animate-spin" />}
                   <span>Calculate Readiness Score</span>
@@ -185,9 +195,9 @@ const FinancialAssessment = () => {
               transition={{ duration: 0.3 }}
               className="space-y-6"
             >
-              <div className="bg-white rounded-xl border border-[#DFE3E8] flex flex-col items-center justify-center text-center py-12 px-6">
-                <CircleCheck className="w-12 h-12 text-[#ec4899] mb-6" />
-                <h2 className="text-4xl font-bold text-color-jet-black mb-4.5">
+              <div className="flex flex-col justify-center items-center bg-white px-6 py-12 border border-[#DFE3E8] rounded-xl text-center">
+                <CircleCheck className="mb-6 w-12 h-12 text-[#ec4899]" />
+                <h2 className="mb-4.5 font-bold text-color-jet-black text-4xl">
                   You're {resultData?.readiness_score}% Ready
                 </h2>
                 <div className="mb-4">
@@ -201,24 +211,24 @@ const FinancialAssessment = () => {
                     {resultData?.readiness_label} Readiness
                   </span>
                 </div>
-                <p className="text-xl font-normal text-[#4A5565] max-w-2xl">
+                <p className="max-w-2xl font-normal text-[#4A5565] text-xl">
                   {resultData?.summary}
                 </p>
                 {resultData?.dti_ratio !== undefined && (
-                  <p className="text-sm text-gray-500 mt-3 font-semibold">
+                  <p className="mt-3 font-semibold text-gray-500 text-sm">
                     Debt-to-Income (DTI) Ratio: {resultData.dti_ratio}%
                   </p>
                 )}
                 {resultData?.confirm_with_lender && (
-                  <div className="mt-4 p-3 bg-pink-50 border border-pink-100 rounded-lg text-xs text-[#ec4899] font-medium max-w-md">
+                  <div className="bg-pink-50 mt-4 p-3 border border-pink-100 rounded-lg max-w-md font-medium text-[#ec4899] text-xs">
                     💡 Tip: We highly recommend confirming eligibility requirements with your selected lender.
                   </div>
                 )}
               </div>
 
               {resultData?.recommendations && resultData.recommendations.length > 0 && (
-                <div className="bg-white p-8 rounded-xl border border-[#DFE3E8]">
-                  <h3 className="text-2xl font-bold text-color-jet-black mb-6">
+                <div className="bg-white p-8 border border-[#DFE3E8] rounded-xl">
+                  <h3 className="mb-6 font-bold text-color-jet-black text-2xl">
                     Recommendations
                   </h3>
                   <ul className="space-y-4 text-gray-600">
@@ -235,15 +245,15 @@ const FinancialAssessment = () => {
               <div className="flex items-center space-x-4">
                 <button
                   onClick={handleReassess}
-                  className="flex-1 bg-white border border-color-main text-color-jet-black hover:bg-pink-50 py-3.5 rounded-lg font-medium transition-colors cursor-pointer"
+                  className="flex-1 bg-white hover:bg-pink-50 py-3.5 border border-color-main rounded-lg font-medium text-color-jet-black transition-colors cursor-pointer"
                 >
                   Reassess
                 </button>
                 <button
-                  onClick={() => navigate("/onboarding/guide")}
-                  className="flex-1 bg-color-main hover:bg-[#d01958] text-white py-3.5 rounded-lg font-medium transition-colors cursor-pointer flex items-center justify-center space-x-2"
+                  onClick={handleContinue}
+                  className="flex flex-1 justify-center items-center space-x-2 bg-color-main hover:bg-[#d01958] py-3.5 rounded-lg font-medium text-white transition-colors cursor-pointer"
                 >
-                  <span>Continue to Investment Guide</span>
+                  <span>{fromDashboard ? "Back to Dashboard" : "Continue to Required Documents"}</span>
                   <span className="text-lg">→</span>
                 </button>
               </div>

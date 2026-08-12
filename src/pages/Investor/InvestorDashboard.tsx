@@ -453,7 +453,7 @@ const InvestorDashboard: React.FC = () => {
                       <h4 className="mb-1.5 font-semibold text-color-jet-black text-base">Review financing options</h4>
                       <p className="font-normal text-[#4A5565] text-sm">Based on your profile, you qualify for pre-approval with recommended institutions</p>
                     </div>
-                    <Link to="/onboarding/assessment" className="inline-flex items-center gap-1.5 bg-color-main hover:bg-[#c2185b] mt-3 sm:mt-0 px-4 py-2 rounded-lg font-medium text-white text-sm transition-colors cursor-pointer">
+                    <Link to="/onboarding/assessment" state={{ fromDashboard: true }} className="inline-flex items-center gap-1.5 bg-color-main hover:bg-[#c2185b] mt-3 sm:mt-0 px-4 py-2 rounded-lg font-medium text-white text-sm transition-colors cursor-pointer">
                       Learn More <ArrowRight size={14} />
                     </Link>
                   </motion.div>
@@ -669,13 +669,18 @@ const InvestorDashboard: React.FC = () => {
                 </div>
                 <div>
                   <label className="block mb-1 font-medium text-gray-700 text-sm">Investment Goal</label>
-                  <input
+                  <select
                     name="goal"
                     value={editForm.goal}
                     onChange={(e) => setEditForm((prev) => ({ ...prev, goal: e.target.value }))}
-                    placeholder="Not provided"
-                    className="px-4 py-2 border border-gray-300 focus:border-transparent rounded-lg outline-none focus:ring-[#d81b60] focus:ring-2 w-full text-sm"
-                  />
+                    className="px-4 py-2 border border-gray-300 focus:border-transparent rounded-lg outline-none focus:ring-[#d81b60] focus:ring-2 w-full text-sm bg-white"
+                  >
+                    <option value="">Select Investment Goal</option>
+                    <option value="rental_income">Rental Income</option>
+                    <option value="vacation_home">Vacation Home</option>
+                    <option value="retirement_property">Retirement Property</option>
+                    <option value="capital_appreciation">Capital Appreciation</option>
+                  </select>
                 </div>
                 <div>
                   <label className="block mb-1 font-medium text-gray-700 text-sm">Timeline</label>
