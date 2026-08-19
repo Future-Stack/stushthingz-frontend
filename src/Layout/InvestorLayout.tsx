@@ -5,7 +5,7 @@ import chatLogo from "@/assets/home/ai_chat_icon.png";
 import wishlistIcon from "@/assets/home/wishlistIcon.png";
 import ScrollToTop from "@/common/ScrollToTop";
 import { useGetWishlistPropertiesQuery } from "@/store/api/propertyApi";
-import { User, Lock, Heart, LogOut, ChevronDown } from "lucide-react";
+import { User, Lock, Heart, LogOut, ChevronDown, Compass } from "lucide-react";
 import ChangePasswordModal from "@/components/common/ChangePasswordModal";
 import { useAppDispatch, useAppSelector } from "@/store/hook";
 import { logout, selectUser } from "@/store/features/auth/auth.slice";
@@ -55,6 +55,11 @@ const InvestorLayout: React.FC = () => {
   const handleProfileClick = () => {
     setIsDropdownOpen(false);
     navigate("/investor/dashboard?tab=profile");
+  };
+
+  const handleOnboardingClick = () => {
+    setIsDropdownOpen(false);
+    navigate("/onboarding", { state: { fromNavbar: true } });
   };
 
   const handleWishlistClick = () => {
@@ -153,6 +158,16 @@ const InvestorLayout: React.FC = () => {
                         <User size={14} className="text-gray-500 group-hover:text-color-main" />
                       </div>
                       <span className="font-medium text-sm">Profile</span>
+                    </button>
+
+                    <button
+                      onClick={handleOnboardingClick}
+                      className="flex items-center gap-3 hover:bg-pink-50 px-3 py-2.5 rounded-xl w-full text-left text-gray-700 hover:text-color-main transition-colors cursor-pointer group"
+                    >
+                      <div className="flex justify-center items-center bg-gray-100 group-hover:bg-pink-100 rounded-lg w-7 h-7 transition-colors">
+                        <Compass size={14} className="text-gray-500 group-hover:text-color-main" />
+                      </div>
+                      <span className="font-medium text-sm">Onboarding</span>
                     </button>
 
                     <button

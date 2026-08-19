@@ -1,10 +1,10 @@
 import { useState, useRef, useEffect } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
 import { IoSend } from "react-icons/io5";
 import { motion, AnimatePresence } from "framer-motion";
 import logo from "@/assets/nav/logo.png";
 import chatLogo from "@/assets/nav/chatLogo.png";
-import { sendChatMessage, sendOnboardingMessage } from "@/utils/chatbotService";
+import { sendChatMessage, sendOnboardingMessage, OnboardingChatRequest } from "@/utils/chatbotService";
 import { useAppSelector } from "@/store/hook";
 import { selectUser } from "@/store/features/auth/auth.slice";
 
@@ -93,8 +93,8 @@ const QUESTIONS: QuestionConfig[] = [
     ],
   },
   {
-    key: "employmentType",
-    text: "What is your employment type?",
+    key: "employmentStatus",
+    text: "What is your current employment status?",
     options: [
       { label: "Employed", value: "employed" },
       { label: "Self Employed", value: "self_employed" },
@@ -128,16 +128,16 @@ const renderMarkdown = (text: string) => {
     if (headingMatch) {
       const level = headingMatch[1].length;
       const content = parseInlineMarkdown(headingMatch[2]);
-      if (level === 1) return <h1 key={idx} className="text-xl font-bold my-2 text-gray-950">{content}</h1>;
-      if (level === 2) return <h2 key={idx} className="text-lg font-bold my-2 text-gray-950">{content}</h2>;
-      return <h3 key={idx} className="text-base font-bold my-1 text-gray-950">{content}</h3>;
+      if (level === 1) return <h1 key={idx} className="my-2 font-bold text-gray-950 text-xl">{content}</h1>;
+      if (level === 2) return <h2 key={idx} className="my-2 font-bold text-gray-950 text-lg">{content}</h2>;
+      return <h3 key={idx} className="my-1 font-bold text-gray-950 text-base">{content}</h3>;
     }
 
     const listMatch = line.match(/^[\*\-]\s+(.*)$/);
     if (listMatch) {
       return (
-        <div key={idx} className="flex gap-2 pl-4 my-1 text-gray-800">
-          <span className="text-gray-900 shrink-0 select-none">•</span>
+        <div key={idx} className="flex gap-2 my-1 pl-4 text-gray-800">
+          <span className="text-gray-900 select-none shrink-0">•</span>
           <span className="flex-1">{parseInlineMarkdown(listMatch[1])}</span>
         </div>
       );
@@ -146,8 +146,8 @@ const renderMarkdown = (text: string) => {
     const numListMatch = line.match(/^(\d+)\.\s+(.*)$/);
     if (numListMatch) {
       return (
-        <div key={idx} className="flex gap-1.5 pl-2 my-1 text-gray-800">
-          <span className="font-semibold text-gray-900 shrink-0 select-none">{numListMatch[1]}.</span>
+        <div key={idx} className="flex gap-1.5 my-1 pl-2 text-gray-800">
+          <span className="font-semibold text-gray-900 select-none shrink-0">{numListMatch[1]}.</span>
           <span className="flex-1">{parseInlineMarkdown(numListMatch[2])}</span>
         </div>
       );
@@ -164,6 +164,8 @@ const renderMarkdown = (text: string) => {
 
 const Onboarding = () => {
   const navigate = useNavigate();
+  const location = useLocation();
+  const fromNavbar = location.state?.fromNavbar;
   const user = useAppSelector(selectUser);
 
   const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
@@ -186,7 +188,6 @@ const Onboarding = () => {
   }, [messages, isTyping]);
 
   const submitAnswer = async (valueText: string, valueToSave: string) => {
-    // If onboarding survey is already completed, it's a general chatbot message
     if (surveyCompleted) {
       const userMessage: Message = {
         id: `msg-${Date.now()}`,
@@ -216,20 +217,21 @@ const Onboarding = () => {
           setSessionId(response.session_id);
         }
 
-        const aiMessage: Message = {
-          id: `ai-${Date.now()}`,
-          sender: "ai",
-          text: response.answer,
-        };
-        setMessages((prev) => [...prev, aiMessage]);
-      } catch (error) {
-        console.error("Chat error:", error);
         setMessages((prev) => [
           ...prev,
           {
-            id: `ai-err-${Date.now()}`,
+            id: `msg-${Date.now()}-ai`,
             sender: "ai",
-            text: "Sorry, I ran into an issue processing your query. Please try again.",
+            text: response.answer,
+          },
+        ]);
+      } catch (err) {
+        setMessages((prev) => [
+          ...prev,
+          {
+            id: `msg-${Date.now()}-err`,
+            sender: "ai",
+            text: "Sorry, I ran into an issue answering that. Please try again.",
           },
         ]);
       } finally {
@@ -238,47 +240,36 @@ const Onboarding = () => {
       return;
     }
 
-    // Otherwise, we are still answering the onboarding survey questions
+    const currentQ = QUESTIONS[currentQuestionIndex];
+    const newAnswers = { ...answers, [currentQ.key]: valueToSave };
+    setAnswers(newAnswers);
+
     const userMessage: Message = {
       id: `msg-${Date.now()}`,
       sender: "user",
       text: valueText,
     };
 
-    const newAnswers = {
-      ...answers,
-      [QUESTIONS[currentQuestionIndex].key]: valueToSave,
-    };
-
-    setMessages((prev) => [...prev, userMessage]);
-    setAnswers(newAnswers);
-    setInputValue("");
-
     const nextIndex = currentQuestionIndex + 1;
 
     if (nextIndex < QUESTIONS.length) {
-      // Simulate AI typing delay
-      setTimeout(() => {
-        setMessages((prev) => [
-          ...prev,
-          {
-            id: `msg-${Date.now() + 1}`,
-            sender: "ai",
-            text: QUESTIONS[nextIndex].text,
-          },
-        ]);
-        setCurrentQuestionIndex(nextIndex);
-      }, 600);
+      const nextQ = QUESTIONS[nextIndex];
+      setMessages((prev) => [
+        ...prev,
+        userMessage,
+        { id: `msg-${Date.now()}-ai`, sender: "ai", text: nextQ.text },
+      ]);
+      setCurrentQuestionIndex(nextIndex);
+      setInputValue("");
     } else {
-      // Finished all questions — save answers, call onboarding API (background) and chat API (shown to user)
+      setMessages((prev) => [...prev, userMessage]);
+      setInputValue("");
       setIsTyping(true);
-      localStorage.setItem("onboarding_answers", JSON.stringify(newAnswers));
-      localStorage.setItem("onboarding_completed", "true");
 
       try {
         const user_id = user?.id || "guest";
 
-        const onboardingPayload = {
+        const onboardingPayload: OnboardingChatRequest = {
           user_id,
           investment_goal: newAnswers.investmentGoal || "",
           investment_budget: parseFloat(String(newAnswers.budgetRange).replace(/[^0-9.]/g, "")) || 0,
@@ -291,10 +282,10 @@ const Onboarding = () => {
           selected_lender: newAnswers.selectedLender && newAnswers.selectedLender !== "null"
             ? newAnswers.selectedLender
             : "NCB",
-          employment_type: newAnswers.employmentType || "employed",
+          employment_type: newAnswers.employmentStatus || "employed",
         };
 
-        // Call onboarding API silently in background (just to save data), and chat API for the user-facing response
+        // Call BOTH onboarding API to save answers AND chat API for initial analysis/response
         const [, chatRes] = await Promise.allSettled([
           sendOnboardingMessage(onboardingPayload),
           sendChatMessage({
@@ -307,32 +298,32 @@ const Onboarding = () => {
           }),
         ]);
 
-        // Show the chat API response to the user
         const chatAnswer = chatRes.status === "fulfilled"
           ? chatRes.value.answer
-          : "Perfect! I've saved your goals and budget details. You can now chat with me about your real estate plans here, or proceed to the next step when you are ready.";
+          : "Thank you for sharing your investment profile! Your responses have been saved. Click below to continue.";
 
-        // Store session_id from the chat API response
         if (chatRes.status === "fulfilled" && chatRes.value.session_id) {
           setSessionId(chatRes.value.session_id);
         }
 
-        const initialAnalysisMessage: Message = {
-          id: `ai-analysis-${Date.now()}`,
-          sender: "ai",
-          text: chatAnswer,
-        };
-
-        setMessages((prev) => [...prev, initialAnalysisMessage]);
+        setMessages((prev) => [
+          ...prev,
+          {
+            id: `msg-${Date.now()}-ai`,
+            sender: "ai",
+            text: chatAnswer,
+          },
+        ]);
         setSurveyCompleted(true);
-      } catch (error) {
-        console.error("Failed to fetch initial AI analysis:", error);
-        const fallbackMessage: Message = {
-          id: `ai-fallback-${Date.now()}`,
-          sender: "ai",
-          text: "Perfect! I've saved your goals and budget details. You can now chat with me about your real estate plans here, or proceed to the next step when you are ready.",
-        };
-        setMessages((prev) => [...prev, fallbackMessage]);
+      } catch (err) {
+        setMessages((prev) => [
+          ...prev,
+          {
+            id: `msg-${Date.now()}-err`,
+            sender: "ai",
+            text: "Thank you for completing the survey! Your responses have been recorded.",
+          },
+        ]);
         setSurveyCompleted(true);
       } finally {
         setIsTyping(false);
@@ -353,21 +344,23 @@ const Onboarding = () => {
   };
 
   const handleProceed = () => {
-    navigate("/onboarding/assessment");
+    if (fromNavbar) {
+      navigate("/investor/dashboard");
+    } else {
+      navigate("/onboarding/assessment");
+    }
   };
 
   return (
-    <div className="flex flex-col h-screen bg-[#f8f9fa] font-sans">
-      {/* Header */}
-      <header className="flex items-center justify-between px-6 py-3 bg-white border-b border-gray-200 shrink-0">
+    <div className="flex flex-col bg-[#f8f9fa] h-screen font-sans">
+      <header className="flex justify-between items-center bg-white px-6 py-3 border-gray-200 border-b shrink-0">
         <div className="flex items-center space-x-2">
           <img src={logo} alt="logo" className="w-40" />
         </div>
         
-        {/* Progress Tracker / Action Button */}
         <div className="flex items-center space-x-4">
           {!surveyCompleted ? (
-            <div className="flex items-center space-x-1.5 overflow-x-auto max-w-[200px] py-1">
+            <div className="flex items-center space-x-1.5 py-1 max-w-[200px] overflow-x-auto">
               {QUESTIONS.map((_, index) => (
                 <motion.div
                   key={index}
@@ -379,7 +372,7 @@ const Onboarding = () => {
                     scale: index === currentQuestionIndex ? 1.2 : 1,
                   }}
                   transition={{ duration: 0.3 }}
-                  className="w-2 h-2 rounded-full shrink-0"
+                  className="rounded-full w-2 h-2 shrink-0"
                 />
               ))}
             </div>
@@ -388,18 +381,17 @@ const Onboarding = () => {
               initial={{ scale: 0.9, opacity: 0 }}
               animate={{ scale: 1, opacity: 1 }}
               onClick={handleProceed}
-              className="bg-color-main hover:bg-[#d01958] text-white px-5 py-2 rounded-lg font-medium text-sm transition-all shadow-md flex items-center gap-1.5 cursor-pointer"
+              className="flex items-center gap-1.5 bg-color-main hover:bg-[#d01958] shadow-md px-5 py-2 rounded-lg font-medium text-white text-sm transition-all cursor-pointer"
             >
-              <span>Financial Assessment</span>
+              <span>{fromNavbar ? "Go to Dashboard" : "Financial Assessment"}</span>
               <span>→</span>
             </motion.button>
           )}
         </div>
       </header>
 
-      {/* Chat Area */}
-      <main className="flex-1 overflow-y-auto p-4 sm:p-8 bg-[#f8fafc]">
-        <div className="max-w-3xl mx-auto space-y-6">
+      <main className="flex-1 bg-[#f8fafc] p-4 sm:p-8 overflow-y-auto">
+        <div className="space-y-6 mx-auto max-w-3xl">
           <AnimatePresence initial={false}>
             {messages.map((msg) => (
               <motion.div
@@ -412,7 +404,7 @@ const Onboarding = () => {
                 }`}
               >
                 {msg.sender === "ai" && (
-                  <div className="shrink-0 w-10 h-10 rounded-full bg-color-main flex items-center justify-center mr-3 mb-1">
+                  <div className="flex justify-center items-center bg-color-main mr-3 mb-1 rounded-full w-10 h-10 shrink-0">
                     <img src={chatLogo} alt="Vanessa" className="" />
                   </div>
                 )}
@@ -428,8 +420,8 @@ const Onboarding = () => {
                 </div>
 
                 {msg.sender === "user" && (
-                  <div className="shrink-0 w-8 h-8 rounded-full bg-pink-100 border border-pink-200 ml-3 mb-1 overflow-hidden flex items-center justify-center">
-                    <span className="text-xs font-bold text-color-main">
+                  <div className="flex justify-center items-center bg-pink-100 mb-1 ml-3 border border-pink-200 rounded-full w-8 h-8 overflow-hidden shrink-0">
+                    <span className="font-bold text-color-main text-xs">
                       {user?.name ? user.name[0].toUpperCase() : "U"}
                     </span>
                   </div>
@@ -441,15 +433,15 @@ const Onboarding = () => {
               <motion.div
                 initial={{ opacity: 0, y: 10 }}
                 animate={{ opacity: 1, y: 0 }}
-                className="flex items-center justify-start"
+                className="flex justify-start items-center"
               >
-                <div className="shrink-0 w-10 h-10 rounded-full bg-color-main flex items-center justify-center mr-3">
+                <div className="flex justify-center items-center bg-color-main mr-3 rounded-full w-10 h-10 shrink-0">
                   <img src={chatLogo} alt="Vanessa" className="" />
                 </div>
-                <div className="bg-white border border-gray-100 px-5 py-3.5 rounded-2xl rounded-bl-sm flex space-x-1 items-center shadow-sm">
-                  <span className="w-2.5 h-2.5 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: "0ms" }}></span>
-                  <span className="w-2.5 h-2.5 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: "150ms" }}></span>
-                  <span className="w-2.5 h-2.5 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: "300ms" }}></span>
+                <div className="flex items-center space-x-1 bg-white shadow-sm px-5 py-3.5 border border-gray-100 rounded-2xl rounded-bl-sm">
+                  <span className="bg-gray-400 rounded-full w-2.5 h-2.5 animate-bounce" style={{ animationDelay: "0ms" }}></span>
+                  <span className="bg-gray-400 rounded-full w-2.5 h-2.5 animate-bounce" style={{ animationDelay: "150ms" }}></span>
+                  <span className="bg-gray-400 rounded-full w-2.5 h-2.5 animate-bounce" style={{ animationDelay: "300ms" }}></span>
                 </div>
               </motion.div>
             )}
@@ -459,11 +451,11 @@ const Onboarding = () => {
       </main>
 
       {/* Input Area */}
-      <footer className="bg-white border-t border-gray-200 p-4 shrink-0">
-        <div className="max-w-3xl mx-auto flex flex-col space-y-4">
+      <footer className="bg-white p-4 border-gray-200 border-t shrink-0">
+        <div className="flex flex-col space-y-4 mx-auto max-w-3xl">
           {/* Predefined Options - only show if current question has them and we haven't completed the survey */}
           {!surveyCompleted && QUESTIONS[currentQuestionIndex]?.options && (
-            <div className="flex flex-wrap gap-2 justify-center py-2 max-h-[160px] overflow-y-auto">
+            <div className="flex flex-wrap justify-center gap-2 py-2 max-h-[160px] overflow-y-auto">
               {QUESTIONS[currentQuestionIndex].options.map((option, idx) => (
                 <motion.button
                   key={option.value}
@@ -471,7 +463,7 @@ const Onboarding = () => {
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ delay: idx * 0.04 }}
                   onClick={() => submitAnswer(option.label, option.value)}
-                  className="px-4 py-2.5 bg-pink-50 hover:bg-[#ec4899] text-[#ec4899] hover:text-white rounded-full font-medium text-sm transition-colors border border-[#f48fb1]/30 cursor-pointer shadow-sm hover:shadow-md"
+                  className="bg-pink-50 hover:bg-[#ec4899] shadow-sm hover:shadow-md px-4 py-2.5 border border-[#f48fb1]/30 rounded-full font-medium text-[#ec4899] hover:text-white text-sm transition-colors cursor-pointer"
                 >
                   {option.label}
                 </motion.button>
@@ -482,7 +474,7 @@ const Onboarding = () => {
           {/* Text Input - show if no options exist, or if survey is completed so they can chat */}
           {(surveyCompleted || !QUESTIONS[currentQuestionIndex]?.options) && (
             <div className="flex items-center space-x-4">
-              <div className="flex-1 bg-gray-100 rounded-xl px-4 py-3 flex items-center focus-within:ring-2 focus-within:ring-pink-400 focus-within:border-transparent transition-all">
+              <div className="flex flex-1 items-center bg-gray-100 px-4 py-3 focus-within:border-transparent rounded-xl focus-within:ring-2 focus-within:ring-pink-400 transition-all">
                 <textarea
                   value={inputValue}
                   onChange={(e) => setInputValue(e.target.value)}
@@ -493,13 +485,13 @@ const Onboarding = () => {
                       : "Type your response..."
                   }
                   rows={1}
-                  className="bg-transparent w-full focus:outline-none text-gray-700 text-sm resize-none"
+                  className="bg-transparent focus:outline-none w-full text-gray-700 text-sm resize-none"
                 />
               </div>
               <button
                 onClick={handleSend}
                 disabled={!inputValue.trim() || isTyping}
-                className="w-12 h-12 bg-color-main hover:bg-[#d01958] text-white rounded-xl flex items-center justify-center transition-colors disabled:opacity-50 cursor-pointer shrink-0 shadow-sm"
+                className="flex justify-center items-center bg-color-main hover:bg-[#d01958] disabled:opacity-50 shadow-sm rounded-xl w-12 h-12 text-white transition-colors cursor-pointer shrink-0"
               >
                 <IoSend className="w-5 h-5" />
               </button>

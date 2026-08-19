@@ -52,10 +52,9 @@ const FinancialTab: React.FC<FinancialTabProps> = ({ profile }) => {
             Based on financial assessment, this investor is classified as{" "}
             <span className="font-bold">
               {overview.readinessLabel
-                ? `${overview.readinessPercentage}% ${overview.readinessLabel}`
-                : "80% Ready"}
+                && `${overview.readinessPercentage}% ${overview.readinessLabel}`}
             </span>
-            . Debt-to-income ratio and available savings meet bank requirements.
+
           </p>
         </div>
       </div>

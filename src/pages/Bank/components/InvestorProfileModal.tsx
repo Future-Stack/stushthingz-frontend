@@ -13,7 +13,7 @@ interface InvestorProfileModalProps {
   profile?: any;
 }
 
-type TabType = "Overview" | "Financial" | "Documents" | "Notes";
+type TabType = "Overview" | "Financial" | "Documents" | "Log";
 
 const InvestorProfileModal: React.FC<InvestorProfileModalProps> = ({
   isOpen,
@@ -32,7 +32,7 @@ const InvestorProfileModal: React.FC<InvestorProfileModalProps> = ({
   if (!isOpen) return null;
 
   const profile = profileResponse?.data;
-  const tabs: TabType[] = ["Overview", "Financial", "Documents", "Notes"];
+  const tabs: TabType[] = ["Overview", "Financial", "Documents", "Log"];
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
@@ -97,7 +97,7 @@ const InvestorProfileModal: React.FC<InvestorProfileModalProps> = ({
               {activeTab === "Overview" && <OverviewTab profile={profile} />}
               {activeTab === "Financial" && <FinancialTab profile={profile} />}
               {activeTab === "Documents" && <DocumentsTab profile={profile} />}
-              {activeTab === "Notes" && <NotesTab profile={profile} />}
+              {activeTab === "Log" && <NotesTab profile={profile} />}
             </>
           )}
         </div>

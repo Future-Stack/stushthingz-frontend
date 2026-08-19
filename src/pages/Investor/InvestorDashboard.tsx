@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from "react";
 import { Link, useNavigate, useSearchParams } from "react-router-dom";
-import { ShieldCheck, ArrowRight, Home, Upload, House, TrendingUp, LogOut, Loader2, Camera, User } from "lucide-react";
+import { ShieldCheck, ArrowRight, Home, Upload, House, TrendingUp, LogOut, Loader2, Camera, User, AlertCircle } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import watermark from "@/assets/home/watermark.png";
 import GuideContent from "@/components/onboarding/GuideContent";
@@ -9,7 +9,7 @@ import { useAppDispatch, useAppSelector } from "@/store/hook";
 import { logout, selectUser, setUser } from "@/store/features/auth/auth.slice";
 import { useLogoutUserMutation, useUpdateProfileMutation, useGetProgressTrackerQuery } from "@/store/features/auth/auth.api";
 import { useGetInvestmentGuideQuery } from "@/store/features/investmentGuide/investmentGuide.api";
-import { getUserDocuments, getLenderDocuments, getLendersList, LenderDocumentRequirement } from "@/utils/chatbotService";
+import { getUserDocuments, getLenderDocuments, getLendersList, LenderDocumentRequirement, UserDocument } from "@/utils/chatbotService";
 import { toast } from "react-toastify";
 
 type TabType = "Dashboard" | "Documents" | "Guide" | "Profile";
@@ -65,6 +65,7 @@ const InvestorDashboard: React.FC = () => {
     missing: 0,
     percentage: 0,
     pendingDocNames: [] as string[],
+    documentsWithIssues: [] as { id: string; name: string; doc_type: string; issues: string[]; url?: string }[],
   });
 
   useEffect(() => {
@@ -102,9 +103,23 @@ const InvestorDashboard: React.FC = () => {
         currentUser?.id ? getUserDocuments(currentUser.id).catch(() => null) : Promise.resolve(null),
       ]);
 
-      const userDocs = userDocsRes?.documents || [];
+      const userDocs: UserDocument[] = userDocsRes?.documents || [];
       const lenders = lendersRes?.lenders || [];
       const defaultLenderCode = lenders.length > 0 ? lenders[0].code : "";
+
+      // Collect documents with validation issues
+      const docsWithIssues = userDocs
+        .filter((doc) => {
+          const issues = doc.validation_result?.issues || [];
+          return issues.length > 0;
+        })
+        .map((doc) => ({
+          id: doc.id,
+          name: doc.name,
+          doc_type: doc.doc_type,
+          issues: doc.validation_result?.issues || [],
+          url: doc.url,
+        }));
 
       if (defaultLenderCode) {
         const reqRes = await getLenderDocuments(defaultLenderCode, "employed").catch(() => ({ documents: [] }));
@@ -136,7 +151,10 @@ const InvestorDashboard: React.FC = () => {
           missing,
           percentage,
           pendingDocNames: pending,
+          documentsWithIssues: docsWithIssues,
         });
+      } else {
+        setDocProgress((prev) => ({ ...prev, documentsWithIssues: docsWithIssues }));
       }
     } catch (err) {
       console.error("Failed to load dashboard document status:", err);

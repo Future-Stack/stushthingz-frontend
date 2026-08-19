@@ -264,6 +264,8 @@ export interface UserDocument {
   validation_result?: {
     valid: boolean;
     issues?: string[];
+    doc_type?: string;
+    resolution_paths?: string[];
     lender?: string;
     results?: {
       doc_type: string;

@@ -51,45 +51,59 @@ const DocumentPreviewModal: React.FC<DocumentPreviewModalProps> = ({ document, o
   const isUploaded = document.status === "accepted";
 
   return (
-    <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/60">
-      <div className="bg-white w-full max-w-md rounded-2xl shadow-2xl overflow-hidden">
+    <div className="z-[60] fixed inset-0 flex justify-center items-center bg-black/60 p-4">
+      <div className="flex flex-col bg-white shadow-2xl rounded-2xl w-full max-w-md max-h-[90vh] overflow-hidden">
         {/* Header */}
-        <div className="p-5 border-b border-gray-100 flex items-center justify-between">
+        <div className="flex justify-between items-center p-5 border-gray-100 border-b shrink-0">
           <div>
-            <h3 className="text-base font-bold text-gray-900">Document Preview</h3>
-            <p className="text-xs text-gray-500 mt-0.5">Viewing document details</p>
+            <h3 className="font-bold text-gray-900 text-base">Document Preview</h3>
+            <p className="mt-0.5 text-gray-500 text-xs">Viewing document details</p>
           </div>
           <button
             type="button"
             onClick={onClose}
-            className="p-1.5 rounded-lg text-gray-400 hover:text-gray-600 hover:bg-gray-100 cursor-pointer transition-colors"
+            className="hover:bg-gray-100 p-1.5 rounded-lg text-gray-400 hover:text-gray-600 transition-colors cursor-pointer"
           >
             <X size={18} />
           </button>
         </div>
 
         {/* Preview Area */}
-        <div className="p-6 flex flex-col items-center gap-4">
-          <div className="w-24 h-24 bg-gray-50 border-2 border-dashed border-gray-200 rounded-xl flex items-center justify-center">
-            <FileText size={40} className="text-gray-300" />
-          </div>
+        <div className="flex flex-col flex-1 items-center gap-4 p-6 overflow-y-auto">
+          {document.url ? (
+            <div className="flex justify-center items-center bg-gray-50 border border-gray-200 rounded-xl w-full h-64 overflow-hidden">
+              {document.url.match(/\.(jpeg|jpg|png|gif|webp)$/i) || document.docType?.toLowerCase().includes("image") ? (
+                <img src={document.url} alt={document.name} className="w-full h-full object-contain" />
+              ) : (
+                <iframe
+                  src={document.url}
+                  title={document.name}
+                  className="border-none w-full h-full"
+                />
+              )}
+            </div>
+          ) : (
+            <div className="flex justify-center items-center bg-gray-50 border-2 border-gray-200 border-dashed rounded-xl w-24 h-24">
+              <FileText size={40} className="text-gray-300" />
+            </div>
+          )}
 
-          <div className="text-center space-y-1">
-            <p className="text-sm font-bold text-gray-900">{document.name}</p>
+          <div className="space-y-1 text-center">
+            <p className="max-w-sm font-bold text-gray-900 text-sm truncate" title={document.name}>{document.name}</p>
             {document.uploadedAt && (
-              <p className="text-xs text-gray-500">Uploaded: {formatDate(document.uploadedAt)}</p>
+              <p className="text-gray-500 text-xs">Uploaded: {formatDate(document.uploadedAt)}</p>
             )}
           </div>
 
           {/* Status Badge */}
           <div className="flex items-center gap-2">
             {isUploaded ? (
-              <div className="flex items-center gap-1.5 bg-[#ECFDF5] text-[#10B981] border border-[#A7F3D0] px-3 py-1.5 rounded-lg text-xs font-bold">
+              <div className="flex items-center gap-1.5 bg-[#ECFDF5] px-3 py-1.5 border border-[#A7F3D0] rounded-lg font-bold text-[#10B981] text-xs">
                 <CheckCircle2 size={14} />
-                Document Uploaded Successfully
+                {/* Document Uploaded Successfully */}{ document.status}
               </div>
             ) : (
-              <div className="flex items-center gap-1.5 bg-[#FEF2F2] text-[#EF4444] border border-[#FECACA] px-3 py-1.5 rounded-lg text-xs font-bold">
+              <div className="flex items-center gap-1.5 bg-[#FEF2F2] px-3 py-1.5 border border-[#FECACA] rounded-lg font-bold text-[#EF4444] text-xs">
                 <AlertCircle size={14} />
                 Document {document.statusLabel || document.status}
               </div>
@@ -97,12 +111,12 @@ const DocumentPreviewModal: React.FC<DocumentPreviewModalProps> = ({ document, o
           </div>
 
           {/* Info Box */}
-          <div className="w-full bg-gray-50 border border-gray-100 rounded-xl p-4 space-y-3">
-            <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide">Document Info</p>
-            <div className="grid grid-cols-2 gap-3">
+          <div className="space-y-3 bg-gray-50 p-4 border border-gray-100 rounded-xl w-full">
+            <p className="font-semibold text-gray-500 text-xs uppercase tracking-wide">Document Info</p>
+            <div className="gap-3 grid grid-cols-2">
               <div>
                 <p className="text-[11px] text-gray-400">File Name</p>
-                <p className="text-xs font-semibold text-gray-700 truncate">{document.name}</p>
+                <p className="font-semibold text-gray-700 text-xs truncate">{document.name}</p>
               </div>
               <div>
                 <p className="text-[11px] text-gray-400">Status</p>
@@ -122,35 +136,35 @@ const DocumentPreviewModal: React.FC<DocumentPreviewModalProps> = ({ document, o
               {document.uploadedAt && (
                 <div>
                   <p className="text-[11px] text-gray-400">Upload Date</p>
-                  <p className="text-xs font-semibold text-gray-700">{formatDate(document.uploadedAt)}</p>
+                  <p className="font-semibold text-gray-700 text-xs">{formatDate(document.uploadedAt)}</p>
                 </div>
               )}
               <div>
                 <p className="text-[11px] text-gray-400">File Type</p>
-                <p className="text-xs font-semibold text-gray-700">{document.docType || "PDF"}</p>
+                <p className="font-semibold text-gray-700 text-xs">{document.docType || "PDF"}</p>
               </div>
             </div>
 
             {/* Note Input */}
-            <div className="pt-2 border-t border-gray-200/60">
-              <p className="text-[11px] text-gray-400 mb-1">Operator Note</p>
+            <div className="pt-2 border-gray-200/60 border-t">
+              <p className="mb-1 text-[11px] text-gray-400">Operator Note</p>
               <input
                 type="text"
                 value={note}
                 onChange={(e) => setNote(e.target.value)}
                 placeholder="Add verification note..."
-                className="w-full bg-white border border-gray-200 rounded px-2 py-1 text-xs text-gray-800 placeholder-gray-400 focus:outline-none focus:ring-1 focus:ring-[#D91E75]"
+                className="bg-white px-2 py-1 border border-gray-200 rounded focus:outline-none focus:ring-[#D91E75] focus:ring-1 w-full text-gray-800 text-xs placeholder-gray-400"
               />
             </div>
           </div>
         </div>
 
         {/* Footer */}
-        <div className="px-6 pb-5 flex justify-end gap-2">
+        <div className="flex justify-end gap-2 px-6 py-4 border-gray-100 border-t shrink-0">
           <button
             type="button"
             onClick={onClose}
-            className="px-4 py-2 border border-gray-200 rounded-lg text-sm font-semibold text-gray-600 hover:bg-gray-50 cursor-pointer transition-colors"
+            className="hover:bg-gray-50 px-4 py-2 border border-gray-200 rounded-lg font-semibold text-gray-600 text-sm transition-colors cursor-pointer"
           >
             Close
           </button>
@@ -158,7 +172,7 @@ const DocumentPreviewModal: React.FC<DocumentPreviewModalProps> = ({ document, o
             type="button"
             onClick={handleUpdateStatus}
             disabled={isLoading}
-            className="px-4 py-2 bg-[#D91E75] text-white rounded-lg text-sm font-bold hover:bg-[#c21a69] cursor-pointer disabled:cursor-not-allowed transition-colors flex items-center gap-1.5"
+            className="flex items-center gap-1.5 bg-[#D91E75] hover:bg-[#c21a69] px-4 py-2 rounded-lg font-bold text-white text-sm transition-colors cursor-pointer disabled:cursor-not-allowed"
           >
             {isLoading ? <Loader2 size={14} className="animate-spin" /> : null}
             Save Update

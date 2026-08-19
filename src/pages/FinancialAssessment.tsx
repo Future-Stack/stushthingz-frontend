@@ -4,12 +4,14 @@ import { motion, AnimatePresence } from "framer-motion";
 import logo from "@/assets/nav/logo.png";
 import { CircleCheck, Loader2 } from "lucide-react";
 import { getFinancialAssessment, FinancialAssessmentResponse } from "@/utils/chatbotService";
-import { useAppSelector } from "@/store/hook";
+import { useAppDispatch, useAppSelector } from "@/store/hook";
 import { selectUser } from "@/store/features/auth/auth.slice";
+import { authAPI } from "@/store/features/auth/auth.api";
 
 const FinancialAssessment = () => {
   const navigate = useNavigate();
   const location = useLocation();
+  const dispatch = useAppDispatch();
   const fromDashboard = location.state?.fromDashboard;
   const user = useAppSelector(selectUser);
   const [isCalculated, setIsCalculated] = useState(false);
@@ -43,6 +45,7 @@ const FinancialAssessment = () => {
       });
       setResultData(response);
       setIsCalculated(true);
+      dispatch(authAPI.util.invalidateTags(["Auth", "userProfile", "InvestmentGuide"]));
     } catch (error) {
       console.error(error);
     } finally {

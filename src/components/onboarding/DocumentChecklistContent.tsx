@@ -395,10 +395,10 @@ const DocumentChecklistContent: React.FC<DocumentChecklistContentProps> = ({ onP
   const isFullyValidated = totalDocsCount > 0 && uploadedDocsCount >= totalDocsCount;
 
   const handleGeneratePackage = async () => {
-    if (!isFullyValidated) {
-      toast.warning("Please upload and validate all required documents before generating your package.");
-      return;
-    }
+    // if (!isFullyValidated) {
+    //   toast.warning("Please upload and validate all required documents before generating your package.");
+    //   return;
+    // }
 
     setIsGeneratingPackage(true);
     try {
@@ -472,11 +472,8 @@ const DocumentChecklistContent: React.FC<DocumentChecklistContentProps> = ({ onP
 
         <button
           onClick={handleGeneratePackage}
-          disabled={!isFullyValidated || isGeneratingPackage}
-          className={`px-6 py-3 rounded-xl font-semibold flex items-center gap-2.5 transition-all shadow-md whitespace-nowrap ${isFullyValidated
-              ? "bg-white text-[#0D7A5F] hover:bg-emerald-50 active:scale-[0.98] cursor-pointer"
-              : "bg-gray-100 text-gray-400 border border-gray-200 cursor-not-allowed shadow-none"
-            }`}
+          // disabled={!isFullyValidated || isGeneratingPackage}
+          className={`px-6 py-3 rounded-xl font-semibold flex items-center gap-2.5 transition-all shadow-md whitespace-nowrap bg-white text-[#0D7A5F] hover:bg-emerald-50 active:scale-[0.98] cursor-pointer`}
         >
           {isGeneratingPackage ? (
             <>
@@ -637,6 +634,23 @@ const DocumentChecklistContent: React.FC<DocumentChecklistContentProps> = ({ onP
                                         </button>
                                       </div>
                                     </div>
+
+                                    {/* Display Validation Issues if present */}
+                                    {(sDoc.validation_result?.issues ?? []).length > 0 && (
+                                      <div className="mt-1.5 bg-red-50 border border-red-200 rounded-md p-2.5">
+                                        <div className="flex items-center gap-1.5 mb-1.5">
+                                          <AlertCircle size={13} className="text-red-500 shrink-0" />
+                                          <span className="font-bold text-red-700 text-[11px] uppercase tracking-wide">Validation Issue(s):</span>
+                                        </div>
+                                        <ul className="space-y-1 pl-4 list-disc">
+                                          {(sDoc.validation_result?.issues ?? []).map((issue, issueIdx) => (
+                                            <li key={issueIdx} className="text-red-700 text-[11px] leading-relaxed">
+                                              {issue}
+                                            </li>
+                                          ))}
+                                        </ul>
+                                      </div>
+                                    )}
 
                                     {/* Display Note if present */}
                                     {sDoc.note && (
