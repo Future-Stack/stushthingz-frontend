@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from "react";
 import { Link, useNavigate, useSearchParams } from "react-router-dom";
-import { ShieldCheck, ArrowRight, Home, Upload, House, TrendingUp, LogOut, Loader2, Camera, User, AlertCircle } from "lucide-react";
+import { ShieldCheck, ArrowRight, Home, Upload, House, TrendingUp, LogOut, Loader2, Camera, User } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import watermark from "@/assets/home/watermark.png";
 import GuideContent from "@/components/onboarding/GuideContent";
@@ -591,15 +591,15 @@ const InvestorDashboard: React.FC = () => {
               </div>
               <form onSubmit={handleProfileSave} className="space-y-4 p-6 max-h-[80vh] overflow-y-auto">
                 {/* Profile Image Upload Section */}
-                <div className="flex flex-col items-center gap-3 pb-3 border-b border-gray-100">
-                  <div className="relative group">
-                    <div className="flex justify-center items-center bg-gradient-to-br from-[#D91A7C] to-[#9c1654] rounded-full w-24 h-24 overflow-hidden ring-4 ring-pink-100">
+                <div className="flex flex-col items-center gap-3 pb-3 border-gray-100 border-b">
+                  <div className="group relative">
+                    <div className="flex justify-center items-center bg-gradient-to-br from-[#D91A7C] to-[#9c1654] rounded-full ring-4 ring-pink-100 w-24 h-24 overflow-hidden">
                       {profileImagePreview ? (
                         <img src={profileImagePreview} alt="Preview" className="w-full h-full object-cover" />
                       ) : currentUser?.profileImage || currentUser?.image ? (
                         <img src={currentUser.profileImage || currentUser.image || ""} alt={currentUser.name} className="w-full h-full object-cover" />
                       ) : (
-                        <User size={36} className="text-white opacity-80" />
+                        <User size={36} className="opacity-80 text-white" />
                       )}
                     </div>
                   </div>
@@ -616,7 +616,7 @@ const InvestorDashboard: React.FC = () => {
                     <button
                       type="button"
                       onClick={() => fileInputRef.current?.click()}
-                      className="flex items-center gap-1.5 bg-gray-100 hover:bg-gray-200 border border-gray-300 px-3.5 py-1.5 rounded-xl text-xs font-semibold text-gray-700 transition-colors cursor-pointer"
+                      className="flex items-center gap-1.5 bg-gray-100 hover:bg-gray-200 px-3.5 py-1.5 border border-gray-300 rounded-xl font-semibold text-gray-700 text-xs transition-colors cursor-pointer"
                     >
                       <Camera size={15} className="text-color-main" />
                       <span>{profileImagePreview ? "Change Photo" : "Select Photo"}</span>
@@ -628,7 +628,7 @@ const InvestorDashboard: React.FC = () => {
                         type="button"
                         onClick={handleImageUpload}
                         disabled={isUploadingImage}
-                        className="flex items-center gap-1.5 bg-color-main hover:bg-pink-700 disabled:opacity-50 text-white px-3.5 py-1.5 rounded-xl text-xs font-semibold shadow-sm transition-all cursor-pointer"
+                        className="flex items-center gap-1.5 bg-color-main hover:bg-pink-700 disabled:opacity-50 shadow-sm px-3.5 py-1.5 rounded-xl font-semibold text-white text-xs transition-all cursor-pointer"
                       >
                         {isUploadingImage ? (
                           <Loader2 size={14} className="animate-spin" />
@@ -640,7 +640,7 @@ const InvestorDashboard: React.FC = () => {
                     )}
                   </div>
                   {profileImagePreview && (
-                    <p className="text-xs text-green-600 font-medium">✓ Photo selected. Click "Upload Image" to save photo separately.</p>
+                    <p className="font-medium text-green-600 text-xs">✓ Photo selected. Click "Upload Image" to save photo separately.</p>
                   )}
                 </div>
 
@@ -691,7 +691,7 @@ const InvestorDashboard: React.FC = () => {
                     name="goal"
                     value={editForm.goal}
                     onChange={(e) => setEditForm((prev) => ({ ...prev, goal: e.target.value }))}
-                    className="px-4 py-2 border border-gray-300 focus:border-transparent rounded-lg outline-none focus:ring-[#d81b60] focus:ring-2 w-full text-sm bg-white"
+                    className="bg-white px-4 py-2 border border-gray-300 focus:border-transparent rounded-lg outline-none focus:ring-[#d81b60] focus:ring-2 w-full text-sm"
                   >
                     <option value="">Select Investment Goal</option>
                     <option value="rental_income">Rental Income</option>
@@ -723,7 +723,7 @@ const InvestorDashboard: React.FC = () => {
                   <button
                     type="submit"
                     disabled={isUpdatingProfile || !isTextFieldsChanged}
-                    className="flex items-center gap-2 bg-[#d81b60] hover:bg-[#c2185b] disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:bg-[#d81b60] px-5 py-2.5 rounded-lg font-medium text-white text-sm transition-all cursor-pointer"
+                    className="flex items-center gap-2 bg-[#d81b60] hover:bg-[#c2185b] disabled:hover:bg-[#d81b60] disabled:opacity-50 px-5 py-2.5 rounded-lg font-medium text-white text-sm transition-all cursor-pointer disabled:cursor-not-allowed"
                   >
                     {isUpdatingProfile && <Loader2 className="w-4 h-4 animate-spin" />}
                     <span>Save Changes</span>

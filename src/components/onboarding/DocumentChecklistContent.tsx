@@ -5,6 +5,7 @@ import { toast } from "react-toastify";
 import Modal from "@/components/ui/Modal";
 import { useAppSelector } from "@/store/hook";
 import { selectUser } from "@/store/features/auth/auth.slice";
+import { useGetProgressTrackerQuery } from "@/store/features/auth/auth.api";
 import {
   getLendersList,
   getLenderDocuments,
@@ -113,6 +114,7 @@ interface DocumentChecklistContentProps {
 
 const DocumentChecklistContent: React.FC<DocumentChecklistContentProps> = ({ onProgressUpdate }) => {
   const user = useAppSelector(selectUser);
+  const { data: progressTrackerData } = useGetProgressTrackerQuery();
 
   const [lenders, setLenders] = useState<Lender[]>([]);
   const [selectedLender, setSelectedLender] = useState<string>("");
@@ -386,19 +388,74 @@ const DocumentChecklistContent: React.FC<DocumentChecklistContentProps> = ({ onP
 
   const [isGeneratingPackage, setIsGeneratingPackage] = useState(false);
 
-  const uploadedDocsCount = documents.filter((d) => {
-    const hasServerDoc = serverUserDocs.some((sd) => areDocTypesMatching(d.doc_type, sd.doc_type));
-    const hasLocalDoc = (uploadedFiles[d.doc_type] || []).length > 0;
-    return hasServerDoc || hasLocalDoc;
-  }).length;
+  // Helper to determine accurate document validation status
+  const getDocValidationStatus = (
+    docType: string
+  ): "validated" | "flagged" | "missing" | "pending" => {
+    const matchingServerDocs = serverUserDocs.filter((sd) =>
+      areDocTypesMatching(docType, sd.doc_type)
+    );
+    const localUploaded = (uploadedFiles[docType] || []).length > 0;
+    const errors = docErrors[docType] || [];
+
+    // Flagged if there are local validation errors or server-reported issues
+    const hasErrors =
+      errors.length > 0 ||
+      matchingServerDocs.some(
+        (sd) =>
+          (sd.validation_result?.issues && sd.validation_result.issues.length > 0) ||
+          ["failed", "rejected", "invalid", "flagged"].includes(
+            (sd.validation_status || "").toLowerCase()
+          )
+      );
+
+    if (hasErrors) return "flagged";
+
+    // Validated if server document has verified/valid status in validation_status
+    const hasValidatedServerDoc = matchingServerDocs.some((sd) =>
+      ["valid", "approved", "passed", "verified", "validated"].includes(
+        (sd.validation_status || "").toLowerCase()
+      )
+    );
+
+    if (hasValidatedServerDoc || (localUploaded && errors.length === 0)) {
+      return "validated";
+    }
+
+    // Pending if uploaded and undergoing review in validation_status
+    const hasPendingServerDoc = matchingServerDocs.some((sd) =>
+      ["pending", "review", "processing"].includes(
+        (sd.validation_status || "").toLowerCase()
+      )
+    );
+
+    if (hasPendingServerDoc) return "pending";
+
+    // Missing if not uploaded at all
+    if (!hasValidatedServerDoc && !localUploaded && matchingServerDocs.length === 0) {
+      return "missing";
+    }
+
+    return "pending";
+  };
+
   const totalDocsCount = documents.length;
-  const isFullyValidated = totalDocsCount > 0 && uploadedDocsCount >= totalDocsCount;
+  const validatedDocsCount = documents.filter(
+    (d) => getDocValidationStatus(d.doc_type) === "validated"
+  ).length;
+  const isFullyValidated = totalDocsCount > 0 && validatedDocsCount >= totalDocsCount;
+
+  // Extract financial readiness score from /auth/progress-tracker API
+  const financialReadinessScore =
+    progressTrackerData?.data?.financialReadiness?.percentage ??
+    progressTrackerData?.data?.overallReadiness ??
+    0;
 
   const handleGeneratePackage = async () => {
-    // if (!isFullyValidated) {
-    //   toast.warning("Please upload and validate all required documents before generating your package.");
-    //   return;
-    // }
+    if (!selectedLender && lenders.length > 0) {
+      toast.warning("Please select a lender first to generate your lending package.");
+      return;
+    }
 
     setIsGeneratingPackage(true);
     try {
@@ -413,15 +470,13 @@ const DocumentChecklistContent: React.FC<DocumentChecklistContentProps> = ({ onP
           investmentTimeline: user?.investmentTimeline || "3-6 Months",
         },
         lender: activeLender ? { name: activeLender.name, id: activeLender.code } : null,
-        readinessScore: 100,
+        readinessScore: financialReadinessScore,
         documents: documents.map((d) => {
-          const hasServerDoc = serverUserDocs.some((sd) => areDocTypesMatching(d.doc_type, sd.doc_type));
-          const hasLocalDoc = (uploadedFiles[d.doc_type] || []).length > 0;
-          const isUploaded = hasServerDoc || hasLocalDoc;
+          const status = getDocValidationStatus(d.doc_type);
           return {
             docType: d.doc_type,
             title: DOC_TYPE_META[d.doc_type]?.title || formatDocTitle(d.doc_type),
-            status: isUploaded ? "validated" : "pending",
+            status,
           };
         }),
       };
@@ -439,41 +494,48 @@ const DocumentChecklistContent: React.FC<DocumentChecklistContentProps> = ({ onP
   return (
     <div className="space-y-8">
       {/* Lending Package Banner */}
-      <div className={`p-6 rounded-[14px] border shadow-sm transition-all flex flex-col md:flex-row items-start md:items-center justify-between gap-4 ${isFullyValidated
-          ? "bg-gradient-to-r from-emerald-900 to-[#0D7A5F] text-white border-emerald-700"
-          : "bg-white border-[#C4CDD5]"
-        }`}>
+      <div
+        className={`p-6 rounded-[14px] border shadow-sm transition-all flex flex-col md:flex-row items-start md:items-center justify-between gap-4 ${isFullyValidated
+            ? "bg-gradient-to-r from-emerald-900 to-[#0D7A5F] text-white border-emerald-700"
+            : "bg-gradient-to-r from-slate-900 to-slate-800 text-white border-slate-700"
+          }`}
+      >
         <div className="flex items-start gap-4">
-          <div className={`p-3 rounded-xl ${isFullyValidated ? "bg-white/10 text-white" : "bg-emerald-50 text-[#0D7A5F]"}`}>
+          <div
+            className={`p-3 rounded-xl ${isFullyValidated
+                ? "bg-white/10 text-white"
+                : "bg-emerald-500/20 text-emerald-400 border border-emerald-500/30"
+              }`}
+          >
             <FileCheck size={28} />
           </div>
           <div>
             <div className="flex items-center gap-2">
-              <h3 className={`font-bold text-lg ${isFullyValidated ? "text-white" : "text-color-jet-black"}`}>
+              <h3 className="font-bold text-white text-lg">
                 Lending Package Summary
               </h3>
               {isFullyValidated ? (
                 <span className="flex items-center gap-1 bg-emerald-400/20 px-2.5 py-0.5 border border-emerald-400/30 rounded-full font-semibold text-emerald-200 text-xs">
-                  <CheckCircle2 size={12} /> Ready to Generate
+                  <CheckCircle2 size={12} /> Full Package (100% Validated)
                 </span>
               ) : (
-                <span className="bg-gray-100 px-2.5 py-0.5 border border-gray-200 rounded-full font-medium text-gray-600 text-xs">
-                  {uploadedDocsCount}/{totalDocsCount} Validated
+                <span className="flex items-center gap-1 bg-amber-400/20 px-2.5 py-0.5 border border-amber-400/30 rounded-full font-semibold text-amber-300 text-xs">
+                  Partial Package ({validatedDocsCount}/{totalDocsCount} Validated)
                 </span>
               )}
             </div>
-            <p className={`text-sm mt-1 max-w-xl ${isFullyValidated ? "text-emerald-100" : "text-gray-600"}`}>
+            <p className="mt-1 max-w-xl text-slate-200 text-sm">
               {isFullyValidated
-                ? "All required documents are validated! You can now generate your official 1-page summary cover and validated lending package PDF."
-                : "Upload and validate all required documents to unlock your downloadable Lending Package to send to your loan officer."}
+                ? "All required documents are validated! You can now generate your official full lending package PDF for loan underwriting."
+                : "You can generate your interim Lending Package at any time with validated items to date, complete with an itemized cover summary for loan officer pre-approval discussions."}
             </p>
           </div>
         </div>
 
         <button
           onClick={handleGeneratePackage}
-          // disabled={!isFullyValidated || isGeneratingPackage}
-          className={`px-6 py-3 rounded-xl font-semibold flex items-center gap-2.5 transition-all shadow-md whitespace-nowrap bg-white text-[#0D7A5F] hover:bg-emerald-50 active:scale-[0.98] cursor-pointer`}
+          disabled={isGeneratingPackage}
+          className="flex items-center gap-2.5 bg-white hover:bg-emerald-50 disabled:opacity-75 shadow-md px-6 py-3 rounded-xl font-semibold text-[#0D7A5F] whitespace-nowrap active:scale-[0.98] transition-all cursor-pointer"
         >
           {isGeneratingPackage ? (
             <>
@@ -483,7 +545,7 @@ const DocumentChecklistContent: React.FC<DocumentChecklistContentProps> = ({ onP
           ) : (
             <>
               <Download size={18} />
-              Generate My Package
+              {isFullyValidated ? "Download Full Package" : "Generate Lending Package"}
             </>
           )}
         </button>
@@ -585,11 +647,11 @@ const DocumentChecklistContent: React.FC<DocumentChecklistContentProps> = ({ onP
                           {matchingServerDocs.length > 0 && (
                             <div className="space-y-2 mt-3">
                               {matchingServerDocs.map((sDoc) => {
-                                const rawStatus = (sDoc.status || sDoc.validation_status || "pending").toLowerCase();
+                                const rawStatus = (sDoc.status || "pending").toLowerCase();
                                 let badgeColor = "bg-amber-100 text-amber-800 border-amber-200";
-                                if (["valid", "approved", "passed", "verified"].includes(rawStatus)) {
+                                if (["valid", "approved", "passed", "verified", "validated"].includes(rawStatus)) {
                                   badgeColor = "bg-green-100 text-green-700 border-green-200";
-                                } else if (["failed", "rejected", "invalid"].includes(rawStatus)) {
+                                } else if (["failed", "rejected", "invalid", "flagged"].includes(rawStatus)) {
                                   badgeColor = "bg-red-100 text-red-700 border-red-200";
                                 } else if (["pending", "review", "processing"].includes(rawStatus)) {
                                   badgeColor = "bg-yellow-100 text-yellow-800 border-yellow-200";
@@ -637,14 +699,14 @@ const DocumentChecklistContent: React.FC<DocumentChecklistContentProps> = ({ onP
 
                                     {/* Display Validation Issues if present */}
                                     {(sDoc.validation_result?.issues ?? []).length > 0 && (
-                                      <div className="mt-1.5 bg-red-50 border border-red-200 rounded-md p-2.5">
+                                      <div className="bg-red-50 mt-1.5 p-2.5 border border-red-200 rounded-md">
                                         <div className="flex items-center gap-1.5 mb-1.5">
                                           <AlertCircle size={13} className="text-red-500 shrink-0" />
-                                          <span className="font-bold text-red-700 text-[11px] uppercase tracking-wide">Validation Issue(s):</span>
+                                          <span className="font-bold text-[11px] text-red-700 uppercase tracking-wide">Validation Issue(s):</span>
                                         </div>
                                         <ul className="space-y-1 pl-4 list-disc">
                                           {(sDoc.validation_result?.issues ?? []).map((issue, issueIdx) => (
-                                            <li key={issueIdx} className="text-red-700 text-[11px] leading-relaxed">
+                                            <li key={issueIdx} className="text-[11px] text-red-700 leading-relaxed">
                                               {issue}
                                             </li>
                                           ))}
