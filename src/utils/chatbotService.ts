@@ -106,7 +106,7 @@ export interface DocumentValidationResponse {
 }
 
 const getBaseUrl = () => {
-  return import.meta.env.VITE_AI_API_URL;
+  return "https://ai.myvanessa.ai";
 };
 
 export const sendChatMessage = async (data: ChatRequest): Promise<ChatResponse> => {
@@ -314,7 +314,7 @@ export const getUserDocuments = async (userId: string): Promise<UserDocumentsRes
 };
 
 export const deleteDocument = async (documentId: string, userId?: string): Promise<{ success: boolean; message?: string }> => {
-  const url = userId 
+  const url = userId
     ? `${getBaseUrl()}/api/v1/document/${documentId}?user_id=${encodeURIComponent(userId)}`
     : `${getBaseUrl()}/api/v1/document/${documentId}`;
   const response = await fetch(url, {
