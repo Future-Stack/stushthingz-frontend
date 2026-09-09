@@ -38,7 +38,7 @@ const Signup: React.FC = () => {
   const [registerUser, { isLoading }] = useRegisterMutation();
 
   const handleGoogleLogin = () => {
-    const rawApiUrl = import.meta.env.VITE_API_URL || "http://localhost:3000";
+    const rawApiUrl = "https://api.myvanessa.ai";
     const baseUrl = rawApiUrl.replace(/\/+$/, "").replace(/\/api$/, "");
     window.location.href = `${baseUrl}/auth/google`;
   };
