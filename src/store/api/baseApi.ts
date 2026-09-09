@@ -4,7 +4,7 @@ import { toast } from "react-toastify";
 import { logout } from "../features/auth/auth.slice";
 
 const baseQueryAPI = fetchBaseQuery({
-  baseUrl: import.meta.env.VITE_API_URL,
+  baseUrl: "https://api.myvanessa.ai",
   credentials: "include",
   prepareHeaders(headers, { getState }) {
     const token = (getState() as RootState).auth.accessToken;
